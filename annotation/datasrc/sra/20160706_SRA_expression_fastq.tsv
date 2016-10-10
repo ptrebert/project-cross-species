@@ -1,0 +1,20 @@
+comment	use	date	sra	rep	runtype	readlength	SRA_ReadClass	species	cell	GEO_Sample	GEO_Series	lab	platform
+	0	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX122/SRX122668/SRR414980/SRR414980.sra	1	se	100	"application read"	ssc	iPS	GSM881389	GSE36114	"Sheng Zhong UCSD"	GAII
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211579/SRR636839/SRR636839.sra	1	pe	51	"application read"	bta	liver	GSM1054989	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211580/SRR636840/SRR636840.sra	2	pe	51	"application read"	bta	liver	GSM1054990	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211629/SRR636889/SRR636889.sra	1	pe	51	"application read"	bta	kidney	GSM1055039	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211630/SRR636890/SRR636890.sra	2	pe	51	"application read"	bta	kidney	GSM1055040	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211582/SRR636842/SRR636842.sra	1	pe	51	"application read"	cfa	liver	GSM1054992	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211583/SRR636843/SRR636843.sra	2	pe	51	"application read"	cfa	liver	GSM1054993	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211632/SRR636892/SRR636892.sra	1	pe	51	"application read"	cfa	kidney	GSM1055042	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211633/SRR636893/SRR636893.sra	2	pe	51	"application read"	cfa	kidney	GSM1055043	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211621/SRR636881/SRR636881.sra	1	pe	51	"application read"	ssc	liver	GSM1055031	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211622/SRR636882/SRR636882.sra	2	pe	51	"application read"	ssc	liver	GSM1055032	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211668/SRR636928/SRR636928.sra	1	pe	51	"application read"	ssc	kidney	GSM1055078	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211669/SRR636929/SRR636929.sra	2	pe	51	"application read"	ssc	kidney	GSM1055079	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211608/SRR636868/SRR636868.sra	1	pe	51	"application read"	mmu	liver	GSM1055018	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211609/SRR636869/SRR636869.sra	2	pe	51	"application read"	mmu	liver	GSM1055019	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211610/SRR636870/SRR636870.sra	3	pe	51	"application read"	mmu	liver	GSM1055020	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211656/SRR636916/SRR636916.sra	1	pe	51	"application read"	mmu	kidney	GSM1055066	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211657/SRR636917/SRR636917.sra	2	pe	51	"application read"	mmu	kidney	GSM1055067	GSE43013	EWHA	GAIIx
+	1	2016/07/06	ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByExp/sra/SRX/SRX211/SRX211658/SRR636918/SRR636918.sra	3	pe	51	"application read"	mmu	kidney	GSM1055068	GSE43013	EWHA	GAIIx
