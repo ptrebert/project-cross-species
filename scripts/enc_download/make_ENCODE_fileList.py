@@ -22,7 +22,7 @@ DL_FOLDER = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdat
 LISTFILE = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/listing_encode.txt'
 
 MDFILE = '/home/pebert/work/code/mpggit/crossspecies/annotation/datasrc/encode/20160713_ENCODE_metadata.tsv'
-SELECTFILE = '/home/pebert/work/code/mpggit/crossspecies/scripts/preprocess/ENCODE_md_selectors.ini'
+SELECTFILE = '/home/pebert/work/code/mpggit/crossspecies/scripts/enc_download/ENCODE_md_selectors.ini'
 # end of config
 
 
