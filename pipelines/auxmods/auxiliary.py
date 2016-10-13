@@ -36,3 +36,18 @@ def touch_checkfile(inputfiles, outputfile):
     with open(outputfile, 'w') as outf:
         _ = outf.write(timestr + '\n')
     return outputfile
+
+
+def dbg_param_list(pl):
+    """
+    :param pl:
+    :return:
+    """
+    if not isinstance(pl, (list, tuple)):
+        raise ValueError('Passed parameter is not list or tuple: {}'.format(type(pl)))
+    print('======== First')
+    print(pl[0])
+    print('======== Last')
+    print(pl[-1])
+    print('==============')
+    raise RuntimeError('Explicit stop (debug)')
