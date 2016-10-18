@@ -1,0 +1,15 @@
+filename	biosample	lifestage	lab	assembly
+01_HepG2_LiHG_Ct1_DNase_S_1.DHSv3.20150729.hs37.raw.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K27ac_S_2.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K27me3_S_1.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K36me3_S_2.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K4me1_S_1.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K4me3_S_1.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct1_H3K9me3_S_2.CHPv3.20150507.hs37.bamcov.bw	HepG2	ch	JWSB	hg19
+01_HepG2_LiHG_Ct2_DNase_S_1.DHSv3.20150729.hs37.raw.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K27ac_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K27me3_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K36me3_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K4me1_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K4me3_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
+01_HepG2_LiHG_Ct2_H3K9me3_F_1.CHPv3.20150501.hs37.bamcov.bw	HepG2	ch	TMFR	hg19
