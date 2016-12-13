@@ -240,7 +240,7 @@ def build_pipeline(args, config, sci_obj):
                               extras=[cmd, runjob]).mkdir(hdfout)
 
     cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
-    re_filter = '(?P<EID>E[0-9]+)_hs37d5_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>E[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfdeep = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                                name='bgtohdfdeep',
                                input=output_from(bwtobg),
