@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os as os
+import csv as csv
 import fnmatch as fnm
 import datetime as dt
 
@@ -51,3 +52,45 @@ def dbg_param_list(pl):
     print(pl[-1])
     print('==============')
     raise RuntimeError('Explicit stop (debug)')
+
+
+def prep_metadata(mdfile, key):
+    """
+    :param mdfile:
+    :return:
+    """
+    metadata = dict()
+    with open(mdfile, 'r', newline='') as infile:
+        reader = csv.DictReader(infile, delimiter='\t')
+        for row in reader:
+            metadata[row[key]] = row
+    assert metadata, 'No metadata records read from file {}'.format(mdfile)
+    return metadata
+
+
+def prep_dset_ids(idfile, project, datatype):
+    """
+    :param idfile:
+    :return:
+    """
+    dsetids = dict()
+    with open(idfile, 'r', newline='') as infile:
+        reader = csv.DictReader(infile, delimiter='\t')
+        for row in reader:
+            if row['project'] != project or row['type'] != datatype:
+                continue
+            if datatype == 'transcriptome':
+                k = row['biosample'], row['lifestage'], row['lab'], row['experiment']
+            else:
+                k = row['assembly'], row['biosample'], row['lifestage'], row['lab']
+            assert k not in dsetids, 'Duplicate key for IDs: {}'.format(k)
+            if row['id'] == 'na':
+                assert row['multid'] != 'na', 'Invalid ID for entry: {}'.format(row)
+                dsetids[k] = row['multid'].split(',')
+            else:
+                if datatype == 'epigenome':
+                    dsetids[k] = row['id']
+                else:
+                    dsetids[k] = row['id'], row['assembly']
+    assert dsetids, 'No metadata read from ID file {}'.format(idfile)
+    return dsetids
