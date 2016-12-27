@@ -1,11 +1,11 @@
 # coding=utf-8
 
 import os as os
-import csv as csv
 
 from ruffus import *
 
-from pipelines.auxmods.auxiliary import collect_full_paths, touch_checkfile
+from pipelines.auxmods.auxiliary import collect_full_paths, \
+    touch_checkfile, prep_dset_ids, prep_metadata
 
 
 def annotate_encode_files(fpaths, mddict, eiddict):
@@ -80,8 +80,8 @@ def link_encode_epigenomes(folder, mdfile, idfile, outfolder):
     """
     os.makedirs(outfolder, exist_ok=True)
     bwfiles = collect_full_paths(folder, '*.bigWig', False)
-    metadata = build_mddict(mdfile, 'File accession')
-    eids = build_eiddict(idfile, 'ENCODE', 'epigenome')
+    metadata = prep_metadata(mdfile, 'File accession')
+    eids = prep_dset_ids(idfile, 'ENCODE', 'epigenome')
     annfiles = annotate_encode_files(bwfiles, metadata, eids)
     linked_files = []
     for afp in annfiles:
@@ -113,8 +113,8 @@ def link_deep_epigenomes(folder, mdfile, idfile, outfolder):
     """
     os.makedirs(outfolder, exist_ok=True)
     bwfiles = collect_full_paths(folder, '*.bamcov.bw', False)
-    metadata = build_mddict(mdfile, 'filename')
-    eids = build_eiddict(idfile, 'DEEP', 'epigenome')
+    metadata = prep_metadata(mdfile, 'filename')
+    eids = prep_dset_ids(idfile, 'DEEP', 'epigenome')
     annfiles = annotate_deep_files(bwfiles, metadata, eids)
     linked_files = []
     for afp in annfiles:
@@ -131,42 +131,6 @@ def link_deep_epigenomes(folder, mdfile, idfile, outfolder):
         linked_files.append(new_path)
     assert linked_files, 'No DEEP files linked to destination: {}'.format(outfolder)
     return linked_files
-
-
-def build_mddict(mdfile, key):
-    """
-    :param mdfile:
-    :return:
-    """
-    metadata = dict()
-    with open(mdfile, 'r', newline='') as infile:
-        reader = csv.DictReader(infile, delimiter='\t')
-        for row in reader:
-            metadata[row[key]] = row
-    assert metadata, 'No metadata records read from file {}'.format(mdfile)
-    return metadata
-
-
-def build_eiddict(idfile, project, datatype):
-    """
-    :param idfile:
-    :return:
-    """
-    eiddict = dict()
-    with open(idfile, 'r', newline='') as infile:
-        reader = csv.DictReader(infile, delimiter='\t')
-        for row in reader:
-            if row['project'] != project or row['type'] != datatype:
-                continue
-            k = row['assembly'], row['biosample'], row['lifestage'], row['lab']
-            assert k not in eiddict, 'Duplicate key for IDs: {}'.format(k)
-            if row['id'] == 'na':
-                assert row['multid'] != 'na', 'Invalid ID for entry: {}'.format(row)
-                eiddict[k] = row['multid'].split(',')
-            else:
-                eiddict[k] = row['id']
-    assert eiddict, 'No metadata read from ID file {}'.format(idfile)
-    return eiddict
 
 
 def build_pipeline(args, config, sci_obj):
@@ -202,7 +166,8 @@ def build_pipeline(args, config, sci_obj):
                                   link_deep_epigenomes(dlfolder,
                                                        deep_metadata,
                                                        dataset_ids,
-                                                       linkfolder))
+                                                       linkfolder),
+                                  name='deepepi_init')
 
     # ===========
     # Major task: convert all epigenomes from init tasks to HDF
@@ -256,6 +221,4 @@ def build_pipeline(args, config, sci_obj):
     # End of major task: convert epigenomes to HDF
     # ================
 
-
     return pipe
-
