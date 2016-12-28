@@ -277,11 +277,22 @@ def make_qall_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
         else:
             files1.append(read1)
             files2.append(read2)
+    assert readlength > 0, 'No read length extracted from filenames'
+    assm = current.split('_')[1]
+    if readlength > 52:
+        idxdir, genemodel = indices[(assm, 'k31')]
+    else:
+        idxdir, genemodel = indices[(assm, 'k19')]
+    genemap = genemodel + '.map.tsv'
+    outdir = os.path.join(outpath, current)
+    params = {'index': idxdir, 'outpath': outdir, 'genemap': genemap,
+              'reads1': ' '.join(files1), 'reads2': ' '.join(files2)}
+    tmp = cmd.format(**params)
+    joined_reads = files1 + files2
+    arglist.append([joined_reads, os.path.join(outdir, 'quant.genes.sf'), tmp, jobcall])
     if fwreads:
         assert arglist, 'No argument list created for paired-end quantification'
     return arglist
-
-# the following functions may be outdated
 
 
 def convert_salmon_quant(inputfile, outputfile, genemodels):
