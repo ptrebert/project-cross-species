@@ -316,34 +316,6 @@ def convert_salmon_quant(inputfile, outputfile, genemodels):
     return outputfile
 
 
-def convert_hcop_table(inputfile, outputfile):
-    """
-    :param inputfile:
-    :param outputfile:
-    :return:
-    """
-    fn = os.path.basename(inputfile)
-    from_species = fn.split('_')[0]
-    to_species = fn.split('_')[1]
-    outbuffer = io.StringIO()
-    _ = outbuffer.write('\t'.join([from_species, to_species, 'support', 'assert_ids']) + '\n')
-    with gz.open(inputfile, 'rb') as inf:
-        # skip header
-        _ = inf.readline()
-        for line in inf:
-            line = line.decode('ascii')
-            if not line:
-                continue
-            _, from_ens, from_assert, _, to_ens, to_assert = line.strip().split()
-            if not (from_ens.startswith('ENS') and to_ens.startswith('ENS')):
-                continue
-            support = str(min(len(from_assert.split(',')), len(to_assert.split(','))))
-            _ = outbuffer.write('\t'.join([from_ens, to_ens, support, from_assert + '@' + to_assert]) + '\n')
-    with open(outputfile, 'w') as outf:
-        _ = outf.write(outbuffer.getvalue())
-    return outputfile
-
-
 def build_pipeline(args, config, sci_obj):
     """
     :param args:
@@ -464,17 +436,5 @@ def build_pipeline(args, config, sci_obj):
                              name='task_preptr',
                              input=output_from(fastqc, qmmuk13, qallpe, convquant, hdfquant),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
-
-    # orth_files = os.listdir(orthdir)
-    # orth_files = [os.path.join(orthdir, f) for f in orth_files]
-    #
-    # initorth = pipe.originate(lambda x: x, orth_files, name='initorth')
-    #
-    # convorth = pipe.transform(task_func=convert_hcop_table,
-    #                           name='convorth',
-    #                           input=output_from(initorth),
-    #                           filter=suffix('_six_column.txt.gz'),
-    #                           output='_orthologs.tsv',
-    #                           output_dir=orthdir).jobs_limit(2)
 
     return pipe
