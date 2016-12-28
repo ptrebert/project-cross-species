@@ -6,7 +6,6 @@ import gzip as gz
 import io as io
 import fnmatch as fnm
 import json as js
-import sys as sys
 import re as re
 
 from ruffus import *
@@ -285,43 +284,35 @@ def make_qall_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
 # the following functions may be outdated
 
 
-def salmon_to_bed(inputfile, outputfile, genemodel, datadir, expid):
+def convert_salmon_quant(inputfile, outputfile, genemodels):
     """
     :param inputfile:
     :param outputfile:
-    :param genemodel:
+    :param genemodels:
     :return:
     """
-    ra_genemodel = dict([(d['id'], d) for d in js.load(open(genemodel, 'r'))])
-    with open(inputfile, 'r', newline='') as quantfile:
-        rows = csv.DictReader(quantfile, delimiter='\t')
+    assert not inputfile.endswith('.gz'), 'Expect gzip input file: {}'.format(inputfile)
+    assembly = os.path.basename(outputfile).split('_')[1]
+    genemodel = fnm.filter(genemodels, '*_{}_*'.format(assembly))
+    assert len(genemodel) == 1, 'Non-unique gene model for assembly {} selected: {}'.format(assembly, genemodel)
+    with gz.open(genemodel[0], 'rt', newline='') as gm:
+        rows = csv.DictReader(gm, delimiter='\t')
+        lut_gene = dict([(r['name'], r) for r in rows])
+    outrows = []
+    with open(inputfile, 'rt', newline='') as quant:
+        rows = csv.DictReader(quant, delimiter='\t')
         for r in rows:
-            this_gene = ra_genemodel[r['Name']]
-            tpm = float(r['TPM'])
-            this_gene['tpm'] = tpm
-
-    fp, fn = os.path.split(genemodel)
-    parts = fn.split('_')
-    species, assembly, auth, ver = parts[0], parts[1], parts[2], parts[3].split('.')[0]
-
-    assoc_files = os.listdir(datadir)
-    assoc_files = fnm.filter(assoc_files, expid + '*' + '.fastq.gz')
-    assert assoc_files, 'No files for experiment ID: {}'.format(expid)
-    common_name = ''
-    for af in assoc_files:
-        parts = af.split('_')
-        new_name = '_'.join([parts[0], assembly, parts[3], parts[4], parts[5].split('.')[0]])
-        if common_name:
-            assert new_name == common_name, 'Information mismatch: {} \n {}'.format(common_name, assoc_files)
-        common_name = new_name
-
-    outpath = os.path.join(datadir, 'tmp', common_name + '.' + auth + '-' + ver + '.bed')
-    genes = sorted(ra_genemodel.values(), key=lambda d: (d['chrom'], d['start'], d['end'], d['id']))
-    with open(outpath, 'w') as out:
-        writer = csv.DictWriter(out, fieldnames=['chrom', 'start', 'end', 'id', 'tpm', 'strand', 'symbol'],
+            # by construction, must not throw
+            gene = lut_gene[r['Name']]
+            gene.update(r)
+            outrows.append(gene)
+    assert outrows, 'No rows for output created'
+    outrows = sorted(outrows, key=lambda d: (d['#chrom'], int(d['start']), int(d['end'])))
+    with open(outputfile, 'w') as outf:
+        writer = csv.DictWriter(outf, fieldnames=['#chrom', 'start', 'end', 'name', 'TPM', 'strand', 'symbol'],
                                 extrasaction='ignore', delimiter='\t')
         writer.writeheader()
-        writer.writerows(genes)
+        writer.writerows(outrows)
     return outputfile
 
 
@@ -376,6 +367,7 @@ def build_pipeline(args, config, sci_obj):
     linkfolder = os.path.join(workbase, 'normlinks')
     tempfolder = os.path.join(workbase, 'temp')
     qidxfolder = os.path.join(config.get('Pipeline', 'refdatabase'), 'transcriptome', 'qindex')
+    genemodels = os.path.join(config.get('Pipeline', 'refdatabase'), 'genemodel', 'subsets', 'protein_coding')
 
     enctrans_init = pipe.originate(lambda x: x,
                                    link_encode_transcriptomes(dlfolder, enc_metadata,
@@ -444,9 +436,33 @@ def build_pipeline(args, config, sci_obj):
                                         collect_full_paths(linkfolder, '*r2_pe*.gz', False),
                                         tmpquant, qidxfolder, cmd, jobcall))
 
+    conv_out = os.path.join(workbase, 'conv', 'bed')
+    convquant = pipe.transform(task_func=convert_salmon_quant,
+                               name='convquant',
+                               input=output_from(qmmuk13, qallpe),
+                               filter=formatter('.+/(?P<TID>T[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_mRNA/quant\.genes\.sf'),
+                               output=os.path.join(conv_out, '{TID[0]}_{ASSM[0]}_{CELL[0]}_mRNA.genes.tpm.bed'),
+                               extras=[collect_full_paths(genemodels, '*genes.bed.gz')]).mkdir(conv_out).jobs_limit(4)
+
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    hdfout = os.path.join(workbase, 'conv', 'hdf')
+    cmd = config.get('Pipeline', 'hdfquant').replace('\n', ' ')
+    hdfquant = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                              name='hdfquant',
+                              input=output_from(convquant),
+                              filter=suffix('.bed'),
+                              output='.h5',
+                              output_dir=hdfout,
+                              extras=[cmd, jobcall]).mkdir(hdfout)
+
     task_preptr = pipe.merge(task_func=touch_checkfile,
                              name='task_preptr',
-                             input=output_from(fastqc, qmmuk13, qallpe),
+                             input=output_from(fastqc, qmmuk13, qallpe, convquant, hdfquant),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
 
     # orth_files = os.listdir(orthdir)
