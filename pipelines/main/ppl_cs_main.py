@@ -70,8 +70,13 @@ def make_groups_compatible(groupings, epibundles):
         rows = csv.DictReader(inf, delimiter='\t')
         for r in rows:
             p1, p2 = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+            p1_params = ' '.join([x['param'] for x in p1])
+            p2_params = ' '.join([x['param'] for x in p2])
+            entry = {'partner1': p1, 'partner2': p2, 'params1': p1_params, 'params2': p2_params}
+            groups[r['gid']] = entry
+    assert groups, 'No group dictionary constructed'
+    return groups
             
-
 
 def bundle_epigenomes(folder):
     """
@@ -88,56 +93,36 @@ def bundle_epigenomes(folder):
     return collector
 
 
-
-
-def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobcall):
+def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd, jobcall):
     """
-    :param inputfiles:
     :param mapfiles:
-    :param baseout:
-    :param targets:
-    :param queries:
+    :param roifiles:
+    :param epidir:
+    :param groupfile:
+    :param outraw:
     :param cmd:
     :param jobcall:
     :return:
     """
-    arglist = []
-    out_done = set()
-    for mpf in sorted(mapfiles):
-        fn = os.path.basename(mpf)
-        trg, to, qry = fn.split('.')[0].split('_')
-        if trg in targets and qry in queries:
-            sigfiles = fnm.filter(inputfiles, '*/E0*_{}_*.h5'.format(trg))
-            for sgf in sigfiles:
-                sgfn = os.path.basename(sgf)
-                eid, assembly, cell, lib = sgfn.split('.')[0].split('_')
-                assert trg == assembly, 'Filtering for target assembly failed: {} - {}'.format(fn, sgfn)
-                mapfile = '_'.join([eid, qry, cell, lib])
-                mapfile += '.'.join(['', 'from', trg, 'mapsig', 'h5'])
-                mapout = os.path.join(baseout, '{}_from_{}'.format(qry, trg), mapfile)
-                if mapout in out_done:
-                    # for assemblies w/o cell type matches (pig, cow etc), duplicates
-                    # can arise since the original cell type is used (of the source signal)
-                    # simply ignore these
-                    continue
-                out_done.add(mapout)
-                tmp = cmd.format(**{'mapfile': mpf, 'query': qry})
-                arglist.append([sgf, mapout, tmp, jobcall])
-    if inputfiles:
-        assert arglist, 'No argument list created for signal mapping'
-    return arglist
 
+    # note to self: this is just paired/matched/grouped training data
+    # for #$(&^% sake, stop wanting to make everything in one call - split things up!!!!
+    # this is just groups/pairs between human and mouse - that's it
 
-def annotate_train_dataset(mapfiles, epigenomes, roifiles, outbase, cmd, jobcall):
-
+    epibundles = bundle_epigenomes(epidir)
+    groupings = make_groups_compatible(groupfile, epibundles)
 
     for map in mapfiles:
 
 
-        for epi in epigenomes:
+        for gid, partners in groupings.items():
+            assm1, assm2 = partners['partner1'][0]['assembly'], partners['partner2'][0]['assembly']
+
+            for assm in {assm1, assm2}:
 
 
-            for roi in roifiles:
+
+            compat_roi = fnm.filter(roifiles, '_{}_')
 
 
                 tmp = cmd.format(**params)
@@ -237,6 +222,47 @@ def annotate_train_dataset(mapfiles, epigenomes, roifiles, outbase, cmd, jobcall
                 arglist.append([roif, outpath, tmp, jobcall])
     assert arglist, 'No calls created: make_hist_featdata'
     return arglist
+
+
+
+def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobcall):
+    """
+    :param inputfiles:
+    :param mapfiles:
+    :param baseout:
+    :param targets:
+    :param queries:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    arglist = []
+    out_done = set()
+    for mpf in sorted(mapfiles):
+        fn = os.path.basename(mpf)
+        trg, to, qry = fn.split('.')[0].split('_')
+        if trg in targets and qry in queries:
+            sigfiles = fnm.filter(inputfiles, '*/E0*_{}_*.h5'.format(trg))
+            for sgf in sigfiles:
+                sgfn = os.path.basename(sgf)
+                eid, assembly, cell, lib = sgfn.split('.')[0].split('_')
+                assert trg == assembly, 'Filtering for target assembly failed: {} - {}'.format(fn, sgfn)
+                mapfile = '_'.join([eid, qry, cell, lib])
+                mapfile += '.'.join(['', 'from', trg, 'mapsig', 'h5'])
+                mapout = os.path.join(baseout, '{}_from_{}'.format(qry, trg), mapfile)
+                if mapout in out_done:
+                    # for assemblies w/o cell type matches (pig, cow etc), duplicates
+                    # can arise since the original cell type is used (of the source signal)
+                    # simply ignore these
+                    continue
+                out_done.add(mapout)
+                tmp = cmd.format(**{'mapfile': mpf, 'query': qry})
+                arglist.append([sgf, mapout, tmp, jobcall])
+    if inputfiles:
+        assert arglist, 'No argument list created for signal mapping'
+    return arglist
+
+
 
 
 # ===============
