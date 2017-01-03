@@ -6,6 +6,7 @@ import json as js
 import csv as csv
 import collections as col
 import fnmatch as fnm
+import datetime as dt
 
 from ruffus import *
 
@@ -68,6 +69,7 @@ def make_groups_compatible(groupings, epibundles):
     :return:
     """
     groups = dict()
+    cmatches = col.defaultdict(set)
     with open(groupings, 'r', newline='') as inf:
         rows = csv.DictReader(inf, delimiter='\t')
         for r in rows:
@@ -78,11 +80,14 @@ def make_groups_compatible(groupings, epibundles):
             extgid = gid + str(h) + str(d)
             entry = {'partner1': p1, 'partner2': p2, 'params1': p1_params, 'params2': p2_params, 'extgid': extgid}
             groups[gid] = entry
+            c1, c2 = r['comment'].split('-')
+            cmatches[c1].add(c2)
+            cmatches[c2].add(c1)
     assert groups, 'No group dictionary constructed'
-    return groups
+    return groups, cmatches
             
 
-def bundle_epigenomes(folder):
+def bundle_epigenomes(folder, mapped=False):
     """
     :param folder:
     :return:
@@ -91,12 +96,24 @@ def bundle_epigenomes(folder):
     collector = col.defaultdict(list)
     for fp in fpaths:
         try:
-            eid, assm, cell, lib = os.path.basename(fp).split('.')[0].split('_')
+            if mapped:
+                sample, foo, target, bar, ext = os.path.basename(fp).split('.')
+                assert foo == 'from', 'Unexpected file name: {}'.format(os.path.basename(fp))
+                eid, query, cell, lib = sample.split('_')
+                key = eid, target, query
+                param = '{}::{}'.format(lib, fp)
+                infos = {'EID': eid, 'target': target, 'query': query, 'lib': lib,
+                         'cell': cell, 'param': param, 'path': fp}
+            else:
+                eid, assm, cell, lib = os.path.basename(fp).split('.')[0].split('_')
+                key = eid
+                param = '{}::{}'.format(lib, fp)
+                infos = {'EID': eid, 'assembly': assm, 'lib': lib,
+                         'cell': cell, 'param': param, 'path': fp}
+
         except ValueError as ve:
             raise ValueError('Cannot process file {} - {}'.format(fp, str(ve)))
-        param = '{}::{}'.format(lib, fp)
-        collector[eid].append({'EID': eid, 'assembly': assm, 'lib': lib,
-                               'cell': cell, 'param': param, 'path': fp})
+        collector[key].append(infos)
     return collector
 
 
@@ -112,8 +129,9 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
     :return:
     """
     epibundles = bundle_epigenomes(epidir)
-    groupings = make_groups_compatible(groupfile, epibundles)
+    groupings, matchings = make_groups_compatible(groupfile, epibundles)
     arglist = []
+    uniq = set()
     for mapf in mapfiles:
         target, query = mapf['target'], mapf['query']
         for gid, partners in groupings.items():
@@ -126,6 +144,8 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
                                     assm1, partners['partner1'][0]['cell']])
                 outfile += '.' + roi['regtype'] + '.h5'
                 outpath = os.path.join(outfolder, outfile)
+                assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
+                uniq.add(outpath)
                 params = {'target': target, 'query': query, 'mapref': mapref, 'genome': assm1,
                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                           'datafiles': partners['params1'], 'info': partners['extgid']}
@@ -141,14 +161,66 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
                                     assm2, partners['partner2'][0]['cell']])
                 outfile += '.' + roi['regtype'] + '.h5'
                 outpath = os.path.join(outfolder, outfile)
+                assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
+                uniq.add(outpath)
                 params = {'target': target, 'query': query, 'mapref': mapref, 'genome': assm2,
                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                           'datafiles': partners['params2'], 'info': partners['extgid']}
                 tmp = cmd.format(**params)
                 arglist.append([roi['path'], outpath, tmp, jobcall])
+    # store group info
+    store_group_info(groupfile, groupings)
+    # store cell type matches
+    store_cell_matches(groupfile, matchings)
     if mapfiles:
         assert arglist, 'No calls created: annotate_training_groups'
     return arglist
+
+
+def store_group_info(groupfile, grouping):
+    """
+    :param groupfile:
+    :param grouping:
+    :return:
+    """
+    timestr = dt.datetime.now().strftime('%A_%Y-%m-%d_%H:%M:%S')
+    filepath = os.path.join(os.path.dirname(groupfile), 'groupinfo_ro.json')
+    if not os.path.isfile(filepath):
+        with open(filepath, 'w') as dump:
+            js.dump({'timestamp': timestr, 'groupinfo': {}}, dump, indent=1, sort_keys=True)
+    rewrite = False
+    with open(filepath, 'r') as dumped:
+        gi = js.load(dumped)['groupinfo']
+        if gi != grouping:
+            rewrite = True
+    if rewrite:
+        with open(filepath, 'w') as dump:
+            js.dump({'timestamp': timestr, 'groupinfo': grouping}, dump, indent=1, sort_keys=True)
+    return
+
+
+def store_cell_matches(groupfile, matchings):
+    """
+    :param groupfile:
+    :return:
+    """
+    serialize = dict()
+    for key, vals in matchings.items():
+        serialize[key] = list(vals)
+    timestr = dt.datetime.now().strftime('%A_%Y-%m-%d_%H:%M:%S')
+    filepath = os.path.join(os.path.dirname(groupfile), 'cellmatches_ro.json')
+    if not os.path.isfile(filepath):
+        with open(filepath, 'w') as dump:
+            js.dump({'timestamp': timestr, 'matchings': {}}, dump, indent=1, sort_keys=True)
+    rewrite = False
+    with open(filepath, 'r') as dumped:
+        cmi = js.load(dumped)['matchings']
+        if cmi != serialize:
+            rewrite = True
+    if rewrite:
+        with open(filepath, 'w') as dump:
+            js.dump({'timestamp': timestr, 'matchings': serialize}, dump, indent=1, sort_keys=True)
+    return
 
 
 def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobcall):
@@ -189,7 +261,7 @@ def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobc
     return arglist
 
 
-def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall):
+def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False, matchings=None):
     """
     :param featdir:
     :param expdir:
@@ -198,18 +270,39 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall):
     :param jobcall:
     :return:
     """
-    featfiles = collect_full_paths(featdir, '*/G*.h5', True)
-    expfiles = collect_full_paths(expdir, '*/T*.h5')
+    if mapped:
+        assert matchings is not None, 'Need to specify cell type matchings for mapped data'
+        matchings = js.load(open(matchings, 'r'))['matchings']
+    featfiles = collect_full_paths(featdir, '*/G[0-9]*.h5', True)
+    expfiles = collect_full_paths(expdir, '*/T0*.h5')
     collector = col.defaultdict(list)
     for fp in featfiles:
-        k, i = os.path.basename(fp).split('.')[:2]
+        if mapped:
+            parts = os.path.basename(fp).split('.')
+            k, i = '.'.join(parts[:3]), parts[3]
+        else:
+            k, i = os.path.basename(fp).split('.')[:2]
         sub = os.path.split(os.path.dirname(fp))[1]
         collector[(k, sub)].append((fp, '{}::{}'.format(i, fp)))
     arglist = []
+    uniq = set()
     for (group, sub), files in collector.items():
         assert len(files) == 4, 'Unexpected number of feature files {}: {}'.format(group, files)
-        pat = group.split('_', 2)[-1]
-        match_exp = fnm.filter(expfiles, '*/T*_{}_mRNA*'.format(pat))
+        if mapped:
+            # the pattern for mapped files consists of QRY-ASSM_TRG-CELL
+            # for that combo, there is obv. no expression data, so fix here
+            # to get QRY-ASSM_QRY-CELL and add TRG-CELL for ambig. cases like liver and kidney
+            pat = group.split('.')[0].split('_', 2)[-1]
+            query, cell_to_match = pat.split('_')
+            matched_cell = matchings[cell_to_match]
+            matched_cell.append(cell_to_match)
+            match_exp = []
+            for mc in set(matched_cell):
+                foo = fnm.filter(expfiles, '*/T0*_{}_{}_mRNA*'.format(query, mc))
+                match_exp.extend(foo)
+        else:
+            pat = group.split('_', 2)[-1]
+            match_exp = fnm.filter(expfiles, '*/T0*_{}_mRNA*'.format(pat))
         try:
             assert match_exp, 'No matched expression files for group {} / pattern {} / {}'.format(group, pat, files)
         except AssertionError as ae:
@@ -218,23 +311,96 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall):
             else:
                 raise ae
         mergefiles = ' '.join([t[1] for t in files])
-        gid, eid, assm, cell = group.split('_')
+        if mapped:
+            gid, eid, assm, cell = group.split('.')[0].split('_')
+        else:
+            gid, eid, assm, cell = group.split('_')
         tmp = os.path.split(os.path.dirname(files[0][0]))[1]
-        trg, foo, qry = tmp.split('_')
-        assert foo == 'to', 'Unexpected folder structure: {}'.format(tmp)
+        if mapped:
+            qry, foo, trg = tmp.split('_')
+            assert foo == 'from', 'Unexpected folder structure: {}'.format(tmp)
+        else:
+            trg, foo, qry = tmp.split('_')
+            assert foo == 'to', 'Unexpected folder structure: {}'.format(tmp)
         for fp in match_exp:
             fn = os.path.basename(fp)
             tid = fn.split('_')[0]
-            og = os.path.join(trg, qry, gid, 'features')
+            if mapped:
+                og = os.path.join(qry, trg, gid, 'features')
+            else:
+                og = os.path.join(trg, qry, gid, 'features')
             params = {'outgroup': og, 'mergefiles': mergefiles}
             outbase = outraw.format(**{'target': trg, 'query': qry})
-            outfile = '_'.join([gid, eid, tid, assm, cell]) + '.feat.h5'
+            if mapped:
+                outfile = '_'.join([gid, eid, tid, assm, cell]) + '.from.{}.feat.h5'.format(trg)
+            else:
+                outfile = '_'.join([gid, eid, tid, assm, cell]) + '.feat.h5'
             outpath = os.path.join(outbase, outfile)
+            assert outpath not in uniq, 'Duplicate created: {}'.format(outpath)
+            uniq.add(outpath)
             tmp = cmd.format(**params)
             arglist.append([fp, outpath, tmp, jobcall])
     if featfiles:
         assert arglist, 'No merge arguments created'
     return arglist
+
+
+def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, outraw, cmd, jobcall):
+    """
+    :param mapfiles:
+    :param roifiles:
+    :param mapepidir:
+    :param expfiles:
+    :param groupfile:
+    :param outraw:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    mapepibundles = bundle_epigenomes(mapepidir, mapped=True)
+    groupings = js.load(open(groupfile, 'r'))['groupinfo']
+    arglist = []
+    uniq = set()
+    for mapf in mapfiles:
+        target, query = mapf['target'], mapf['query']
+        for (eid, trg, qry), bundle in mapepibundles.items():
+            if trg == target and qry == query:
+                cell = bundle[0]['cell']
+                compat_exp = fnm.filter(expfiles, '*_{}_*'.format(query))
+                if not compat_exp:
+                    continue
+                # there are ENCODE expression data for mm9 kidney/liver, but no
+                # associated histone data - so make this unique here, otherwise
+                # this would create duplicates
+                exp_cells = set([os.path.basename(fp).split('_')[2] for fp in compat_exp])
+                compat_roi = [roi for roi in roifiles if roi['assembly'] == query]
+                for exp_cell in exp_cells:
+                    for gid, ginfo in groupings.items():
+                        if (ginfo['partner1'][0]['cell'] == exp_cell or ginfo['partner2'][0]['cell'] == exp_cell) and \
+                                (ginfo['partner1'][0]['EID'] == eid or ginfo['partner2'][0]['EID'] == eid):
+                            extgid = ginfo['extgid']
+                            libs = [entry['lib'] for entry in ginfo['partner1']]
+                            # the filter for actually available expression data exists to avoid creating
+                            # test datasets on which the learner performance cannot be evaluated
+                            for roi in compat_roi:
+                                use_mapped = [item for item in bundle if item['lib'] in libs]
+                                datafiles = ' '.join([x['param'] for x in use_mapped])
+
+                                outfolder = outraw.format(**{'target': target, 'query': query})
+                                outfile = '_'.join([extgid, eid, query, cell])
+                                outfile += '.'.join(['', 'from', target, roi['regtype'], 'h5'])
+                                outpath = os.path.join(outfolder, outfile)
+                                assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
+                                uniq.add(outpath)
+                                params = {'target': target, 'query': query, 'mapref': 'query', 'genome': query,
+                                          'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                                          'datafiles': datafiles, 'info': extgid}
+                                tmp = cmd.format(**params)
+                                arglist.append([roi['path'], outpath, tmp, jobcall])
+    if mapfiles:
+        assert arglist, 'No argument list for building test datasets created'
+    return arglist
+
 
 # ===============
 # everything below needs to be revised
@@ -687,9 +853,6 @@ def build_pipeline(args, config, sci_obj):
     use_targets = config.get('Pipeline', 'targets').split()
     use_queries = config.get('Pipeline', 'queries').split()
 
-    # load cell type matches from central annotation file
-    ctype_match = js.load(open(config.get('Pipeline', 'ctypeann'), 'r'))
-
     # step 0: initiate pipeline with input signal files
     init = pipe.originate(task_func=lambda x: x, output=inputfiles, name='init')
 
@@ -860,7 +1023,7 @@ def build_pipeline(args, config, sci_obj):
                                               name='trainmodel_expvalone_seq',
                                               input=output_from(mrgtraindataexp_groups),
                                               filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
-                                              output=os.path.join(dir_exp_statone,
+                                              output=os.path.join(dir_exp_valone,
                                                                   '{subdir[0][0]}',
                                                                   '{SAMPLE[0]}.rfreg.seq.uw.geq1.pck'),
                                               extras=[cmd, jobcall]).mkdir(dir_exp_valone)
@@ -870,7 +1033,7 @@ def build_pipeline(args, config, sci_obj):
                                               name='trainmodel_expvalone_sig',
                                               input=output_from(mrgtraindataexp_groups),
                                               filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
-                                              output=os.path.join(dir_exp_statone,
+                                              output=os.path.join(dir_exp_valone,
                                                                   '{subdir[0][0]}',
                                                                   '{SAMPLE[0]}.rfreg.sig.uw.geq1.pck'),
                                               extras=[cmd, jobcall]).mkdir(dir_exp_valone)
@@ -880,7 +1043,7 @@ def build_pipeline(args, config, sci_obj):
                                                name='trainmodel_expvalone_full',
                                                input=output_from(mrgtraindataexp_groups),
                                                filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
-                                               output=os.path.join(dir_exp_statone,
+                                               output=os.path.join(dir_exp_valone,
                                                                    '{subdir[0][0]}',
                                                                    '{SAMPLE[0]}.rfreg.full.uw.geq1.pck'),
                                                extras=[cmd, jobcall]).mkdir(dir_exp_valone)
@@ -894,50 +1057,48 @@ def build_pipeline(args, config, sci_obj):
     #
     # END: major task train model for gene expression prediction
     # ==============================
+
+    # ==================================
+    # Major task: generate test data for gene expression prediction (based on mapped signal)
     #
-    # # ==================================
-    # # Major task: generate test data for gene expression prediction (based on mapped signal)
-    # #
-    # dir_task_testdata_exp = os.path.join(workbase, 'task_testdata_exp')
-    # sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('EnvConfig')))
-    # if args.gridmode:
-    #     jobcall = sci_obj.ruffus_gridjob()
-    # else:
-    #     jobcall = sci_obj.ruffus_localjob()
+    dir_task_testdataexp_groups = os.path.join(workbase, 'task_testdata_exp')
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    # Subtask
+    # compute features for all regions of interest separately and
+    # then merge region data and add expression values
+    dir_sub_cmpf_testdataexp = os.path.join(dir_task_testdataexp_groups, 'compfeat_groups', '{query}_from_{target}')
+    mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
+    roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
+    expfiles = collect_full_paths(dir_indata, '*/T0*.h5')
+    groupinfos = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'groupinfo_ro.json')
+    matchings = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'cellmatches_ro.json')
+    cmd = config.get('Pipeline', 'testdataexp').replace('\n', ' ')
+    testdataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
+                                    annotate_test_datasets(mapfiles, roifiles, dir_sub_signal, expfiles,
+                                                           groupinfos, dir_sub_cmpf_testdataexp,
+                                                           cmd, jobcall),
+                                    name='testdataexp_groups').mkdir(os.path.split(dir_sub_cmpf_testdataexp)[0])
+
+    dir_mrg_test_datasets = os.path.join(dir_task_testdataexp_groups, 'test_datasets', '{query}_from_{target}')
+    cmd = config.get('Pipeline', 'mrgtestdataexp').replace('\n', ' ')
+    mrgtestdataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
+                                       merge_augment_featfiles(os.path.split(dir_sub_cmpf_testdataexp)[0],
+                                                               dir_indata, dir_mrg_test_datasets, cmd, jobcall, True, matchings),
+                                       name='mrgtestdataexp_groups').mkdir(os.path.split(dir_mrg_test_datasets)[0])
+
+    task_testdata_exp = pipe.merge(task_func=touch_checkfile,
+                                   name='task_testdata_exp',
+                                   input=output_from(testdataexp_groups, mrgtestdataexp_groups),
+                                   output=os.path.join(dir_task_traindata_exp, 'run_task_testdata_exp.chk'))
+
     #
-    # # Subtask
-    # # compute features for all regions of interest separately and
-    # # then merge region data and add expression values
-    # dir_sub_cmpf_testdataexp = os.path.join(dir_task_testdata_exp, 'sub_cmp_features')
-    # cmd = config.get('Pipeline', 'testdataexp').replace('\n', ' ')
-    # dir_base_testdataexp = os.path.join(dir_sub_cmpf_testdataexp, 'featdata', 'hist_signal', '{assembly}_from_{query}')
-    # testdataexp = pipe.files(sci_obj.get_jobf('in_out'),
-    #                          make_hist_featdata(genedir, dir_sub_mapext, indexdir,
-    #                                             all_queries, dir_base_testdataexp,
-    #                                             cmd, jobcall, is_mapped=True),
-    #                          name='testdataexp').mkdir(os.path.split(dir_base_traindataexp)[0])
-    #
-    # sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('EnvConfig')))
-    # if args.gridmode:
-    #     jobcall = sci_obj.ruffus_gridjob()
-    # else:
-    #     jobcall = sci_obj.ruffus_localjob()
-    #
-    # # merge testdata and add expression values
-    # cmd = config.get('Pipeline', 'mrgtestdataexp').replace('\n', ' ')
-    # mrgtestdataexp = pipe.files(sci_obj.get_jobf('in_out'),
-    #                             merge_augment_gene_regions(os.path.split(dir_base_testdataexp)[0], expdir,
-    #                                                        cmd, jobcall),
-    #                             name='mrgtestdataexp').follows(testdataexp)
-    #
-    # run_task_testdata_exp = pipe.merge(task_func=touch_checkfile,
-    #                                    name='run_task_testdata_exp',
-    #                                    input=output_from(testdataexp, mrgtestdataexp),
-    #                                    output=os.path.join(dir_task_traindata_exp, 'run_task_testdata_exp.chk'))
-    #
-    # #
-    # # END: major task generate test data
-    # # ==============================
+    # END: major task generate test data
+    # ==============================
     #
     # # ==============================
     # # Major task: apply models to predict gene status (on/off) and expression level
