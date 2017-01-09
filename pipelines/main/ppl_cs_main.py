@@ -71,9 +71,13 @@ def make_groups_compatible(groupings, epibundles):
     groups = dict()
     cmatches = col.defaultdict(set)
     dupgroups = col.defaultdict(list)
+    match_types = dict()
     with open(groupings, 'r', newline='') as inf:
         rows = csv.DictReader(inf, delimiter='\t')
         for r in rows:
+            match_types[r['comment']] = r['type']
+            foo, bar = r['comment'].split('-')
+            match_types[bar + '-' + foo] = r['type']
             p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
             clibs = '-'.join(clibs)
             p1_params = ' '.join([x['param'] for x in p1])
@@ -88,7 +92,7 @@ def make_groups_compatible(groupings, epibundles):
             cmatches[c1].add(c2)
             cmatches[c2].add(c1)
     assert groups, 'No group dictionary constructed'
-    return groups, cmatches, dupgroups
+    return groups, cmatches, dupgroups, match_types
             
 
 def bundle_epigenomes(folder, mapped=False):
@@ -133,7 +137,7 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
     :return:
     """
     epibundles = bundle_epigenomes(epidir)
-    groupings, matchings, dups = make_groups_compatible(groupfile, epibundles)
+    groupings, matchings, dups, mtypes = make_groups_compatible(groupfile, epibundles)
     arglist = []
     uniq = set()
     for gid, partners in groupings.items():
@@ -186,7 +190,7 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
     # store group info
     store_group_info(groupfile, groupings, dups)
     # store cell type matches
-    store_cell_matches(groupfile, matchings)
+    store_cell_matches(groupfile, matchings, mtypes)
     if mapfiles:
         assert arglist, 'No calls created: annotate_training_groups'
     return arglist
@@ -217,7 +221,7 @@ def store_group_info(groupfile, grouping, dupgroups):
     return
 
 
-def store_cell_matches(groupfile, matchings):
+def store_cell_matches(groupfile, matchings, matchtypes):
     """
     :param groupfile:
     :return:
@@ -229,7 +233,7 @@ def store_cell_matches(groupfile, matchings):
     filepath = os.path.join(os.path.dirname(groupfile), 'cellmatches_ro.json')
     if not os.path.isfile(filepath):
         with open(filepath, 'w') as dump:
-            js.dump({'timestamp': timestr, 'matchings': {}}, dump, indent=1, sort_keys=True)
+            js.dump({'timestamp': timestr, 'matchings': {}, 'matchtypes': {}}, dump, indent=1, sort_keys=True)
     rewrite = False
     with open(filepath, 'r') as dumped:
         cmi = js.load(dumped)['matchings']
@@ -237,7 +241,7 @@ def store_cell_matches(groupfile, matchings):
             rewrite = True
     if rewrite:
         with open(filepath, 'w') as dump:
-            js.dump({'timestamp': timestr, 'matchings': serialize}, dump, indent=1, sort_keys=True)
+            js.dump({'timestamp': timestr, 'matchings': serialize, 'matchtypes': matchtypes}, dump, indent=1, sort_keys=True)
     return
 
 
@@ -464,6 +468,68 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
     if all_models:
         assert arglist, 'No apply parameters created'
     return arglist
+
+
+def annotate_modelfile(fpath, datasets, groupings):
+    """
+    :param fpath:
+    :return:
+    """
+    path, name = os.path.split(fpath)
+    sample_desc, model_desc = name.split('.', 1)
+    groupid, model_epi, model_trans, target, model_cell = sample_desc.split('_')
+    group, hist, dnase = groupid[:3], groupid[3], groupid[4]
+    _, query, model_type = model_desc.split('.', 2)
+    model_type = model_type.rsplit('.', 1)[0]
+    test_type = groupings[group]['type']
+    epi_cell = datasets[model_epi]['biosample']
+    trans_cell = datasets[model_trans]['biosample']
+    # since model == training dataset, the cell types
+    # have to match
+    assert epi_cell == trans_cell, 'Biosample mismatch for model file: {}'.format(fpath)
+    md = {'path': fpath, 'group': group, 'num_hist': hist, 'num_dnase': dnase,
+          'group_test_type': test_type, 'model_spec': model_type, 'model_target': target,
+          'model_query': query, 'model_cell': epi_cell, 'model_epigenome': model_epi,
+          'model_transcriptome': model_trans}
+    return md
+
+
+def annotate_test_dataset(fpath, datasets, groupings, cmatchtypes):
+    """
+    :param fpath:
+    :param datasets:
+    :param groupings:
+    :return:
+    """
+    path, name = os.path.split(fpath)
+    sample_desc, _, target, _, _ = name.split('.')
+    groupid, data_epi, data_trans, query, data_cell = sample_desc.split('_')
+    group, hist, dnase = groupid[:3], groupid[3], groupid[4]
+    epi_cell = datasets[data_epi]['biosample']
+    trans_cell = datasets[data_trans]['biosample']
+    test_type = cmatchtypes[epi_cell + '-' + trans_cell]
+    group_test = groupings[group]['type']
+    epi_assm = datasets[data_epi]['assembly']
+    trans_assm = datasets[data_trans]['assembly']
+    assert trans_assm == query, 'Assembly mismatch for transcriptome / query in test_dataset: {}'.format(fpath)
+    assert epi_assm == target, 'Assembly mismatch for epigenome / target in test dataset: {}'.format(fpath)
+    assert epi_assm != trans_assm, 'Assembly match in test dataset: {}'.format(fpath)
+    md = {'path': fpath, 'group': group, 'num_hist': hist, 'num_dnase': dnase,
+          'group_test_type': group_test, 'data_test_type': test_type,
+          'data_epigenome': data_epi, 'data_transcriptome': data_trans,
+          'data_target': target, 'data_query': query, 'data_epi_cell': epi_cell,
+          'data_trans_cell': trans_cell}
+    return md
+
+
+def annotate_test_output(modelfile, datafile):
+    """
+    :param modelfile:
+    :param datafile:
+    :param datasets:
+    :param groupings:
+    :return:
+    """
 
 
 def build_pipeline(args, config, sci_obj):
