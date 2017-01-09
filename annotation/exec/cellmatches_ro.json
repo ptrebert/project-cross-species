@@ -5,43 +5,43 @@
    "GM12878"
   ],
   "ESB4": [
-   "H1hESC",
-   "GM12878"
+   "GM12878",
+   "H1hESC"
   ],
   "ESE14": [
-   "H1hESC",
-   "GM12878"
+   "GM12878",
+   "H1hESC"
   ],
   "GM12878": [
+   "ESE14",
    "kidney",
    "CH12",
-   "ESB4",
    "liver",
-   "ESE14"
+   "ESB4"
   ],
   "H1hESC": [
-   "ESB4",
-   "ESE14"
+   "ESE14",
+   "ESB4"
   ],
   "HepG2": [
-   "kidney",
-   "liver"
+   "liver",
+   "kidney"
   ],
   "K562": [
-   "MEL",
-   "CH12"
+   "CH12",
+   "MEL"
   ],
   "MEL": [
    "K562"
   ],
   "kidney": [
-   "HepG2",
-   "GM12878"
+   "GM12878",
+   "HepG2"
   ],
   "liver": [
-   "HepG2",
-   "GM12878"
+   "GM12878",
+   "HepG2"
   ]
  },
- "timestamp": "Tuesday_2017-01-03_14:37:33"
+ "timestamp": "Monday_2017-01-09_16:31:34"
 }
