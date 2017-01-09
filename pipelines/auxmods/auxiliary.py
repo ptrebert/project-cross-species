@@ -6,7 +6,7 @@ import fnmatch as fnm
 import datetime as dt
 
 
-def collect_full_paths(folder, pattern, topdown=True):
+def collect_full_paths(folder, pattern, topdown=True, allow_none=False):
     """
     :param folder:
     :param pattern:
@@ -23,7 +23,8 @@ def collect_full_paths(folder, pattern, topdown=True):
                 for f in files:
                     found.append(os.path.join(root, f))
     found = fnm.filter(found, pattern)
-    assert found, 'No files found in folder {} with pattern {}'.format(folder, pattern)
+    if not allow_none:
+        assert found, 'No files found in folder {} with pattern {}'.format(folder, pattern)
     return found
 
 

@@ -59,7 +59,7 @@ def select_compatible_libs(partner1, partner2):
     p1 = list(p for p in partner1 if p['lib'] in isect)
     p2 = list(p for p in partner2 if p['lib'] in isect)
     assert p1 and p2, 'Empty partner: {} and {}'.format(p1, p2)
-    return p1, p2, hist, dnase
+    return p1, p2, hist, dnase, sorted(isect)
 
 
 def make_groups_compatible(groupings, epibundles):
@@ -70,10 +70,12 @@ def make_groups_compatible(groupings, epibundles):
     """
     groups = dict()
     cmatches = col.defaultdict(set)
+    dupgroups = col.defaultdict(list)
     with open(groupings, 'r', newline='') as inf:
         rows = csv.DictReader(inf, delimiter='\t')
         for r in rows:
-            p1, p2, h, d = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+            p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+            clibs = '-'.join(clibs)
             p1_params = ' '.join([x['param'] for x in p1])
             p2_params = ' '.join([x['param'] for x in p2])
             gid = r['gid']
@@ -81,10 +83,12 @@ def make_groups_compatible(groupings, epibundles):
             entry = {'partner1': p1, 'partner2': p2, 'params1': p1_params, 'params2': p2_params, 'extgid': extgid}
             groups[gid] = entry
             c1, c2 = r['comment'].split('-')
+            dupgroups[c1 + '-' + clibs].append([gid, extgid])
+            dupgroups[c2 + '-' + clibs].append([gid, extgid])
             cmatches[c1].add(c2)
             cmatches[c2].add(c1)
     assert groups, 'No group dictionary constructed'
-    return groups, cmatches
+    return groups, cmatches, dupgroups
             
 
 def bundle_epigenomes(folder, mapped=False):
@@ -129,47 +133,58 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
     :return:
     """
     epibundles = bundle_epigenomes(epidir)
-    groupings, matchings = make_groups_compatible(groupfile, epibundles)
+    groupings, matchings, dups = make_groups_compatible(groupfile, epibundles)
     arglist = []
     uniq = set()
-    for mapf in mapfiles:
-        target, query = mapf['target'], mapf['query']
-        for gid, partners in groupings.items():
-            assm1, assm2 = partners['partner1'][0]['assembly'], partners['partner2'][0]['assembly']
-            compat_roi = [roi for roi in roifiles if roi['assembly'] == assm1]
-            mapref = 'target' if assm1 == target else 'query'
+    for gid, partners in groupings.items():
+        assm1, assm2 = partners['partner1'][0]['assembly'], partners['partner2'][0]['assembly']
+        cell1, cell2 = partners['partner1'][0]['cell'], partners['partner2'][0]['cell']
+        assert assm1 != assm2, \
+            'Assembly self-match for training data: {} and {}'.format(partners['partner1'], partners['partner2'])
+        compat_roi = [roi for roi in roifiles if roi['assembly'] == assm1]
+        assm1_maps = [mapf for mapf in mapfiles if mapf['target'] == assm1]
+        assert assm1_maps, 'No map files selected for target {}'.format(assm1)
+        for mapf in assm1_maps:
+            target, query = mapf['target'], mapf['query']
+            if query not in ['mm9', 'hg19']:
+                if cell1 not in ['liver', 'kidney'] and cell2 not in ['liver', 'kidney']:
+                    continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
                 outfile = '_'.join([partners['extgid'], partners['partner1'][0]['EID'],
                                     assm1, partners['partner1'][0]['cell']])
-                outfile += '.' + roi['regtype'] + '.h5'
+                outfile += '.to.{}.{}.h5'.format(query, roi['regtype'])
                 outpath = os.path.join(outfolder, outfile)
                 assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
                 uniq.add(outpath)
-                params = {'target': target, 'query': query, 'mapref': mapref, 'genome': assm1,
+                params = {'target': target, 'query': query, 'genome': assm1,
                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                           'datafiles': partners['params1'], 'info': partners['extgid']}
                 tmp = cmd.format(**params)
                 arglist.append([roi['path'], outpath, tmp, jobcall])
-            if assm2 == assm1:
-                continue
-            compat_roi = [roi for roi in roifiles if roi['assembly'] == assm2]
-            mapref = 'target' if assm2 == target else 'query'
+        # same for other group partner
+        compat_roi = [roi for roi in roifiles if roi['assembly'] == assm2]
+        assm2_maps = [mapf for mapf in mapfiles if mapf['target'] == assm2]
+        for mapf in assm2_maps:
+            target, query = mapf['target'], mapf['query']
+            if query not in ['mm9', 'hg19']:
+                if cell1 not in ['liver', 'kidney'] and cell2 not in ['liver', 'kidney']:
+                    continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
                 outfile = '_'.join([partners['extgid'], partners['partner2'][0]['EID'],
                                     assm2, partners['partner2'][0]['cell']])
-                outfile += '.' + roi['regtype'] + '.h5'
+                outfile += '.to.{}.{}.h5'.format(query, roi['regtype'])
                 outpath = os.path.join(outfolder, outfile)
                 assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
                 uniq.add(outpath)
-                params = {'target': target, 'query': query, 'mapref': mapref, 'genome': assm2,
+                params = {'target': target, 'query': query, 'genome': assm2,
                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                           'datafiles': partners['params2'], 'info': partners['extgid']}
                 tmp = cmd.format(**params)
                 arglist.append([roi['path'], outpath, tmp, jobcall])
     # store group info
-    store_group_info(groupfile, groupings)
+    store_group_info(groupfile, groupings, dups)
     # store cell type matches
     store_cell_matches(groupfile, matchings)
     if mapfiles:
@@ -177,17 +192,18 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
     return arglist
 
 
-def store_group_info(groupfile, grouping):
+def store_group_info(groupfile, grouping, dupgroups):
     """
     :param groupfile:
     :param grouping:
+    :param dupgroups:
     :return:
     """
     timestr = dt.datetime.now().strftime('%A_%Y-%m-%d_%H:%M:%S')
     filepath = os.path.join(os.path.dirname(groupfile), 'groupinfo_ro.json')
     if not os.path.isfile(filepath):
         with open(filepath, 'w') as dump:
-            js.dump({'timestamp': timestr, 'groupinfo': {}}, dump, indent=1, sort_keys=True)
+            js.dump({'timestamp': timestr, 'groupinfo': {}, 'duplicates': {}}, dump, indent=1, sort_keys=True)
     rewrite = False
     with open(filepath, 'r') as dumped:
         gi = js.load(dumped)['groupinfo']
@@ -195,7 +211,9 @@ def store_group_info(groupfile, grouping):
             rewrite = True
     if rewrite:
         with open(filepath, 'w') as dump:
-            js.dump({'timestamp': timestr, 'groupinfo': grouping}, dump, indent=1, sort_keys=True)
+            js.dump({'timestamp': timestr,
+                     'groupinfo': grouping,
+                     'duplicates': dupgroups}, dump, indent=1, sort_keys=True)
     return
 
 
@@ -273,15 +291,14 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
     if mapped:
         assert matchings is not None, 'Need to specify cell type matchings for mapped data'
         matchings = js.load(open(matchings, 'r'))['matchings']
-    featfiles = collect_full_paths(featdir, '*/G[0-9]*.h5', True)
-    expfiles = collect_full_paths(expdir, '*/T0*.h5')
+    featfiles = collect_full_paths(featdir, '*/G[0-9]*.h5', True, True)
+    expfiles = collect_full_paths(expdir, '*/T0*.h5', False, False)
     collector = col.defaultdict(list)
     for fp in featfiles:
-        if mapped:
-            parts = os.path.basename(fp).split('.')
-            k, i = '.'.join(parts[:3]), parts[3]
-        else:
-            k, i = os.path.basename(fp).split('.')[:2]
+        parts = os.path.basename(fp).split('.')
+        # k is the sample ID
+        # i is the region type
+        k, i = '.'.join(parts[:3]), parts[3]
         sub = os.path.split(os.path.dirname(fp))[1]
         collector[(k, sub)].append((fp, '{}::{}'.format(i, fp)))
     arglist = []
@@ -301,7 +318,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
                 foo = fnm.filter(expfiles, '*/T0*_{}_{}_mRNA*'.format(query, mc))
                 match_exp.extend(foo)
         else:
-            pat = group.split('_', 2)[-1]
+            pat = group.split('.')[0].split('_', 2)[-1]
             match_exp = fnm.filter(expfiles, '*/T0*_{}_mRNA*'.format(pat))
         try:
             assert match_exp, 'No matched expression files for group {} / pattern {} / {}'.format(group, pat, files)
@@ -311,10 +328,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
             else:
                 raise ae
         mergefiles = ' '.join([t[1] for t in files])
-        if mapped:
-            gid, eid, assm, cell = group.split('.')[0].split('_')
-        else:
-            gid, eid, assm, cell = group.split('_')
+        gid, eid, assm, cell = group.split('.')[0].split('_')
         tmp = os.path.split(os.path.dirname(files[0][0]))[1]
         if mapped:
             qry, foo, trg = tmp.split('_')
@@ -326,15 +340,15 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
             fn = os.path.basename(fp)
             tid = fn.split('_')[0]
             if mapped:
-                og = os.path.join(qry, trg, gid, 'features')
+                og = os.path.join(qry, 'from', trg, gid, 'features')
             else:
-                og = os.path.join(trg, qry, gid, 'features')
+                og = os.path.join(trg, 'to', qry, gid, 'features')
             params = {'outgroup': og, 'mergefiles': mergefiles}
             outbase = outraw.format(**{'target': trg, 'query': qry})
             if mapped:
                 outfile = '_'.join([gid, eid, tid, assm, cell]) + '.from.{}.feat.h5'.format(trg)
             else:
-                outfile = '_'.join([gid, eid, tid, assm, cell]) + '.feat.h5'
+                outfile = '_'.join([gid, eid, tid, assm, cell]) + '.to.{}.feat.h5'.format(qry)
             outpath = os.path.join(outbase, outfile)
             assert outpath not in uniq, 'Duplicate created: {}'.format(outpath)
             uniq.add(outpath)
@@ -392,7 +406,7 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                 outpath = os.path.join(outfolder, outfile)
                                 assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
                                 uniq.add(outpath)
-                                params = {'target': target, 'query': query, 'mapref': 'query', 'genome': query,
+                                params = {'target': target, 'query': query, 'genome': query,
                                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                                           'datafiles': datafiles, 'info': extgid}
                                 tmp = cmd.format(**params)
@@ -402,127 +416,7 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
     return arglist
 
 
-# ===============
-# everything below needs to be revised
-# ===============
-
-
-def make_corr_pairs(inputfiles, targets, mapdata, roifiles, outbase, cmd, jobcall):
-    """
-    :param inputfiles:
-    :param targets:
-    :param mapdata:
-    :param roifiles:
-    :param outbase:
-    :param cmd:
-    :param jobcall:
-    :return:
-    """
-    mates = []
-    for root, dirs, files in os.walk(mapdata):
-        if files:
-            basedir, subdir = os.path.split(root)
-            query, from_assm, target = subdir.split('_')
-            if query in targets and target in targets:
-                # there is assayed signal data just for some species/assemblies
-                for f in files:
-                    mates.append(os.path.join(root, f))
-    params = []
-    # assayed: ENCSR000CGJ_mm9_CH12_H3K27ac_BRUCSD.srcsig.h5
-    # mapped: ENCSR000AMO_mm9_CH12_H3K27ac_BBBRD.from.hg19.HepG2.mapsig.h5
-    done = set()
-    for inf in inputfiles:
-        if not inf.endswith('.srcsig.h5'):
-            continue
-        _, qry, qcell, lib, qlab = inf.split('.')[0].split('_')
-        matched_files = fnm.filter(mates, '*_' + qry + '_*' + '_' + lib + '_*')
-        assert matched_files, 'No matches for input file {}'.format(inf)
-        for mf in matched_files:
-            mfname = os.path.basename(mf)
-            _, _, trg, tcell, _, _ = mfname.split('.')
-            if (os.path.basename(inf), trg, tcell) in done:
-                continue
-            for roi in roifiles:
-                roilabel, roifile = roi.split(':')
-                this_roi = roifile.format(**{'assembly': qry})
-                tmp = cmd.format(**{'query': qry, 'target': trg, 'roifile': this_roi})
-                outname = 'corr_{}_{}_to_{}.json'.format(roilabel,
-                                                         os.path.basename(inf).strip('.h5'),
-                                                         os.path.basename(mfname).strip('.h5'))
-                outpath = os.path.join(outbase, '{}_from_{}'.format(qry, trg), outname)
-                params.append([[inf, mf], outpath, tmp, jobcall])
-            done.add((os.path.basename(inf), trg, tcell))
-    # assert params, 'No parameter pairs created for signal/mapping correlation'
-    return params
-
-
-def make_srcsig_pairs(inputfiles, targets, roifiles, outbase, cmd, jobcall):
-    """
-    :param inputfiles:
-    :param targets:
-    :param roifiles:
-    :param outbase:
-    :param cmd:
-    :param jobcall:
-    :return:
-    """
-    params = []
-    # assayed: ENCSR000CGJ_mm9_CH12_H3K27ac_BRUCSD.srcsig.h5
-    done = set()
-    for inf in inputfiles:
-        if not inf.endswith('.srcsig.h5'):
-            continue
-        _, trg, cell, lib, lab = inf.split('.')[0].split('_')
-        # the following assumes two targets: hg19, mm9
-        assert len(targets) == 2, 'More than two targets: {}'.format(targets)
-        if targets[0] == trg:
-            qry = targets[1]
-        else:
-            qry = targets[0]
-        matched_files = fnm.filter(inputfiles, '*_' + trg + '_*' + '_' + lib + '_*.srcsig.h5')
-        assert matched_files, 'No matches for input file {}'.format(inf)
-        for mf in matched_files:
-            mfname = os.path.basename(mf)
-            if mf == inf or (inf, mf) in done or (mf, inf) in done:
-                continue
-            for roi in roifiles:
-                roilabel, roifile = roi.split(':')
-                this_roi = roifile.format(**{'assembly': trg})
-                tmp = cmd.format(**{'query': qry, 'target': trg, 'roifile': this_roi})
-                outname = 'corr_{}_{}_to_{}.json'.format(roilabel,
-                                                         os.path.basename(inf).strip('.h5'),
-                                                         os.path.basename(mfname).strip('.h5'))
-                outpath = os.path.join(outbase, '{}_from_{}'.format(trg, qry), outname)
-                params.append([[inf, mf], outpath, tmp, jobcall])
-            done.add((inf, mf))
-    # assert params, 'No parameter pairs created for signal/mapping correlation'
-    return params
-
-
-def annotate_histone_files(fpaths):
-    """
-    :param fpaths:
-    :return:
-    """
-    ret = []
-    for filep in fpaths:
-        fp, fn = os.path.split(filep)
-        expid_parts = fn.split('.')[0].split('_')
-        run_parts = fn.split('.')
-        assm, cell, mark, lab = expid_parts[1:]
-        if run_parts[-2] == 'mapsig':
-            source = run_parts[-3]
-            if source in CTYPE_MATCH:
-                ret.append((cell, source, lab, mark, filep))
-            else:
-                ret.append((cell, '', lab, mark, filep))
-        else:
-            ret.append((cell, '', lab, mark, filep))
-    assert ret, 'Annotating data files failed for {}'.format(fpaths)
-    return ret
-
-
-def make_predtestdata_params(modelroot, dataroot, outroot, cmd, jobcall, addmd=False):
+def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=False, mdpath=''):
     """
     :param modelroot:
     :param dataroot:
@@ -530,296 +424,45 @@ def make_predtestdata_params(modelroot, dataroot, outroot, cmd, jobcall, addmd=F
     :param jobcall:
     :return:
     """
-    all_models = collect_full_paths(modelroot, '*.pck')
-    all_testdata = collect_full_paths(dataroot, '*genes*.h5')
+    all_models = collect_full_paths(modelroot, '*.pck', True, True)
+    all_testdata = collect_full_paths(dataroot, '*feat.h5', True, True)
 
     arglist = []
     done = set()
-    for testdata in all_testdata:
-        testname = os.path.basename(testdata)
-        parts = testname.split('.')
-        from_cell = parts[-2]
-        from_assm = parts[-3]
-        to_assm = parts[0].split('_')[1]
-        models = fnm.filter(all_models, '*_{}_{}_*.to.{}*pck'.format(from_assm, from_cell, to_assm))
-        if not models:
-            continue
-        for mdf in models:
-            temp_out = outroot.format(**{'from': from_assm, 'to': to_assm})
-            modelname = os.path.basename(mdf)
-            if (testname, modelname) in done:
-                continue
-            outfile = testname.replace('.h5', '') + '_with_' + modelname.replace('.pck', '') + '.json'
-            outpath = os.path.join(temp_out, outfile)
+    for model in all_models:
+        fp, fn = os.path.split(model)
+        subdir = os.path.split(fp)[-1]
+        mtrg, to, mqry = subdir.split('_')
+        assert to == 'to', 'Unexpected folder structure: {}'.format(fp)
+        modelparts = fn.split('.')[0].split('_')
+        groupid, eid, tid, massm, mcell = modelparts[:5]
+        modeldesc = (fn.split('.', 1)[-1]).rsplit('.', 1)[0]
+        out_prefix = groupid + '_trg-{}_qry-{}_'.format(mtrg, mqry)
+        out_model = '_model-{}-{}-{}'.format(eid, tid, mcell) + '.' + modeldesc
+        datasets = fnm.filter(all_testdata, '*/{}_*'.format(groupid))
+        assert datasets, 'No test datasets for group: {}'.format(groupid)
+        for dat in datasets:
+            fp2, fn2 = os.path.split(dat)
+            assert fn2.startswith(groupid), 'Group mismatch: {} vs {}'.format(groupid, fn2)
+            dqry, fr, dtrg = (os.path.split(fp2)[-1]).split('_')
+            assert fr == 'from', 'Unexpected folder structure: {}'.format(fp2)
+            dataparts = fn2.split('.')[0].split('_')
+            out_data = 'data-{}-{}-{}-{}-from-{}'.format(dataparts[1], dataparts[2], dataparts[4], dqry, dtrg)
+            outname = out_prefix + out_data + out_model + '.json'
             if addmd:
-                mdfile = outpath.replace('rfreg', 'rfcls').replace('sub_value', 'sub_status').replace('pred_status/', '')
-                tmp = cmd.format(**{'mdfile': mdfile})
-                arglist.append([[testdata, mdf], outpath, tmp, jobcall])
+                mdname = outname.replace('rfreg', 'rfcls')
+                mdfull = os.path.join(mdpath, groupid, mdname)
+            outbase = outroot.format(**{'groupid': groupid})
+            outpath = os.path.join(outbase, outname)
+            assert outpath not in done, 'Duplicate created: {}'.format(outname)
+            done.add(outpath)
+            if addmd:
+                tmp = cmd.format(**{'mdfile': mdfull})
+                arglist.append([[dat, model], outpath, tmp, jobcall])
             else:
-                arglist.append([[testdata, mdf], outpath, cmd, jobcall])
-            done.add((testname, modelname))
-    return arglist
-
-
-def make_peak_testdata(peakdir, peakext, signalroot, signalext, outbasedir, cmd, jobcall):
-
-    peakfiles = os.listdir(peakdir)
-    peakfiles = fnm.filter(peakfiles, peakext)
-
-    all_sigfiles = []
-    for root, dirs, files in os.walk(signalroot):
-        if files:
-            sigfiles = fnm.filter(files, signalext)
-            sigfiles = [os.path.join(root, sf) for sf in sigfiles]
-            all_sigfiles.extend(sigfiles)
-
-    arglist = []
-    done_pairs = set()
-    for pf in peakfiles:
-        parts = pf.split('.')[0].split('_')
-        base_filter = '*' + parts[1] + '_'
-        ctype_match = CTYPE_MATCH[parts[2]]
-        for ctm in ctype_match:
-            match_filter = base_filter + ctm + '_' + parts[3] + '*'
-            matched_sigfiles = fnm.filter(all_sigfiles, match_filter)
-            for msig in matched_sigfiles:
-                if (pf, msig) in done_pairs:
-                    continue
-                sigparts = os.path.basename(msig).split('.')
-                assert sigparts[1] == 'trg', 'Not a mapped/estimated signal file'
-                trgassembly = sigparts[2]
-                sigparts = sigparts[0].split('_')
-                subdir = outbasedir.format(**{'assembly': parts[1], 'query': trgassembly})
-                outname = '_'.join([parts[0], parts[1], parts[2] + '-' + sigparts[2], parts[3], parts[4] + '-' + sigparts[4]])
-                outname += '.trg.' + trgassembly + '.testdat.pk.h5'
-                outpath = os.path.join(subdir, outname)
-                mycmd = cmd.format(**{'signalfile': msig, 'mark': parts[3], 'assembly': parts[1], 'query': trgassembly})
-                arglist.append([os.path.join(peakdir, pf), outpath, mycmd, jobcall])
-    return arglist
-
-
-def make_compfeat_genes(expdir, regdir, sigdir, outdir, cmd, jobcall):
-    """
-    :return:
-    """
-    expression_files = collect_full_paths(expdir, '*.h5')
-    gene_regions = collect_full_paths(regdir, '*.h5')
-    signalfiles = collect_full_paths(sigdir, '*.h5')
-
-    arglist = []
-    for expf in expression_files:
-        # ENCSR000CPE_hg19_HepG2_mRNA_L13.genc-v19.h5
-        _, assembly, cell, _, _ = expf.split('_')
-        gencode_version = expf.split('.')[1].split('-')[1]
-        matched_cells = CTYPE_MATCH[cell]
-        gene_files = fnm.filter(gene_regions, '*' + gencode_version + '_' + assembly + '*.h5')
-        assert len(gene_files) == 2, 'Missing gene regions for expression file: {}'.format(expf)
-        for genf in gene_files:
-            _, _, regtype, _ = genf.split('.')
-            msigfiles = filter(lambda fp: '_' + assembly + '_' in fp and any(['_' + ct + '_' in fp for ct in matched_cells]), signalfiles)
-            for msig in msigfiles:
-                _, _, mcell, mark, labext = os.path.basename(msig).split('_')
-                if mark in ['DNaseI', 'InpControl']:
-                    continue
-                lab, _, target, _, _ = labext.split('.')
-                outgroup = os.path.join('gencode', gencode_version, regtype, mark)
-                if regtype == 'body':
-                    win = '1000'
-                    step = '500'
-                elif regtype == 'promoter':
-                    win = '500'
-                    step = '250'
-                else:
-                    raise ValueError('Unsupported region type for windowing: {}'.format(regtype))
-                tmp = cmd.format(**{'assembly': assembly, 'query': target,
-                                    'outputgroup': outgroup, 'mark': mark, 'window': win, 'stepsize': step})
-                outfile = os.path.join(outdir, '_'.join(['gencode', gencode_version, regtype, assembly, mark, cell + '-' + mcell, lab]))
-                outfile += '.'.join(['', 'trg', target, 'scnfeat', 'h5'])
-                args = [[genf, msig], outfile, tmp, jobcall]
-                arglist.append(args)
-    return arglist
-
-
-def make_model_featdata_pairs(modeldir, datadir, outdir, cmd, jobcall):
-    """
-    :param modeldir:
-    :param datadir:
-    :param outdir:
-    :param cmd:
-    :param jobcall:
-    :return:
-    """
-    arglist = []
-    all_models = []
-    for root, dirs, files in os.walk(modeldir):
-        if files:
-            files = fnm.filter(files, '*.full.pck')
-            for f in files:
-                all_models.append(os.path.join(root, f))
-    all_featdata = os.listdir(datadir)
-    for fp in all_featdata:
-        fn, _, target, _, _ = fp.split('.')
-        _, gencver, regtype, assembly, mark, cells, lab = fn.split('_')
-        if 'Control' in mark:
-            continue
-        cell, matched_cell = cells.split('-')
-        model_select = '*' + '_'.join([target, matched_cell, mark, lab]) + '*' + assembly + '*'
-        use_models = fnm.filter(all_models, model_select)
-        assert len(use_models) > 0, 'No model files selected for file / pattern: {} / {}'.format(fp, model_select)
-        # for debug purposes only
-        assert len(use_models) == 1, 'Too many models for the same prediction task: {}'.format(use_models)
-        # end debug
-        outfilename = fp.replace('scnfeat', 'pkpred')
-        outfilepath = os.path.join(outdir, outfilename)
-        ingroup = os.path.join('gencode', gencver, regtype, mark)
-        outgroup = ingroup
-        infilepath = os.path.join(datadir, fp)
-        tmp = cmd.format(**{'inputfile': infilepath, 'outputfile': outfilepath, 'inputgroup': ingroup,
-                            'outputgroup': outgroup, 'modelfile': use_models[0]})
-        arglist.append([infilepath, outfilepath, tmp, jobcall])
-    return arglist
-
-
-def build_histone_feature_map(histfiles, assayed=True, defaultext='.5hm.'):
-    """
-    :param histfiles:
-    :return:
-    """
-    use_marks = ['H3K4me1', 'H3K4me3', 'H3K27me3', 'H3K36me3', 'H3K9me3']
-    get_mark = re.compile('_(?P<MARK>H3K[0-9a-z]+)_')
-    get_lab = re.compile('_(?P<LAB>L[0-9]{2})')
-    collect = col.defaultdict(list)
-    for hf in histfiles:
-        mobj = get_mark.search(hf)
-        if mobj is None or mobj.group('MARK') not in use_marks:
-            continue
-        mark = mobj.group('MARK')
-        hfbase = os.path.basename(hf)
-        if assayed:
-            assembly = hfbase.split('_')[1]
-            cell = hfbase.split('_')[2]
-        else:
-            assembly = hfbase.split('_')[3]
-            cell = hfbase.split('_')[5]
-        lab = get_lab.search(hf).group('LAB')
-        collect[(assembly, cell)].append((lab, mark, hf))
-    file_map = col.defaultdict(list)
-    for key, files in collect.items():
-        for lab in sorted(set([info[0] for info in files])):
-            # default ext: 5hm = 5 histone marks / peaks
-            # 5ht = 5 histone tracks / signal
-            ext = defaultext
-            lcount = col.Counter()
-            filelist = ''
-            found_marks = set()
-            for l, m, fp in files:
-                if l != lab:
-                    continue
-                if m in found_marks:
-                    continue
-                filelist += ' ' + ':'.join([m, '', fp])
-                found_marks.add(m)
-                lcount[l] += 1
-            if len(found_marks) < len(use_marks):
-                for l, m, fp in files:
-                    if l == lab:
-                        continue
-                    if m in found_marks:
-                        continue
-                    filelist += ' ' + ':'.join([m, '', fp])
-                    found_marks.add(m)
-                    lcount[l] += 1
-                    if len(found_marks) == len(use_marks):
-                        break
-            for l in sorted(lcount.keys()):
-                ext += str(lcount[l]) + 'x' + l + '.'
-            file_map[key].append((ext, filelist.strip()))
-    return file_map
-
-
-def make_traindata_geneparts_params(genedir, featmap, outdir, cmd, jobcall, targets=''):
-    """
-    :param genedir:
-    :param featmap:
-    :param outdir:
-    :param cmd:
-    :param jobcall:
-    :return:
-    """
-    genefiles = os.listdir(genedir)
-    genefiles = fnm.filter(genefiles, '*.h5')
-    params = []
-    for gf in genefiles:
-        _, gencver, assembly = gf.split('.')[0].split('_')
-        regtype = gf.split('.')[2]
-        for key, all_featfiles in featmap.items():
-            if key[0] != assembly:
-                continue
-            cell = key[1]
-            for featfile in all_featfiles:
-                outfile = '_'.join(['gencode', gencver, assembly, cell])
-                outfile += '.' + regtype + featfile[0] + 'h5'
-                outpath = os.path.join(outdir, outfile)
-                inpath = os.path.join(genedir, gf)
-                outgroup = '/'.join(['gencode', gencver, regtype])
-                if targets:
-                    trg_assemblies = targets.split()
-                    query = [t for t in trg_assemblies if t != assembly]
-                    assert len(query) == 1, 'Multiple queries for target: {} - {}'.format(query, assembly)
-                    query = query[0]
-                    tmp = cmd.format(**{'featfiles': featfile[1], 'outputgroup': outgroup,
-                                        'assembly': assembly, 'query': query})
-                else:
-                    tmp = cmd.format(**{'featfiles': featfile[1], 'outputgroup': outgroup, 'assembly': assembly})
-                params.append([inpath, outpath, tmp, jobcall])
-    return params
-
-
-def make_merge_geneparts_params(geneparts, expression, outdir, cmd, jobcall, assayed=True):
-    """
-    :param geneparts:
-    :param expression:
-    :param outdir:
-    :param cmd:
-    :param jobcall:
-    :return:
-    """
-    arglist = []
-    done = set()
-    for fp in geneparts:
-        if fp in done:
-            continue
-        if '.body.' in fp:
-            infile1 = fp.replace('.body.', '.promoter.')
-            infile2 = fp
-        else:
-            infile1 = fp
-            infile2 = fp.replace('.promoter.', '.body.')
-        done.add(infile1)
-        done.add(infile2)
-        cell = fp.split('.')[0].split('_')[3]
-        if not assayed:
-            matched_cell = cell
-            if len(cell.split('-')) == 1:
-                # TODO for mapped sig tracks, should use the same naming: cell-mapped_cell
-                cell = CTYPE_MATCH[matched_cell][0]
-                matched_cell = cell + '-' + matched_cell
-            else:
-                cell = cell.split('-')[0]
-        # for ESE14, no expression data available
-        if cell == 'ESE14':
-            continue
-        expfiles = fnm.filter(expression, '*' + cell + '*.h5')
-        assert expfiles, 'No expression files for cell {}'.format(cell)
-        for ef in expfiles:
-            sample, gencver, _ = os.path.basename(ef).split('.')
-            if not assayed:
-                sample = sample.replace(cell, matched_cell)
-            labext = os.path.basename(infile1).split('.')[2:]
-            outfile = '.'.join([sample, gencver] + labext)
-            outpath = os.path.join(outdir, outfile)
-            tmp = cmd.format(**{'valuefile': ef, 'outgroup': os.path.join('gencode', gencver.split('-')[1], 'gene')})
-            arglist.append([[infile1, infile2], outpath, tmp, jobcall])
+                arglist.append([[dat, model], outpath, cmd, jobcall])
+    if all_models:
+        assert arglist, 'No apply parameters created'
     return arglist
 
 
@@ -942,8 +585,7 @@ def build_pipeline(args, config, sci_obj):
     # This set will give rise to machine learning models that can applied within and across species
 
     dir_subtask_traindata_exp_groups = os.path.join(dir_task_traindata_exp, 'compfeat_groups', '{target}_to_{query}')
-    group_partners = use_targets
-    mapfiles = collect_mapfiles(dir_maps, group_partners, group_partners)
+    mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
     groupfile = config.get('Annotations', 'groupfile')
     cmd = config.get('Pipeline', 'traindataexp').replace('\n', ' ')
@@ -959,7 +601,7 @@ def build_pipeline(args, config, sci_obj):
     mrgtraindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
                                         merge_augment_featfiles(os.path.split(dir_subtask_traindata_exp_groups)[0],
                                                                 dir_indata, dir_mrg_train_datasets, cmd, jobcall),
-                                        name='mrgtraindataexp_groups').mkdir(os.path.split(dir_mrg_train_datasets)[0])
+                                        name='mrgtraindataexp_groups').mkdir(os.path.split(dir_mrg_train_datasets)[0]).follows(traindataexp_groups)
 
     task_traindata_exp = pipe.merge(task_func=touch_checkfile,
                                     name='task_traindata_exp',
@@ -988,7 +630,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expone_seq = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                            name='trainmodel_expone_seq',
                                            input=output_from(mrgtraindataexp_groups),
-                                           filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                           filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                            output=os.path.join(dir_exp_statone,
                                                                '{subdir[0][0]}',
                                                                '{SAMPLE[0]}.rfcls.seq.uw.geq1.pck'),
@@ -998,7 +640,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                            name='trainmodel_expone_sig',
                                            input=output_from(mrgtraindataexp_groups),
-                                           filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                           filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                            output=os.path.join(dir_exp_statone,
                                                                '{subdir[0][0]}',
                                                                '{SAMPLE[0]}.rfcls.sig.uw.geq1.pck'),
@@ -1008,7 +650,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                             name='trainmodel_expone_full',
                                             input=output_from(mrgtraindataexp_groups),
-                                            filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                             output=os.path.join(dir_exp_statone,
                                                                 '{subdir[0][0]}',
                                                                 '{SAMPLE[0]}.rfcls.full.uw.geq1.pck'),
@@ -1022,7 +664,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expvalone_seq = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                               name='trainmodel_expvalone_seq',
                                               input=output_from(mrgtraindataexp_groups),
-                                              filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                              filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                               output=os.path.join(dir_exp_valone,
                                                                   '{subdir[0][0]}',
                                                                   '{SAMPLE[0]}.rfreg.seq.uw.geq1.pck'),
@@ -1032,7 +674,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expvalone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                               name='trainmodel_expvalone_sig',
                                               input=output_from(mrgtraindataexp_groups),
-                                              filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                              filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                               output=os.path.join(dir_exp_valone,
                                                                   '{subdir[0][0]}',
                                                                   '{SAMPLE[0]}.rfreg.sig.uw.geq1.pck'),
@@ -1042,7 +684,7 @@ def build_pipeline(args, config, sci_obj):
     trainmodel_expvalone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                                name='trainmodel_expvalone_full',
                                                input=output_from(mrgtraindataexp_groups),
-                                               filter=formatter('(?P<SAMPLE>\w+)\.feat\.h5'),
+                                               filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
                                                output=os.path.join(dir_exp_valone,
                                                                    '{subdir[0][0]}',
                                                                    '{SAMPLE[0]}.rfreg.full.uw.geq1.pck'),
@@ -1089,91 +731,77 @@ def build_pipeline(args, config, sci_obj):
     mrgtestdataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
                                        merge_augment_featfiles(os.path.split(dir_sub_cmpf_testdataexp)[0],
                                                                dir_indata, dir_mrg_test_datasets, cmd, jobcall, True, matchings),
-                                       name='mrgtestdataexp_groups').mkdir(os.path.split(dir_mrg_test_datasets)[0])
+                                       name='mrgtestdataexp_groups')\
+                                        .mkdir(os.path.split(dir_mrg_test_datasets)[0])\
+                                        .follows(testdataexp_groups)
 
     task_testdata_exp = pipe.merge(task_func=touch_checkfile,
                                    name='task_testdata_exp',
                                    input=output_from(testdataexp_groups, mrgtestdataexp_groups),
-                                   output=os.path.join(dir_task_traindata_exp, 'run_task_testdata_exp.chk'))
+                                   output=os.path.join(dir_task_testdataexp_groups, 'run_task_testdata_exp.chk'))
 
     #
     # END: major task generate test data
     # ==============================
+
+    # ==============================
+    # Major task: apply models to predict gene status (on/off) and expression level
     #
-    # # ==============================
-    # # Major task: apply models to predict gene status (on/off) and expression level
-    # #
+
+    # NB: this does not perform permutation testing at the moment (takes a loooong time)
+    # iff that is enabled, change job config to CVParallelJobConfig!
+    dir_task_applymodels_exp = os.path.join(workbase, 'task_applymodels_exp')
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    # subtask: predict gene status (on/off) for subset TPM >= 1
+    dir_apply_statusone = os.path.join(dir_task_applymodels_exp, 'sub_status', 'active_geq1', '{groupid}')
+    cmd = config.get('Pipeline', 'applyexpstatone').replace('\n', ' ')
+    applyexpstatone = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                 params_predict_testdata(dir_exp_statone,
+                                                         os.path.split(dir_mrg_test_datasets)[0],
+                                                         dir_apply_statusone, cmd, jobcall),
+                                 name='applyexpstatone')\
+                                    .mkdir(os.path.split(dir_apply_statusone)[0])\
+                                    .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+
+    # subtask: predict gene expression level (using true TPM-based status)
+
+    dir_apply_valueone = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_geq1', '{groupid}')
+    cmd = config.get('Pipeline', 'applyexpvalone').replace('\n', ' ')
+    applyexpvalone = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                params_predict_testdata(dir_exp_valone,
+                                                        os.path.split(dir_mrg_test_datasets)[0],
+                                                        dir_apply_valueone, cmd, jobcall),
+                                name='applyexpvalone')\
+                                    .mkdir(os.path.split(dir_apply_valueone)[0])\
+                                    .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+
+    # subtask: predict gene expression level (using predicted TPM-based status)
+    dir_apply_valueonepred = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_geq1', '{groupid}')
+    cmd = config.get('Pipeline', 'applyexpvalonepred').replace('\n', ' ')
+    load_metadata = os.path.split(dir_apply_statusone)[0]
+    applyexpvalonepred = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                    params_predict_testdata(dir_exp_valone,
+                                                            os.path.split(dir_mrg_test_datasets)[0],
+                                                            dir_apply_valueonepred, cmd, jobcall, True, load_metadata),
+                                    name='applyexpvalonepred')\
+                                        .mkdir(os.path.split(dir_apply_valueonepred)[0])\
+                                        .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+
+    run_task_applymodels_exp = pipe.merge(task_func=touch_checkfile,
+                                          name='task_applymodels_exp',
+                                          input=output_from(applyexpstatone,
+                                                            applyexpvalone,
+                                                            applyexpvalonepred),
+                                          output=os.path.join(dir_task_applymodels_exp, 'task_applymodels_exp.chk'))
+
     #
-    # # NB: this does not perform permutation testing at the moment (takes a loooong time)
-    # # iff that is enabled, change job config to CVParallelJobConfig!
-    # dir_task_applymodels_exp = os.path.join(workbase, 'task_applymodels_exp')
-    # sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('EnvConfig')))
-    # if args.gridmode:
-    #     jobcall = sci_obj.ruffus_gridjob()
-    # else:
-    #     jobcall = sci_obj.ruffus_localjob()
-    #
-    # # subtask: predict gene status (on/off) for subsets TPM > 0 OR TPM >= 1
-    # dir_apply_statuszero = os.path.join(dir_task_applymodels_exp, 'sub_status', 'active_grt0')
-    # cmd = config.get('Pipeline', 'applyexpstatzero').replace('\n', ' ')
-    # applyexpstatzero = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                               make_predtestdata_params(dir_exp_statzero,
-    #                                                        os.path.split(dir_base_testdataexp)[0],
-    #                                                        dir_apply_statuszero, cmd, jobcall),
-    #                               name='applyexpstatzero').mkdir(dir_apply_statuszero).follows(run_task_testdata_exp)
-    #
-    # dir_apply_statusone = os.path.join(dir_task_applymodels_exp, 'sub_status', 'active_geq1')
-    # cmd = config.get('Pipeline', 'applyexpstatone').replace('\n', ' ')
-    # applyexpstatone = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                              make_predtestdata_params(dir_exp_statone,
-    #                                                       os.path.split(dir_base_testdataexp)[0],
-    #                                                       dir_apply_statusone, cmd, jobcall),
-    #                              name='applyexpstatone').mkdir(dir_apply_statusone).follows(run_task_testdata_exp)
-    #
-    # # subtask: predict gene expression level (using true TPM-based status)
-    # dir_apply_valuezero = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_grt0')
-    # cmd = config.get('Pipeline', 'applyexpvalzero').replace('\n', ' ')
-    # applyexpvalzero = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                              make_predtestdata_params(dir_exp_valzero,
-    #                                                       os.path.split(dir_base_testdataexp)[0],
-    #                                                       dir_apply_valuezero, cmd, jobcall),
-    #                              name='applyexpvalzero').mkdir(dir_apply_valuezero).follows(run_task_testdata_exp)
-    #
-    # dir_apply_valueone = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_geq1')
-    # cmd = config.get('Pipeline', 'applyexpvalone').replace('\n', ' ')
-    # applyexpvalone = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                             make_predtestdata_params(dir_exp_valone,
-    #                                                      os.path.split(dir_base_testdataexp)[0],
-    #                                                      dir_apply_valueone, cmd, jobcall),
-    #                             name='applyexpvalone').mkdir(dir_apply_valueone).follows(run_task_testdata_exp)
-    #
-    # # subtask: predict gene expression level (using predicted TPM-based status)
-    # dir_apply_valuezeropred = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_grt0')
-    # cmd = config.get('Pipeline', 'applyexpvalzeropred').replace('\n', ' ')
-    # applyexpvalzeropred = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                                  make_predtestdata_params(dir_exp_valzero,
-    #                                                           os.path.split(dir_base_testdataexp)[0],
-    #                                                           dir_apply_valuezeropred, cmd, jobcall, True),
-    #                                  name='applyexpvalzeropred').mkdir(dir_apply_valuezeropred).follows(run_task_testdata_exp)
-    #
-    # dir_apply_valueonepred = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_geq1')
-    # cmd = config.get('Pipeline', 'applyexpvalonepred').replace('\n', ' ')
-    # applyexpvalonepred = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                                 make_predtestdata_params(dir_exp_valone,
-    #                                                          os.path.split(dir_base_testdataexp)[0],
-    #                                                          dir_apply_valueonepred, cmd, jobcall, True),
-    #                                 name='applyexpvalonepred').mkdir(dir_apply_valueonepred).follows(run_task_testdata_exp)
-    #
-    # run_task_applymodels_exp = pipe.merge(task_func=touch_checkfile,
-    #                                       name='run_task_applymodels_exp',
-    #                                       input=output_from(applyexpstatzero, applyexpstatone,
-    #                                                         applyexpvalzero, applyexpvalone,
-    #                                                         applyexpvalzeropred, applyexpvalonepred),
-    #                                       output=os.path.join(dir_task_applymodels_exp, 'task_applymodels_exp.chk'))
-    #
-    # #
-    # # END: major task apply gene expression models
-    # # ==============================
+    # END: major task apply gene expression models
+    # ==============================
     #
     # run_all = pipe.merge(task_func=touch_checkfile,
     #                      name='run_task_all',
