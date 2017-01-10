@@ -1,4 +1,266 @@
 {
+ "duplicates": {
+  "CH12-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G04",
+    "G0431"
+   ],
+   [
+    "G16",
+    "G1631"
+   ]
+  ],
+  "CH12-DNase-H3K36me3-H3K4me3": [
+   [
+    "G03",
+    "G0321"
+   ]
+  ],
+  "CH12-H3K27ac-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G01",
+    "G0150"
+   ]
+  ],
+  "CH12-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9me3": [
+   [
+    "G02",
+    "G0250"
+   ],
+   [
+    "G15",
+    "G1550"
+   ]
+  ],
+  "ESB4-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac-H3K9me3": [
+   [
+    "G05",
+    "G0570"
+   ]
+  ],
+  "ESB4-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G20",
+    "G2030"
+   ]
+  ],
+  "ESE14-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G19",
+    "G1931"
+   ]
+  ],
+  "ESE14-H3K27ac-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G06",
+    "G0650"
+   ]
+  ],
+  "ESE14-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9me3": [
+   [
+    "G07",
+    "G0750"
+   ]
+  ],
+  "GM12878-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G04",
+    "G0431"
+   ],
+   [
+    "G19",
+    "G1931"
+   ],
+   [
+    "G23",
+    "G2331"
+   ],
+   [
+    "G24",
+    "G2431"
+   ]
+  ],
+  "GM12878-DNase-H3K36me3-H3K4me3": [
+   [
+    "G03",
+    "G0321"
+   ]
+  ],
+  "GM12878-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G21",
+    "G2150"
+   ]
+  ],
+  "GM12878-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G22",
+    "G2260"
+   ]
+  ],
+  "GM12878-H3K27ac-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G01",
+    "G0150"
+   ]
+  ],
+  "GM12878-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9me3": [
+   [
+    "G02",
+    "G0250"
+   ]
+  ],
+  "GM12878-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G20",
+    "G2030"
+   ]
+  ],
+  "H1hESC-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac-H3K9me3": [
+   [
+    "G05",
+    "G0570"
+   ]
+  ],
+  "H1hESC-H3K27ac-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G06",
+    "G0650"
+   ]
+  ],
+  "H1hESC-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9me3": [
+   [
+    "G07",
+    "G0750"
+   ]
+  ],
+  "HepG2-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G11",
+    "G1151"
+   ],
+   [
+    "G12",
+    "G1251"
+   ],
+   [
+    "G17",
+    "G1751"
+   ],
+   [
+    "G18",
+    "G1851"
+   ]
+  ],
+  "HepG2-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G10",
+    "G1031"
+   ]
+  ],
+  "HepG2-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G09",
+    "G0950"
+   ]
+  ],
+  "HepG2-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G08",
+    "G0860"
+   ]
+  ],
+  "K562-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G14",
+    "G1431"
+   ],
+   [
+    "G16",
+    "G1631"
+   ]
+  ],
+  "K562-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G13",
+    "G1360"
+   ]
+  ],
+  "K562-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9me3": [
+   [
+    "G15",
+    "G1550"
+   ]
+  ],
+  "MEL-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G14",
+    "G1431"
+   ]
+  ],
+  "MEL-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G13",
+    "G1360"
+   ]
+  ],
+  "kidney-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G17",
+    "G1751"
+   ],
+   [
+    "G18",
+    "G1851"
+   ]
+  ],
+  "kidney-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G23",
+    "G2331"
+   ]
+  ],
+  "kidney-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G09",
+    "G0950"
+   ],
+   [
+    "G21",
+    "G2150"
+   ]
+  ],
+  "liver-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+   [
+    "G11",
+    "G1151"
+   ],
+   [
+    "G12",
+    "G1251"
+   ]
+  ],
+  "liver-DNase-H3K27me3-H3K36me3-H3K4me3": [
+   [
+    "G10",
+    "G1031"
+   ],
+   [
+    "G24",
+    "G2431"
+   ]
+  ],
+  "liver-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3-H3K9ac": [
+   [
+    "G08",
+    "G0860"
+   ],
+   [
+    "G22",
+    "G2260"
+   ]
+  ]
+ },
  "groupinfo": {
   "G01": {
    "extgid": "G0150",
@@ -2105,5 +2367,5 @@
    ]
   }
  },
- "timestamp": "Monday_2017-01-02_14:25:39"
+ "timestamp": "Tuesday_2017-01-10_10:12:34"
 }
