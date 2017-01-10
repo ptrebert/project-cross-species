@@ -10,7 +10,8 @@ import datetime as dt
 
 from ruffus import *
 
-from pipelines.auxmods.auxiliary import collect_full_paths, touch_checkfile, dbg_param_list
+from pipelines.auxmods.auxiliary import collect_full_paths, touch_checkfile,\
+    dbg_param_list, prep_metadata
 
 
 def collect_mapfiles(folder, targets, queries):
@@ -78,6 +79,9 @@ def make_groups_compatible(groupings, epibundles):
             match_types[r['comment']] = r['type']
             foo, bar = r['comment'].split('-')
             match_types[bar + '-' + foo] = r['type']
+            # self-match can happen for liver, kidney
+            match_types[foo + '-' + foo] = 'pos'
+            match_types[bar + '-' + bar] = 'pos'
             p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
             clibs = '-'.join(clibs)
             p1_params = ' '.join([x['param'] for x in p1])
@@ -484,14 +488,17 @@ def annotate_modelfile(fpath, datasets, groupings):
     test_type = groupings[group]['type']
     epi_cell = datasets[model_epi]['biosample']
     trans_cell = datasets[model_trans]['biosample']
+    epi_proj = datasets[model_epi]['project']
+    trans_proj = datasets[model_trans]['project']
     # since model == training dataset, the cell types
     # have to match
     assert epi_cell == trans_cell, 'Biosample mismatch for model file: {}'.format(fpath)
     md = {'path': fpath, 'group': group, 'num_hist': hist, 'num_dnase': dnase,
           'group_test_type': test_type, 'model_spec': model_type, 'model_target': target,
           'model_query': query, 'model_cell': epi_cell, 'model_epigenome': model_epi,
-          'model_transcriptome': model_trans}
-    return md
+          'model_transcriptome': model_trans, 'model_epi_project': epi_proj,
+          'model_trans_project': trans_proj}
+    return groupid, md
 
 
 def annotate_test_dataset(fpath, datasets, groupings, cmatchtypes):
@@ -507,7 +514,15 @@ def annotate_test_dataset(fpath, datasets, groupings, cmatchtypes):
     group, hist, dnase = groupid[:3], groupid[3], groupid[4]
     epi_cell = datasets[data_epi]['biosample']
     trans_cell = datasets[data_trans]['biosample']
-    test_type = cmatchtypes[epi_cell + '-' + trans_cell]
+    epi_proj = datasets[data_epi]['project']
+    trans_proj = datasets[data_trans]['project']
+    try:
+        test_type = cmatchtypes[epi_cell + '-' + trans_cell]
+    except KeyError:
+        if epi_cell == trans_cell:
+            test_type = 'pos'
+        else:
+            raise
     group_test = groupings[group]['type']
     epi_assm = datasets[data_epi]['assembly']
     trans_assm = datasets[data_trans]['assembly']
@@ -518,18 +533,82 @@ def annotate_test_dataset(fpath, datasets, groupings, cmatchtypes):
           'group_test_type': group_test, 'data_test_type': test_type,
           'data_epigenome': data_epi, 'data_transcriptome': data_trans,
           'data_target': target, 'data_query': query, 'data_epi_cell': epi_cell,
-          'data_trans_cell': trans_cell}
-    return md
+          'data_trans_cell': trans_cell, 'data_epi_project': epi_proj,
+          'data_trans_project': trans_proj}
+    return groupid, md
 
 
-def annotate_test_output(modelfile, datafile):
+def annotate_test_output(paramset, datasets, groupings, cellmatches, task, outfile):
     """
-    :param modelfile:
-    :param datafile:
+    :param paramset:
     :param datasets:
     :param groupings:
+    :param cellmatches:
+    :param outfile:
     :return:
     """
+    cmatches = cellmatches['matchtypes']
+    collect_runs = col.defaultdict(list)
+    for p in paramset:
+        assert isinstance(p, list), 'Unexpected parameter set: {}'.format(p)
+        assert isinstance(p[0], list) and len(p[0]) == 2, 'Expected pair of files: {}'.format(p[0])
+        datafile = p[0][0]
+        modelfile = p[0][1]
+        gid1, data_md = annotate_test_dataset(datafile, datasets, groupings, cmatches)
+        gid2, model_md = annotate_modelfile(modelfile, datasets, groupings)
+        assert gid1 == gid2, 'Group ID mismatch for files {} / {}'.format(datafile, modelfile)
+        mtype, rtype = categorize_test_run(data_md, model_md, cmatches)
+        collect_runs[gid1].append({'run_test_type': rtype, 'run_spec_match': mtype, 'setting': task,
+                                   'model_metadata': model_md, 'data_metadata': data_md,
+                                   'run_file': p[1]})
+    with open(outfile, 'w') as outf:
+        js.dump(collect_runs, outf, indent=1, sort_keys=True)
+    return 0
+
+
+def categorize_test_run(datamd, modelmd, cmatches):
+    """
+    :param datamd:
+    :param modelmd:
+    :param cmatches:
+    :return:
+    """
+    try:
+        model_dataepi = cmatches[modelmd['model_cell'] + '-' + datamd['data_epi_cell']]
+    except KeyError:
+        model_dataepi = 'neg'
+    try:
+        model_datatrans = cmatches[modelmd['model_cell'] + '-' + datamd['data_trans_cell']]
+    except KeyError:
+        model_datatrans = 'neg'
+
+    if (model_dataepi, model_datatrans) == ('pos', 'pos'):
+        run_test_type = 'pos'
+    elif (model_dataepi, model_datatrans) == ('pos', 'neg'):
+        run_test_type = 'expneg'
+    elif (model_dataepi, model_datatrans) == ('neg', 'pos'):
+        run_test_type = 'epineg'
+    elif (model_dataepi, model_datatrans) == ('neg', 'neg'):
+        run_test_type = 'rand'
+    else:
+        run_test_type = 'undefined'
+    if datamd['data_target'] == modelmd['model_target'] and \
+        datamd['data_query'] == modelmd['model_query']:
+        run_spec_match = 'cons'
+    elif datamd['data_query'] == modelmd['model_target']:
+        run_spec_match = 'self'
+    elif datamd['data_target'] != modelmd['model_target'] and \
+        datamd['data_query'] == modelmd['model_query']:
+        run_spec_match = 'trgmix'
+    elif datamd['data_target'] == modelmd['model_target'] and \
+        datamd['data_query'] != modelmd['model_query']:
+        run_spec_match = 'qrymix'
+    elif datamd['data_target'] != modelmd['model_target'] and \
+        datamd['data_query'] != modelmd['model_query']:
+        run_spec_match = 'dblmix'
+    else:
+        run_spec_match = 'undefined'
+    return run_spec_match, run_test_type
 
 
 def build_pipeline(args, config, sci_obj):
@@ -823,40 +902,64 @@ def build_pipeline(args, config, sci_obj):
     else:
         jobcall = sci_obj.ruffus_localjob()
 
+    # ==================================================
+    # annotations needed to categorize test output
+    # matchings json from above
+    # groupfile from above
+    datasetfile = config.get('Annotations', 'dsetfile')
+    groupings = prep_metadata(groupfile, 'gid')
+    datasets = prep_metadata(datasetfile, 'id')
+    cellmatches = js.load(open(matchings, 'r'))
+    # ===================================================
+
     # subtask: predict gene status (on/off) for subset TPM >= 1
     dir_apply_statusone = os.path.join(dir_task_applymodels_exp, 'sub_status', 'active_geq1', '{groupid}')
     cmd = config.get('Pipeline', 'applyexpstatone').replace('\n', ' ')
+    params_applyexpstatone = params_predict_testdata(dir_exp_statone, os.path.split(dir_mrg_test_datasets)[0],
+                                                     dir_apply_statusone, cmd, jobcall)
+
+    statone_out = os.path.join(dir_task_applymodels_exp, 'eval_models_stat-one.json')
+    _ = annotate_test_output(params_applyexpstatone, datasets, groupings, cellmatches, 'Status >= 1', statone_out)
+
     applyexpstatone = pipe.files(sci_obj.get_jobf('inpair_out'),
-                                 params_predict_testdata(dir_exp_statone,
-                                                         os.path.split(dir_mrg_test_datasets)[0],
-                                                         dir_apply_statusone, cmd, jobcall),
+                                 params_applyexpstatone,
                                  name='applyexpstatone')\
                                     .mkdir(os.path.split(dir_apply_statusone)[0])\
                                     .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+    params_applyexpstatone = list()
 
     # subtask: predict gene expression level (using true TPM-based status)
-
     dir_apply_valueone = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_geq1', '{groupid}')
     cmd = config.get('Pipeline', 'applyexpvalone').replace('\n', ' ')
+    params_applyexpvalone_true = params_predict_testdata(dir_exp_valone, os.path.split(dir_mrg_test_datasets)[0],
+                                                         dir_apply_valueone, cmd, jobcall)
+
+    valonetrue_out = os.path.join(dir_task_applymodels_exp, 'eval_models_val-one-true.json')
+    _ = annotate_test_output(params_applyexpvalone_true, datasets, groupings, cellmatches, 'Value TPM >= 1', valonetrue_out)
+
     applyexpvalone = pipe.files(sci_obj.get_jobf('inpair_out'),
-                                params_predict_testdata(dir_exp_valone,
-                                                        os.path.split(dir_mrg_test_datasets)[0],
-                                                        dir_apply_valueone, cmd, jobcall),
+                                params_applyexpvalone_true,
                                 name='applyexpvalone')\
                                     .mkdir(os.path.split(dir_apply_valueone)[0])\
                                     .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+    params_applyexpvalone_true = list()
 
     # subtask: predict gene expression level (using predicted TPM-based status)
     dir_apply_valueonepred = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_geq1', '{groupid}')
     cmd = config.get('Pipeline', 'applyexpvalonepred').replace('\n', ' ')
     load_metadata = os.path.split(dir_apply_statusone)[0]
+    params_applyexpvalone_est = params_predict_testdata(dir_exp_valone, os.path.split(dir_mrg_test_datasets)[0],
+                                                        dir_apply_valueonepred, cmd, jobcall, True, load_metadata)
+
+    valoneest_out = os.path.join(dir_task_applymodels_exp, 'eval_models_val-one-est.json')
+    _ = annotate_test_output(params_applyexpvalone_est, datasets, groupings, cellmatches, 'Value Est. >= 1', valoneest_out)
+
     applyexpvalonepred = pipe.files(sci_obj.get_jobf('inpair_out'),
-                                    params_predict_testdata(dir_exp_valone,
-                                                            os.path.split(dir_mrg_test_datasets)[0],
-                                                            dir_apply_valueonepred, cmd, jobcall, True, load_metadata),
+                                    params_applyexpvalone_est,
                                     name='applyexpvalonepred')\
                                         .mkdir(os.path.split(dir_apply_valueonepred)[0])\
                                         .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+    params_applyexpvalone_est = list()
 
     run_task_applymodels_exp = pipe.merge(task_func=touch_checkfile,
                                           name='task_applymodels_exp',
