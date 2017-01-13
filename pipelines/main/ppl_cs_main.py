@@ -835,10 +835,26 @@ def build_pipeline(args, config, sci_obj):
                                                                    '{SAMPLE[0]}.rfreg.full.uw.geq1.pck'),
                                                extras=[cmd, jobcall]).mkdir(dir_exp_valone)
 
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'collect_train_metrics').replace('\n', ' ')
+    collect_train_metrics = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                                       name='train_metrics',
+                                       input=output_from(trainmodel_expone_seq, trainmodel_expone_sig,
+                                                         trainmodel_expone_full, trainmodel_expvalone_seq,
+                                                         trainmodel_expvalone_sig, trainmodel_expvalone_full),
+                                       output=os.path.join(dir_task_trainmodel_exp, 'models_train_metrics.h5'),
+                                       extras=[cmd, jobcall])
+
     task_trainmodel_exp = pipe.merge(task_func=touch_checkfile,
                                      name='task_trainmodel_exp',
                                      input=output_from(trainmodel_expone_seq, trainmodel_expone_sig, trainmodel_expone_full,
-                                                       trainmodel_expvalone_seq, trainmodel_expvalone_sig, trainmodel_expvalone_full),
+                                                       trainmodel_expvalone_seq, trainmodel_expvalone_sig, trainmodel_expvalone_full,
+                                                       collect_train_metrics),
                                      output=os.path.join(dir_task_trainmodel_exp, 'task_trainmodel_exp.chk'))
 
     #
