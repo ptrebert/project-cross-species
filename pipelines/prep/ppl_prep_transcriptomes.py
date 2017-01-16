@@ -433,6 +433,15 @@ def build_pipeline(args, config, sci_obj):
     else:
         jobcall = sci_obj.ruffus_localjob()
 
+    aggout = os.path.join(workbase, 'conv', 'agg')
+    cmd = config.get('Pipeline', 'hdfagg')
+    hdfagg = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                          name='hdfagg',
+                          input=output_from(convquant),
+                          filter=formatter('T[0-9]+_(?P<ASSM>[0-9a-zA-Z]+)_.+\.bed$'),
+                          output=os.path.join(aggout, '{ASSM[0]}_agg_TPM.h5'),
+                          extras=[cmd, jobcall]).mkdir(aggout)
+
     hdfout = os.path.join(workbase, 'conv', 'hdf')
     cmd = config.get('Pipeline', 'hdfquant').replace('\n', ' ')
     hdfquant = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
@@ -445,7 +454,7 @@ def build_pipeline(args, config, sci_obj):
 
     task_preptr = pipe.merge(task_func=touch_checkfile,
                              name='task_preptr',
-                             input=output_from(fastqc, qmmuk13, qallpe, convquant, hdfquant),
+                             input=output_from(fastqc, qmmuk13, qallpe, convquant, hdfquant, hdfagg),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
 
     return pipe
