@@ -32,6 +32,9 @@ def main():
     for inpf in args.inputfiles:
         df = pd.read_csv(inpf, header=0, delimiter='\t', names=col_names,
                          usecols=[3, 4, 6], dtype={'name': str, 'tpm': np.float64, 'symbol': str})
+        simple_names = df['name'].tolist()
+        simple_names = [n.split('.')[0] for n in simple_names]
+        df['name'] = simple_names
         df = df.set_index(['name', 'symbol'], drop=True)
         assert df.shape[1] == 1, 'Re-creating index failed: {}'.format(df.shape)
         ds_name = os.path.basename(inpf).split('_')
