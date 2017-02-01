@@ -6,7 +6,7 @@ LISTING=/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/lis
 
 cd ${TARGET_DIR}
 
-CMD="xargs -n 1 -a ${LISTING} curl -L -O -k -s -S"
+CMD="xargs -n 1 -a ${LISTING} curl -L -O -k -S"
 
 ${CMD}
 

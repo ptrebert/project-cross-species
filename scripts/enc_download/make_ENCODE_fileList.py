@@ -38,9 +38,25 @@ NORMALIZE = {'Biosample term name': {'CH12.LX': 'CH12', 'ES-Bruce4': 'ESB4', 'ES
              'Biosample organism': {'Homo sapiens': 'hsa', 'Mus musculus': 'mmu'},
              'Lab': {'Barbara Wold, Caltech': 'BWCALT', 'Ross Hardison, PennState': 'RHPSU',
                      'Bradley Bernstein, Broad': 'BBBRD', 'Bing Ren, UCSD': 'BRUCSD',
-                     'John Stamatoyannopoulos, UW': 'JSUW'},
+                     'John Stamatoyannopoulos, UW': 'JSUW', 'Michael Snyder, Stanford': 'MSST'},
              'Run type': {'paired-ended': 'pe', 'single-ended': 'se'},
              'Experiment target': 'foo'}
+
+# These blacklists are the result of manual curation, i.e., to limit the
+# amount of data that is processed but not used for model building,
+# remove some experiments or files before downloading them unnecessarily
+
+EXPERIMENT_BLACKLIST = ['ENCSR297UBP', 'ENCSR077AZT', 'ENCSR643QIZ',
+                        'ENCSR962TBJ', 'ENCSR329MHM', 'ENCSR637VLS',
+                        'ENCSR000AEH', 'ENCSR000CID', 'ENCSR000CHM',
+                        'ENCSR000CMQ', 'ENCSR000CHR', 'ENCSR000CMW']
+
+FILE_BLACKLIST = ['ENCFF000DGX', 'ENCFF000DGY', 'ENCFF000DHF',
+                  'ENCFF000DHG', 'ENCFF000DPU', 'ENCFF000DPX',
+                  'ENCFF000DQB', 'ENCFF000DQE', 'ENCFF001MXO',
+                  'ENCFF001MXW', 'ENCFF001BDI', 'ENCFF001MZA']
+
+MD_SORT_KEY = op.itemgetter(*('Biosample term name', 'Lab', 'Experiment target', 'File accession'))
 
 
 def normalize_value(field, value):
@@ -117,6 +133,13 @@ if __name__ == '__main__':
                 for row in rows:
                     res = rowcheck(row)
                     if res is not None:
+                        if res['Biosample type'] == 'tissue':
+                            if res['Biosample life stage'] == 'embryonic':
+                                continue
+                        if res['Experiment accession'] in EXPERIMENT_BLACKLIST:
+                            continue
+                        if res['File accession'] in FILE_BLACKLIST:
+                            continue
                         if res['File accession'] not in existing_acc:
                             dlfiles.append(res['File download URL'])
                         norm = {}
@@ -132,7 +155,7 @@ if __name__ == '__main__':
                             else:
                                 norm[k.strip()] = v.strip()
                         md_out.append(norm)
-        md_out = sorted(md_out, key=lambda d: d['File accession'])
+        md_out = sorted(md_out, key=lambda d: MD_SORT_KEY(d))
         if dlfiles:
             with open(LISTFILE, 'w') as listing:
                 _ = listing.write('\n'.join(dlfiles))

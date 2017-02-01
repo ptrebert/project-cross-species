@@ -52,3 +52,9 @@ Note 2016-07-13
  
  * changed approach since gene-level expression quantification is anyway required; downloaded all ENCODE
  file metadata and created normalized annotation file from that (encode_metadata_ro.tsv)
+ 
+Note 2017-01-31
+
+ * Update of ENCODE metadata annotation file revealed that some data files have been archived in the meantime,
+   i.e., they are no longer documented in the metadata file. It follows that the status as of 2016-07-13
+   represents the ENCODE data freeze for this project.
