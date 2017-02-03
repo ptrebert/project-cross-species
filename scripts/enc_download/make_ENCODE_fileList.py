@@ -38,7 +38,8 @@ NORMALIZE = {'Biosample term name': {'CH12.LX': 'CH12', 'ES-Bruce4': 'ESB4', 'ES
              'Biosample organism': {'Homo sapiens': 'hsa', 'Mus musculus': 'mmu'},
              'Lab': {'Barbara Wold, Caltech': 'BWCALT', 'Ross Hardison, PennState': 'RHPSU',
                      'Bradley Bernstein, Broad': 'BBBRD', 'Bing Ren, UCSD': 'BRUCSD',
-                     'John Stamatoyannopoulos, UW': 'JSUW', 'Michael Snyder, Stanford': 'MSST'},
+                     'John Stamatoyannopoulos, UW': 'JSUW', 'Michael Snyder, Stanford': 'MSST',
+                     'Thomas Gingeras, CSHL': 'TGCSHL'},
              'Run type': {'paired-ended': 'pe', 'single-ended': 'se'},
              'Experiment target': 'foo'}
 
@@ -46,17 +47,26 @@ NORMALIZE = {'Biosample term name': {'CH12.LX': 'CH12', 'ES-Bruce4': 'ESB4', 'ES
 # amount of data that is processed but not used for model building,
 # remove some experiments or files before downloading them unnecessarily
 
+# blacklisted: made from (total) RNA with no rRNA depletion
+# or "too many datasets" to process
+RNASEQ_BLACKLIST = ['ENCSR000AEG', 'ENCSR889TRN', 'ENCSR843RJV', 'ENCSR000AEP', 'ENCSR000AED',
+                    'ENCSR000EYO', 'ENCSR000COK', 'ENCSR000CPH', 'ENCSR000CPS', 'ENCSR000CPY',
+                    'ENCSR000CPZ', 'ENCSR000CQA', 'ENCSR000CVT']
+
 EXPERIMENT_BLACKLIST = ['ENCSR297UBP', 'ENCSR077AZT', 'ENCSR643QIZ',
                         'ENCSR962TBJ', 'ENCSR329MHM', 'ENCSR637VLS',
                         'ENCSR000AEH', 'ENCSR000CID', 'ENCSR000CHM',
                         'ENCSR000CMQ', 'ENCSR000CHR', 'ENCSR000CMW']
 
+EXPERIMENT_BLACKLIST += RNASEQ_BLACKLIST
+
 FILE_BLACKLIST = ['ENCFF000DGX', 'ENCFF000DGY', 'ENCFF000DHF',
                   'ENCFF000DHG', 'ENCFF000DPU', 'ENCFF000DPX',
                   'ENCFF000DQB', 'ENCFF000DQE', 'ENCFF001MXO',
-                  'ENCFF001MXW', 'ENCFF001BDI', 'ENCFF001MZA']
+                  'ENCFF001MXW', 'ENCFF001BDI', 'ENCFF001MZA',
+                  'ENCFF001NBA', 'ENCFF001MZZ']
 
-MD_SORT_KEY = op.itemgetter(*('Biosample term name', 'Lab', 'Experiment target', 'File accession'))
+MD_SORT_KEY = op.itemgetter(*('Biosample term name', 'Lab', 'Experiment target', 'Experiment accession', 'File accession'))
 
 
 def normalize_value(field, value):
