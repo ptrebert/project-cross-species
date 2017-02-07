@@ -17,3 +17,4 @@ dependencies:
   - cutadapt=1.12
   - khmer=2.0
   - salmon=0.7.2
+  - trim-galore=0.4.1
