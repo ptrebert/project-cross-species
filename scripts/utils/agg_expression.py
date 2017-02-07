@@ -3,6 +3,7 @@
 
 import os as os
 import sys as sys
+import gzip as gz
 import traceback as trb
 import argparse as argp
 
@@ -102,6 +103,46 @@ def read_salmon_files(quantfiles):
     return full_dataset
 
 
+def read_gene_annotation(fpath):
+    """
+    :param fpath:
+    :return:
+    """
+    with gz.open(fpath, 'rb') as ann:
+        header = ann.readline().strip().split('\t')
+        header[0] = header[0].strip('#')
+    genes = pd.read_csv(fpath, header=0, sep='\t', names=header,
+                        skip_blank_lines=True, comment=None)
+    return genes
+
+
+def make_split_output(rawdat, rawrk, normdat, normrk, genes, outdir):
+    """
+    :param rawdat:
+    :param rawrk:
+    :param normdat:
+    :param normrk:
+    :param genes:
+    :param outdir:
+    :return:
+    """
+    sample_names = rawdat.columns
+    header = genes.columns
+    header += ['tpm_raw', 'rank_raw', 'tpm_norm', 'rank_norm']
+    write_cols = header
+    header[0] = '#' + header[0]
+    for sn in sample_names:
+        outfile = os.path.join(outdir, sn + '.genes.bed.gz')
+        out_df = pd.concat([rawdat[sn], rawrk[sn], normdat[sn], normrk[sn]], ignore_index=False, copy=True)
+        out_df.columns = ['tpm_raw', 'rank_raw', 'tpm_norm', 'rank_norm']
+        out_df.insert(0, 'name', out_df.index)
+        out_df = out_df.merge(genes, how='outer', on='name')
+        out_df.to_csv(outfile, sep='\t', header=header, columns=write_cols,
+                      compression='gzip', line_terminator='\n', na_rep='N/A',
+                      index=False)
+    return
+
+
 def main():
     """
     :return:
@@ -120,6 +161,9 @@ def main():
         hdf.put('/norm/tpm', norm_dataset, format='fixed')
         hdf.put('/raw/ranks', raw_ranks, format='fixed')
         hdf.put('/norm/ranks', norm_ranks, format='fixed')
+    genes = read_gene_annotation(args.genemodel)
+    make_split_output(raw_dataset, raw_ranks, norm_dataset,
+                      norm_ranks, genes, args.splitoutput)
     return
 
 
