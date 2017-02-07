@@ -48,11 +48,11 @@ NORMALIZE = {'Biosample term name': {'CH12.LX': 'CH12', 'ES-Bruce4': 'ESB4', 'ES
 # remove some experiments or files before downloading them unnecessarily
 
 # blacklisted: made from (total) RNA with no rRNA depletion
-# or "too many datasets" to process
+# or "too many datasets" to process/avoid bias toward a particular tissue type
 RNASEQ_BLACKLIST = ['ENCSR000AEG', 'ENCSR889TRN', 'ENCSR843RJV', 'ENCSR000AEP', 'ENCSR000AED',
                     'ENCSR000EYO', 'ENCSR000COK', 'ENCSR000CPH', 'ENCSR000CPS', 'ENCSR000CPY',
                     'ENCSR000CPZ', 'ENCSR000CQA', 'ENCSR000CVT', 'ENCSR000COQ', 'ENCSR000COR',
-                    'ENCSR000CPO', 'ENCSR000COV', 'ENCSR000COW', 'ENCSR000AEM']
+                    'ENCSR000CPO', 'ENCSR000COV', 'ENCSR000COW', 'ENCSR000AEM', 'ENCSR000AJU']
 
 EXPERIMENT_BLACKLIST = ['ENCSR297UBP', 'ENCSR077AZT', 'ENCSR643QIZ',
                         'ENCSR962TBJ', 'ENCSR329MHM', 'ENCSR637VLS',
@@ -143,6 +143,7 @@ if __name__ == '__main__':
         selectors.read(SELECTFILE)
         dlfiles = []
         md_out = []
+        selected_files = set()
         for category in list(selectors.sections()):
             if category == 'Shared':
                 continue
@@ -173,6 +174,7 @@ if __name__ == '__main__':
                                     raise
                             else:
                                 norm[k.strip()] = v.strip()
+                        selected_files.add(norm['File accession'])
                         md_out.append(norm)
         md_out = sorted(md_out, key=lambda d: MD_SORT_KEY(d))
         if dlfiles:
@@ -184,6 +186,17 @@ if __name__ == '__main__':
                 os.unlink(LISTFILE)
             except (OSError, IOError):
                 pass
+            # remove potentially unneeded data
+            all_files = os.listdir(DL_FOLDER)
+            all_files = [f for f in all_files if f.startswith('ENC')]
+            for f in all_files:
+                fid = f.split('.')[0]
+                if fid not in selected_files:
+                    try:
+                        os.unlink(os.path.join(DL_FOLDER, f))
+                    except (IOError, OSError):
+                        sys.stderr.write('\nCould not remove unneeded file: {}\n'.format(f))
+                        continue
 
         auto_md = os.path.join(os.path.dirname(MDFILE), 'encode_metadata_ro.tsv')
         auto_md_md5 = get_md5(auto_md)
