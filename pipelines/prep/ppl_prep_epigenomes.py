@@ -59,7 +59,7 @@ def annotate_deep_files(fpaths, mddict, eiddict):
             eid = eiddict[k]
         except KeyError:
             continue
-        rep = fn.split('.')[0].split('_')[6]
+        rep = fn.split('.')[0].split('_')[1][3]
         _ = int(rep)  # just test, should always work
         if isinstance(eid, list):
             for i in eid:
@@ -194,24 +194,24 @@ def build_pipeline(args, config, sci_obj):
     else:
         runjob = sci_obj.ruffus_localjob()
 
-    hdfout = os.path.join(workbase, 'conv', 'hdf')
+    sigraw_out = os.path.join(workbase, 'conv', 'sigraw')
     cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
-    re_filter = '(?P<EID>E[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>E(E|D)[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfenc = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                               name='bgtohdfenc',
                               input=output_from(bwtobg),
                               filter=formatter(re_filter),
-                              output=os.path.join(hdfout, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
-                              extras=[cmd, runjob]).mkdir(hdfout)
+                              output=os.path.join(sigraw_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
+                              extras=[cmd, runjob]).mkdir(sigraw_out)
 
     cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
-    re_filter = '(?P<EID>E[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>E(E|D)[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfdeep = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                                name='bgtohdfdeep',
                                input=output_from(bwtobg),
                                filter=formatter(re_filter),
-                               output=os.path.join(hdfout, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
-                               extras=[cmd, runjob]).mkdir(hdfout)
+                               output=os.path.join(sigraw_out, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
+                               extras=[cmd, runjob]).mkdir(sigraw_out)
 
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',

@@ -118,10 +118,7 @@ def annotate_deep_files(fpaths, metadata, dsetids):
         except KeyError:
             continue
         infos['assembly'] = assm
-        if '_Ct1_' in fn:
-            brep = 1
-        else:
-            brep = 2
+        brep = fn.split('_')[1][3]
         if '_R1_' in fn:
             read = 1
         else:
@@ -256,10 +253,10 @@ def make_qall_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
         if m1.group('SAMPLE') != current and current is not None:
             assert readlength > 0, 'No read length extracted from filenames'
             assm = current.split('_')[1]
-            if readlength > 52:
-                idxdir, genemodel = indices[(assm, 'k31')]
-            else:
+            if readlength < 70:
                 idxdir, genemodel = indices[(assm, 'k19')]
+            else:
+                idxdir, genemodel = indices[(assm, 'k31')]
             genemap = genemodel + '.map.tsv'
             outdir = os.path.join(outpath, current)
             params = {'index': idxdir, 'outpath': outdir, 'genemap': genemap,
@@ -279,10 +276,10 @@ def make_qall_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
             files2.append(read2)
     assert readlength > 0, 'No read length extracted from filenames'
     assm = current.split('_')[1]
-    if readlength > 52:
-        idxdir, genemodel = indices[(assm, 'k31')]
-    else:
+    if readlength < 70:
         idxdir, genemodel = indices[(assm, 'k19')]
+    else:
+        idxdir, genemodel = indices[(assm, 'k31')]
     genemap = genemodel + '.map.tsv'
     outdir = os.path.join(outpath, current)
     params = {'index': idxdir, 'outpath': outdir, 'genemap': genemap,
@@ -390,13 +387,14 @@ def build_pipeline(args, config, sci_obj):
     else:
         jobcall = sci_obj.ruffus_localjob()
 
-    cmd = config.get('Pipeline', 'fastqc')
-    fastqc = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
-                            name='fastqc',
-                            input=output_from(sratrans_fq, enctrans_init, deeptrans_init),
-                            filter=formatter('(?P<FILEID>[\w\-]+)\.fastq\.gz'),
-                            output=os.path.join(workbase, 'qcrep', '{FILEID[0]}_fastqc.zip'),
-                            extras=[cmd, jobcall])
+    cmd = config.get('Pipeline', 'fastqc_raw')
+    reports_raw = os.path.join(workbase, 'reports', 'raw')
+    fastqc_raw = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                name='fastqc_raw',
+                                input=output_from(sratrans_fq, enctrans_init, deeptrans_init),
+                                filter=formatter('(?P<FILEID>[\w\-]+)\.fastq\.gz'),
+                                output=os.path.join(reports_raw, '{FILEID[0]}_fastqc.html'),
+                                extras=[cmd, jobcall]).mkdir(reports_raw)
 
     sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -404,28 +402,14 @@ def build_pipeline(args, config, sci_obj):
     else:
         jobcall = sci_obj.ruffus_localjob()
 
-    cmd = config.get('Pipeline', 'qmmuk13').replace('\n', ' ')
     tmpquant = os.path.join(tempfolder, 'quant')
-    qmmuk13 = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
-                           name='qmmuk13',
-                           input=output_from(enctrans_init),
-                           filter=formatter('(?P<SAMPLE>\w+_mRNA)\w+(?P<LIB>se\-[0-9]+)\.fastq\.gz'),
-                           output=os.path.join(tmpquant, '{SAMPLE[0]}', 'quant.genes.sf'),
-                           extras=[cmd, jobcall]).mkdir(tmpquant)
 
     cmd = config.get('Pipeline', 'qallpe').replace('\n', ' ')
     qallpe = pipe.files(sci_obj.get_jobf('ins_out'),
                         make_qall_calls(collect_full_paths(linkfolder, '*r1_pe*.gz', False),
                                         collect_full_paths(linkfolder, '*r2_pe*.gz', False),
-                                        tmpquant, qidxfolder, cmd, jobcall))
-
-    conv_out = os.path.join(workbase, 'conv', 'bed')
-    convquant = pipe.transform(task_func=convert_salmon_quant,
-                               name='convquant',
-                               input=output_from(qmmuk13, qallpe),
-                               filter=formatter('.+/(?P<TID>T[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_mRNA/quant\.genes\.sf'),
-                               output=os.path.join(conv_out, '{TID[0]}_{ASSM[0]}_{CELL[0]}_mRNA.genes.tpm.bed'),
-                               extras=[collect_full_paths(genemodels, '*genes.bed.gz')]).mkdir(conv_out).jobs_limit(4)
+                                        tmpquant, qidxfolder, cmd, jobcall),
+                        name='qallpe').mkdir(tmpquant)
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -434,27 +418,17 @@ def build_pipeline(args, config, sci_obj):
         jobcall = sci_obj.ruffus_localjob()
 
     aggout = os.path.join(workbase, 'conv', 'agg')
-    cmd = config.get('Pipeline', 'hdfagg')
+    cmd = config.get('Pipeline', 'hdfagg').replace('\n', ' ')
     hdfagg = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                           name='hdfagg',
-                          input=output_from(convquant),
-                          filter=formatter('T[0-9]+_(?P<ASSM>[0-9a-zA-Z]+)_.+\.bed$'),
-                          output=os.path.join(aggout, '{ASSM[0]}_agg_TPM.h5'),
+                          input=output_from(qallpe),
+                          filter=formatter('T(S|D|E)[0-9]+_(?P<ASSM>[0-9a-zA-Z]+)_\w+/quant.genes.sf$'),
+                          output=os.path.join(aggout, '{ASSM[0]}_agg_exp.genes.h5'),
                           extras=[cmd, jobcall]).mkdir(aggout)
-
-    hdfout = os.path.join(workbase, 'conv', 'hdf')
-    cmd = config.get('Pipeline', 'hdfquant').replace('\n', ' ')
-    hdfquant = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
-                              name='hdfquant',
-                              input=output_from(convquant),
-                              filter=suffix('.bed'),
-                              output='.h5',
-                              output_dir=hdfout,
-                              extras=[cmd, jobcall]).mkdir(hdfout)
 
     task_preptr = pipe.merge(task_func=touch_checkfile,
                              name='task_preptr',
-                             input=output_from(fastqc, qmmuk13, qallpe, convquant, hdfquant, hdfagg),
+                             input=output_from(fastqc_raw, qallpe, hdfagg),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
 
     return pipe
