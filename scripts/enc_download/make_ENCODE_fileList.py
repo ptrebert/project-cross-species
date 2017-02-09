@@ -64,6 +64,12 @@ EXPERIMENT_BLACKLIST += RNASEQ_BLACKLIST
 # ignore the third replicate from this series ENCSR000EYP to mitigate bias
 RNASEQ_FILE_BL = ['ENCFF000DHD', 'ENCFF000DHE', 'ENCFF000DGV', 'ENCFF000DGW']
 
+# files removed since the 14 replicates of mouse liver originate from
+# three different platforms; remove those from GA-I (keep GA-IIx and HiSeq 2000,
+# which is more in line with the rest of the data)
+DNASEQ_FILE_BL = ['ENCFF001PRW', 'ENCFF001PSD', 'ENCFF001PSG', 'ENCFF001PSH',
+                  'ENCFF001PRX', 'ENCFF001PSB']
+
 FILE_BLACKLIST = ['ENCFF000DGX', 'ENCFF000DGY', 'ENCFF000DHF',
                   'ENCFF000DHG', 'ENCFF000DPU', 'ENCFF000DPX',
                   'ENCFF000DQB', 'ENCFF000DQE', 'ENCFF001MXO',
@@ -74,6 +80,8 @@ FILE_BLACKLIST = ['ENCFF000DGX', 'ENCFF000DGY', 'ENCFF000DHF',
                   'ENCFF001ZHS', 'ENCFF001ZGW', 'ENCFF001ZPH']
 
 FILE_BLACKLIST += RNASEQ_FILE_BL
+
+FILE_BLACKLIST += DNASEQ_FILE_BL
 
 MD_SORT_KEY = op.itemgetter(*('Biosample term name', 'Lab', 'Experiment target', 'Experiment accession', 'File accession'))
 
