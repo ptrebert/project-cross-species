@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import os as os
+import re as re
+import collections as col
 
 from ruffus import *
 
@@ -133,6 +135,38 @@ def link_deep_epigenomes(folder, mdfile, idfile, outfolder):
     return linked_files
 
 
+def make_norm_calls(inputfiles, outdir, components, cmd, jobcall):
+    """
+    :param inputfiles:
+    :param outdir:
+    :param components:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    match_filename = re.compile(components)
+    collect_input = col.defaultdict(list)
+    collect_output = col.defaultdict(list)
+    for fp in inputfiles:
+        filename = os.path.basename(fp)
+        mobj = match_filename.match(filename)
+        if mobj is None:
+            continue
+        outputfile = os.path.join(outdir, filename)
+        assm, mark = mobj.group('ASSM'), mobj.group('MARK')
+        collect_input[(assm, mark)].append(fp)
+        collect_output[(assm, mark)].append(outputfile)
+    arglist = []
+    expected_output = []
+    for (assm, mark), infiles in collect_input.items():
+        tmp = cmd.format(**{'assm': assm, 'inputfiles': ' '.join(infiles)})
+        outfiles = collect_output[(assm, mark)]
+        assert len(outfiles) == len(infiles), 'Sample mismatch: {} vs {}'.format(infiles, outfiles)
+        arglist.append([tmp, jobcall])
+        expected_output.extend([os.path.basename(f) for f in outfiles])
+    return arglist, expected_output
+
+
 def build_pipeline(args, config, sci_obj):
     """
     :param args:
@@ -196,7 +230,7 @@ def build_pipeline(args, config, sci_obj):
 
     sigraw_out = os.path.join(workbase, 'conv', 'sigraw')
     cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
-    re_filter = '(?P<EID>E(E|D)[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfenc = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                               name='bgtohdfenc',
                               input=output_from(bwtobg),
@@ -204,18 +238,29 @@ def build_pipeline(args, config, sci_obj):
                               output=os.path.join(sigraw_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
                               extras=[cmd, runjob]).mkdir(sigraw_out)
 
+    sighdf_out = os.path.join(workbase, 'conv', 'hdf')
+    cmd = config.get('Pipeline', 'normenc').replace('\n', ' ')
+    re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(mm9|hg19))_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'
+    syscalls, exp_output = make_norm_calls(collect_full_paths(sigraw_out, '*EE*.h5'),
+                                           sighdf_out, re_filter, cmd, runjob)
+    existing_output = os.listdir(sighdf_out)
+    normenc = pipe.parallel(sci_obj.get_jobf('raw'),
+                            syscalls,
+                            name='normenc').active_if(any([fn not in existing_output for fn in exp_output]))
+
     cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
-    re_filter = '(?P<EID>E(E|D)[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>ED[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfdeep = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                                name='bgtohdfdeep',
                                input=output_from(bwtobg),
                                filter=formatter(re_filter),
-                               output=os.path.join(sigraw_out, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
-                               extras=[cmd, runjob]).mkdir(sigraw_out)
+                               output=os.path.join(sighdf_out, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
+                               extras=[cmd, runjob]).mkdir(sighdf_out)
 
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',
-                                  input=output_from(bgtohdfenc, bgtohdfdeep),
+                                  input=output_from(bgtohdfenc, bgtohdfdeep,
+                                                    normenc),
                                   output=os.path.join(workbase, 'run_task_convepi.chk'))
     #
     # End of major task: convert epigenomes to HDF
