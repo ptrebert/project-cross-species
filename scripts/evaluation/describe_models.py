@@ -65,7 +65,7 @@ def read_model_information(metadata, datasets, index):
         group, groupid, hist, dnase = sampleparts[0][:3], sampleparts[0], 0, 0
     else:
         group, groupid, hist, dnase = sampleparts[0][:3], sampleparts[0], int(sampleparts[0][3]), int(sampleparts[0][4])
-    tmp = {'model_file': run['model_file'], 'model_type': modeltype, 'target': trg, 'query': qry,
+    tmp = {'model_file': run['model_file'], 'model_type': modeltype, 'model_target': trg, 'model_query': qry,
            'group': group, 'groupid': groupid, 'num_hist': hist, 'num_dnase': dnase, 'eid': epi, 'tid': trans,
            'epi_project': epi_proj, 'trans_project': trans_proj, 'cell': cell}
     row.update(tmp)
