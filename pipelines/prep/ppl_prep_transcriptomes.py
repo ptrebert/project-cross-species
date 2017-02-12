@@ -426,9 +426,25 @@ def build_pipeline(args, config, sci_obj):
                           output=os.path.join(aggout, '{ASSM[0]}_agg_exp.genes.h5'),
                           extras=[cmd, jobcall]).mkdir(aggout)
 
+    bedout = os.path.join(workbase, 'conv', 'bed')
+    trans_bed_init = pipe.originate(lambda x: x,
+                                    collect_full_paths(bedout, '*.bed.gz'),
+                                    name='trans_bed_init').follows(hdfagg)
+
+    hdfout = os.path.join(workbase, 'conv', 'hdf')
+    cmd = config.get('Pipeline', 'hdfconv').replace('\n', ' ')
+    hdfconv = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                             name='hdfconv',
+                             input=output_from(trans_bed_init),
+                             filter=suffix('.bed.gz'),
+                             output='.h5',
+                             output_dir=hdfout,
+                             extras=[cmd, jobcall])
+
     task_preptr = pipe.merge(task_func=touch_checkfile,
                              name='task_preptr',
-                             input=output_from(fastqc_raw, qallpe, hdfagg),
+                             input=output_from(fastqc_raw, qallpe, hdfagg,
+                                               trans_bed_init, hdfconv),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
 
     return pipe
