@@ -1,81 +1,54 @@
 {
  "matchings": {
   "CH12": [
-   "K562",
-   "GM12878"
-  ],
-  "ESB4": [
-   "H1hESC",
    "GM12878"
   ],
   "ESE14": [
-   "H1hESC",
-   "GM12878"
+   "H1hESC"
   ],
   "GM12878": [
-   "ESE14",
-   "kidney",
-   "liver",
-   "ESB4",
    "CH12"
   ],
   "H1hESC": [
-   "ESE14",
-   "ESB4"
-  ],
-  "HepG2": [
-   "kidney",
-   "liver"
+   "ESE14"
   ],
   "K562": [
-   "CH12",
    "MEL"
   ],
   "MEL": [
    "K562"
   ],
+  "hepa": [
+   "liver",
+   "kidney"
+  ],
   "kidney": [
-   "GM12878",
-   "HepG2"
+   "hepa"
   ],
   "liver": [
-   "GM12878",
-   "HepG2"
+   "hepa"
   ]
  },
  "matchtypes": {
   "CH12-CH12": "pos",
   "CH12-GM12878": "pos",
-  "CH12-K562": "neg",
-  "ESB4-ESB4": "pos",
-  "ESB4-GM12878": "neg",
-  "ESB4-H1hESC": "pos",
   "ESE14-ESE14": "pos",
-  "ESE14-GM12878": "neg",
   "ESE14-H1hESC": "pos",
   "GM12878-CH12": "pos",
-  "GM12878-ESB4": "neg",
-  "GM12878-ESE14": "neg",
   "GM12878-GM12878": "pos",
-  "GM12878-kidney": "neg",
-  "GM12878-liver": "neg",
-  "H1hESC-ESB4": "pos",
   "H1hESC-ESE14": "pos",
   "H1hESC-H1hESC": "pos",
-  "HepG2-HepG2": "pos",
-  "HepG2-kidney": "neg",
-  "HepG2-liver": "pos",
-  "K562-CH12": "neg",
   "K562-K562": "pos",
   "K562-MEL": "pos",
   "MEL-K562": "pos",
   "MEL-MEL": "pos",
-  "kidney-GM12878": "neg",
-  "kidney-HepG2": "neg",
+  "hepa-hepa": "pos",
+  "hepa-kidney": "neg",
+  "hepa-liver": "pos",
+  "kidney-hepa": "neg",
   "kidney-kidney": "pos",
-  "liver-GM12878": "neg",
-  "liver-HepG2": "pos",
+  "liver-hepa": "pos",
   "liver-liver": "pos"
  },
- "timestamp": "Thursday_2017-01-12_15:47:34"
+ "timestamp": "Sunday_2017-02-12_13:36:36"
 }
