@@ -6,21 +6,22 @@ import sys as sys
 import argparse as argp
 import traceback as trb
 import collections as col
-import functools as fnt
 import logging as log
+import json as js
 
+import numpy as np
 import pandas as pd
 
 import scipy.stats as stats
-from sklearn.metrics import accuracy_score, r2_score, make_scorer
+import sklearn.metrics as sklm
 
 
 def parse_command_line():
     """
     """
     parser = argp.ArgumentParser()
-    parser.add_argument('--assembly-a', '-spa', type=str, dest='assemblya')
-    parser.add_argument('--assembly-b', '-spb', type=str, dest='assemblyb')
+    parser.add_argument('--assembly-a', '-asma', type=str, dest='assemblya')
+    parser.add_argument('--assembly-b', '-asmb', type=str, dest='assemblyb')
     parser.add_argument('--exptab-a', '-expa', type=str, dest='exptaba')
     parser.add_argument('--exptab-b', '-expb', type=str, dest='exptabb')
     parser.add_argument('--exp-path', '-expp', type=str, default='/norm/tpm', dest='exppath')
@@ -29,6 +30,8 @@ def parse_command_line():
                         default='/orthologs/subset/proteincoding')
     parser.add_argument('--bio-samples', '-bsam', type=str, dest='biosamples')
     parser.add_argument('--debug', '-dbg', action='store_true', default=False, dest='debug')
+    parser.add_argument('--json-out', '-jo', type=str, dest='jsonout')
+    parser.add_argument('--hdf-out', '-ho', type=str, dest='hdfout')
     args = parser.parse_args()
     return args
 
@@ -81,46 +84,6 @@ def read_biosample_map(fpath):
     return bsmap
 
 
-def eval_performance(truevals, orthmap, mode):
-    """
-    """
-    true_genes = set(truevals['name'].tolist())
-    orth_genes = set(orthmap['name'].tolist())
-    genes = orth_genes.intersection(true_genes)
-    subset_true = truevals.loc[truevals['name'].isin(genes), :]
-    # subset normalized
-    subset_orth = orthmap.loc[orthmap['name'].isin(genes), :]
-    joined = pd.merge(subset_true, subset_orth, on='name', how='outer', copy=True)
-    true_cols = sorted([c for c in subset_true.columns if c not in ['name', 'T010_MEL']])
-    orth_cols = sorted([c for c in subset_orth.columns if c not in ['name', 'T010_MEL']])
-    assert true_cols != orth_cols, 'Wrong columns selected'
-    collect_class = col.defaultdict(list)
-    collect_reg = col.defaultdict(list)
-    collect_exp = col.defaultdict(list)
-    use_comparison = 1 if mode == 'pos' else 0
-    for row in joined.itertuples():
-        for tc in true_cols:
-            for oc in orth_cols:
-                if use_comparison == 1:
-                    use = get_compat_info(tc, oc)
-                    if use != use_comparison:
-                        continue
-                key = tc + '-' + oc
-                tc_val_raw = getattr(row, tc)
-                tc_val = 0 if tc_val_raw < 1 else round(tc_val_raw)
-                oc_val_raw = getattr(row, oc)
-                oc_val = 0 if oc_val_raw < 1 else round(oc_val_raw)
-                true_label = 0 if tc_val < 1 else 1
-                pred_label = 0 if oc_val < 1 else 1
-                collect_class[key].append((row.name, true_label, pred_label))
-                collect_reg[key].append((row.name, tc_val_raw, oc_val_raw))
-                lo, hi = round(tc_val * 0.8), round(tc_val * 1.2)
-                if ((oc_val >= 1 and tc_val >= 1) and
-                        (lo <= oc_val <= hi)):
-                    collect_exp[key].append((row.name, tc_val_raw, oc_val_raw))
-    return collect_class, collect_reg, collect_exp
-      
-
 def get_matching(mapping, col1, col2):
     """
     :param mapping:
@@ -144,6 +107,38 @@ def kendall_tau_scorer(x, y):
     return statistic
 
 
+def collect_metrics(expvals):
+    """
+    :param expvals:
+    :return:
+    """
+    metrics = dict()
+    expvals.insert(0, 'true_class', (expvals['true'] >= 1).astype(np.int8))
+    expvals.insert(0, 'orth_class', (expvals['orth'] >= 1).astype(np.int8))
+    class_counts = expvals['true_class'].value_counts(sort=True)  # assert that class 0 is at index 0
+    weight_zero = 0.5 / class_counts.ix[0]
+    weight_one = 0.5 / class_counts.ix[1]
+    sample_weights = np.array([weight_zero if item < 1 else weight_one for item in expvals['true_class']],
+                              dtype=np.float32)
+    assert np.isclose(sample_weights.sum(), 1), 'Sample weights do not sum to 1: {}'.format(sample_weights.sum())
+    metrics['accuracy'] = round(sklm.accuracy_score(expvals['true_class'].values,
+                                                    expvals['orth_class'].values,
+                                                    sample_weight=sample_weights), 5)
+    metrics['ktau_all'] = round(kendall_tau_scorer(expvals['true'].values, expvals['orth']), 5)
+    metrics['r2_all'] = round(sklm.r2_score(expvals['true'].values,
+                                            expvals['orth'].values,
+                                            sample_weight=sample_weights))
+    subset = expvals.loc[expvals['orth_class'] == 1, :]
+    metrics['ktau_sub'] = round(kendall_tau_scorer(subset['true'].values, subset['orth'].values), 5)
+    metrics['r2_sub'] = round(sklm.r2_score(subset['true'].values, subset['orth'].values), 5)
+    metadata = dict()
+    metadata['true_active'] = expvals.loc[expvals['true_class'] == 1, :].index.tolist()
+    metadata['num_true_active'] = len(metadata['true_active'])
+    metadata['orth_active'] = subset.index.tolist()
+    metadata['num_orth_active'] = len(metadata['orth_active'])
+    return metadata, metrics
+
+
 def evaluate_performance(expvals1, expvals2, select1, select2, orthmap, bsmap):
     """
     :param expvals1:
@@ -151,8 +146,8 @@ def evaluate_performance(expvals1, expvals2, select1, select2, orthmap, bsmap):
     :param bsmap:
     :return:
     """
-    collect_r2 = {'pos': col.defaultdict(list), 'neg': col.defaultdict(list)}
-    collect_kt = {'pos': col.defaultdict(list), 'neg': col.defaultdict(list)}
+    collect_infos = {'pos': col.defaultdict(dict), 'neg': col.defaultdict(dict)}
+    pos_pairs = None
     for c1 in sorted(expvals1.columns):
         for c2 in sorted(expvals2.columns):
             analog = get_matching(bsmap, c1, c2)
@@ -163,24 +158,33 @@ def evaluate_performance(expvals1, expvals2, select1, select2, orthmap, bsmap):
             modmap = orthmap.merge(source_vals, on=select1, how='outer', copy=True)
             orth_vals = modmap.groupby(select2).mean()
             true_vals = expvals2[c2]
-            # make sure that are arranged properly
+            # make sure that genes/rows are properly aligned
             joined = pd.concat([true_vals, orth_vals], ignore_index=False, axis=1)
-            joined.columns = ['true', 'orth']
             assert joined.shape[1] == 2, 'Expected two columns after ortholog mapping: {}'.format(joined.shape)
-            r2_stat = r2_score(joined['true'].values, joined['orth'].values)
-            kt_stat = kendall_tau_scorer(joined['true'].values, joined['orth'].values)
-            collect_kt[group][(c1, c2)].append(kt_stat)
-            collect_r2[group][(c1, c2)].append(r2_stat)
-    all_pos = []
-    all_neg = []
-    for _, vals in collect_kt['pos'].items():
-        all_pos.extend(vals)
-    for _, vals in collect_kt['neg'].items():
-        all_neg.extend(vals)
-    print(len(all_pos))
-    print(len(all_neg))
-    print(stats.ks_2samp(all_neg, all_pos))
-    return
+            joined.columns = ['true', 'orth']
+            metadata, metrics = collect_metrics(joined.copy())
+            joined.columns = ['true_{}'.format(c2), 'orth_{}'.format(c1)]
+            if group == 'pos':
+                if pos_pairs is None:
+                    pos_pairs = joined.copy()
+                else:
+                    pos_pairs = pd.concat([pos_pairs, joined], ignore_index=False, axis=1)
+            else:
+                # negative pairings will not be used to compare to, so save some space
+                # by not keeping all names of active genes
+                metadata['true_active'] = []
+                metadata['orth_active'] = []
+            metadata['select1'] = select1
+            metadata['select2'] = select2
+            key = c1 + '-' + c2
+            assert key not in collect_infos, 'Duplicate detected: {}'.format(key)
+            collect_infos[group][key]['metrics'] = metrics
+            collect_infos[group][key]['metadata'] = metadata
+    # remove redundant data - avoid having these in the DF should be implemented at some point...
+    pos_pairs = pos_pairs.transpose()
+    pos_pairs = pos_pairs.drop_duplicates(keep='first', inplace=False)
+    pos_pairs = pos_pairs.transpose()
+    return collect_infos, pos_pairs
 
 
 def select_gene_subset(orthos, loadpath, selecta, exptaba, selectb, exptabb):
@@ -202,6 +206,29 @@ def select_gene_subset(orthos, loadpath, selecta, exptaba, selectb, exptabb):
     return ortho_subset, data_a, data_b
 
 
+def compare_groups(perfinfos):
+    """
+    :param perfinfos:
+    :return:
+    """
+    all_pos = col.defaultdict(list)
+    all_neg = col.defaultdict(list)
+    for _, infos in perfinfos['pos'].items():
+        for m, value in infos['metrics'].items():
+            all_pos[m].append(value)
+    for _, infos in perfinfos['neg'].items():
+        for m, value in infos['metrics'].items():
+            all_neg[m].append(value)
+    group_data = {'test': 'KS_2samp', 'alternative': '2_sided'}
+    for k, pos in all_pos.items():
+        neg = all_neg[k]
+        pv = float(stats.ks_2samp(pos, neg)[1])
+        group_data[k] = pv
+        group_data['num_pos'] = len(pos)
+        group_data['num_neg'] = len(neg)
+    return group_data
+
+
 def main():
     """
     :return:
@@ -218,8 +245,23 @@ def main():
     logger.debug('Ortholog subset selected: {}'.format(orthos.shape))
     logger.debug('Orthologs species A: {}'.format(expa.shape))
     logger.debug('Orthologs species B: {}'.format(expb.shape))
-    evaluate_performance(expa, expb, selecta, selectb, orthos[[selecta, selectb]], bsmap)
-
+    perf_AB, exp_AB = evaluate_performance(expa, expb, selecta, selectb, orthos[[selecta, selectb]], bsmap)
+    logger.debug('Performance evaluation complete: from {} to {}'.format(spec1, spec2))
+    perf_BA, exp_BA = evaluate_performance(expb, expa, selectb, selecta, orthos[[selecta, selectb]], bsmap)
+    logger.debug('Performance evaluation complete: from {} to {}'.format(spec2, spec1))
+    group_AB = compare_groups(perf_AB)
+    group_BA = compare_groups(perf_BA)
+    logger.debug('Group comparisons complete')
+    dump_object = {'species_A': spec1, 'species_B': spec2, 'assembly_A': args.assemblya, 'assembly_B': args.assemblyb,
+                   'group_comparison': {'AB': group_AB, 'BA': group_BA}, 'performance': {'AB': perf_AB, 'BA': perf_BA}}
+    with open(args.jsonout, 'w') as dump:
+        js.dump(dump_object, dump, sort_keys=True, ensure_ascii=True, indent=1)
+    logger.debug('JSON dumped')
+    with pd.HDFStore(args.hdfout, 'w', complevel=9, complib='blosc') as hdf:
+        hdf.put('AB/{}/{}'.format(args.assemblya, args.assemblyb), exp_AB, format='fixed')
+        hdf.put('BA/{}/{}'.format(args.assemblyb, args.assemblya), exp_BA, format='fixed')
+        hdf.flush()
+    logger.debug('HDF dumped')
     return
 
 
@@ -232,34 +274,3 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         sys.exit(0)
-
-
-
-"""
-if __name__ == '__main__':
-    orth = load_orthologs()
-    run_mode = sys.argv[1]
-    src_species, dest_species = sys.argv[2:]
-    print(src_species, dest_species)
-    classperf, regperf, consperf = find_ortho_cons_genes(src_species, dest_species, orth, run_mode)
-    cons_genes = col.Counter()
-    for key, values in consperf.items():
-        this_genes = set([t[0] for t in values])
-        print(len(this_genes))
-        cons_genes.update(this_genes)
-    for key, values in classperf.items():
-        true = [t[1] for t in values]
-        pred = [t[2] for t in values]
-        print('Acc. {}: {}'.format(key, accuracy_score(true, pred)))
-    for key, values in regperf.items():
-        true = [t[1] for t in values]
-        pred = [t[2] for t in values]
-        print('R2 {}: {}'.format(key, r2_score(true, pred)))
-    outpath = os.path.join(outdir, '{}_cons_orth_pm20pct.txt'.format(dest_species))
-    with open(outpath, 'w') as outf:
-        for gene, count in cons_genes.most_common():
-            if count > 1:
-                _ = outf.write(gene + '\n')
-    #dump_cons_genes(expperf, outpath)
-    sys.exit(0)
-"""
