@@ -993,11 +993,19 @@ def build_pipeline(args, config, sci_obj):
                                         .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
     params_applyexpvalone_est = list()
 
+    cmd = config.get('Pipeline', 'mrgtestmd')
+    mrgtestmd = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                           name='mrgtestmd',
+                           input=[statone_out, valonetrue_out, valoneest_out],
+                           output=os.path.join(dir_task_applymodels_exp, 'eval_models_test_merged.json'),
+                           extras=[cmd, jobcall]).follows(applyexpvalonepred)
+
     run_task_applymodels_exp = pipe.merge(task_func=touch_checkfile,
                                           name='task_applymodels_exp',
                                           input=output_from(applyexpstatone,
                                                             applyexpvalone,
-                                                            applyexpvalonepred),
+                                                            applyexpvalonepred,
+                                                            mrgtestmd),
                                           output=os.path.join(dir_task_applymodels_exp, 'task_applymodels_exp.chk'))
 
     #

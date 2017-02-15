@@ -31,8 +31,17 @@ def main():
         new_pairs = col.Counter()
         data = js.load(open(fp, 'r'))
         for gid, runs in data.items():
-            for run in runs:
+            for idx, run in enumerate(sorted(runs, key=lambda d: d['run_file']), start=1):
                 new_pairs[(run['run_spec_match'], run['run_test_type'])] += 1
+                run['run_number'] = idx
+                if 'Status' in run['setting']:
+                    run['setting_number'] = 1
+                elif 'TPM' in run['setting']:
+                    run['setting_number'] = 2
+                elif 'Est.' in run['setting']:
+                    run['setting_number'] = 3
+                else:
+                    raise ValueError('Unexpected setting of run {}: {}'.format(run['run_file']), run['setting'])
                 run_collector[gid].append(run)
         if run_pairs:
             assert run_pairs == new_pairs, 'Different run types recorded: {} - {}'.format(run_pairs, new_pairs)
