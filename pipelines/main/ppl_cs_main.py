@@ -82,7 +82,11 @@ def make_groups_compatible(groupings, epibundles):
             # self-match can happen for liver, kidney
             match_types[foo + '-' + foo] = 'pos'
             match_types[bar + '-' + bar] = 'pos'
-            p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+            try:
+                p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+            except AssertionError:
+                print(r)
+                raise
             clibs = '-'.join(clibs)
             p1_params = ' '.join([x['param'] for x in p1])
             p2_params = ' '.join([x['param'] for x in p2])
@@ -104,7 +108,7 @@ def bundle_epigenomes(folder, mapped=False):
     :param folder:
     :return:
     """
-    fpaths = collect_full_paths(folder, '*/E0*.h5')
+    fpaths = collect_full_paths(folder, '*/E*.h5', allow_none=True)
     collector = col.defaultdict(list)
     for fp in fpaths:
         try:
@@ -155,7 +159,7 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
         for mapf in assm1_maps:
             target, query = mapf['target'], mapf['query']
             if query not in ['mm9', 'hg19']:
-                if cell1 not in ['liver', 'kidney'] and cell2 not in ['liver', 'kidney']:
+                if cell1 not in ['liver', 'kidney', 'hepa'] and cell2 not in ['liver', 'kidney', 'hepa']:
                     continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
@@ -176,7 +180,7 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
         for mapf in assm2_maps:
             target, query = mapf['target'], mapf['query']
             if query not in ['mm9', 'hg19']:
-                if cell1 not in ['liver', 'kidney'] and cell2 not in ['liver', 'kidney']:
+                if cell1 not in ['liver', 'kidney', 'hepa'] and cell2 not in ['liver', 'kidney', 'hepa']:
                     continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
@@ -266,7 +270,7 @@ def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobc
         fn = os.path.basename(mpf)
         trg, to, qry = fn.split('.')[0].split('_')
         if trg in targets and qry in queries:
-            sigfiles = fnm.filter(inputfiles, '*/E0*_{}_*.h5'.format(trg))
+            sigfiles = fnm.filter(inputfiles, '*/E*_{}_*.h5'.format(trg))
             for sgf in sigfiles:
                 sgfn = os.path.basename(sgf)
                 eid, assembly, cell, lib = sgfn.split('.')[0].split('_')
@@ -300,7 +304,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
         assert matchings is not None, 'Need to specify cell type matchings for mapped data'
         matchings = js.load(open(matchings, 'r'))['matchings']
     featfiles = collect_full_paths(featdir, '*/G[0-9]*.h5', True, True)
-    expfiles = collect_full_paths(expdir, '*/T0*.h5', False, False)
+    expfiles = collect_full_paths(expdir, '*/T*.h5', False, False)
     collector = col.defaultdict(list)
     for fp in featfiles:
         parts = os.path.basename(fp).split('.')
@@ -312,7 +316,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
     arglist = []
     uniq = set()
     for (group, sub), files in collector.items():
-        assert len(files) == 4, 'Unexpected number of feature files {}: {}'.format(group, files)
+        assert len(files) == 3, 'Unexpected number of feature files {}: {}'.format(group, files)
         if mapped:
             # the pattern for mapped files consists of QRY-ASSM_TRG-CELL
             # for that combo, there is obv. no expression data, so fix here
@@ -323,11 +327,11 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
             matched_cell.append(cell_to_match)
             match_exp = []
             for mc in set(matched_cell):
-                foo = fnm.filter(expfiles, '*/T0*_{}_{}_mRNA*'.format(query, mc))
+                foo = fnm.filter(expfiles, '*/T*_{}_{}_mRNA*'.format(query, mc))
                 match_exp.extend(foo)
         else:
             pat = group.split('.')[0].split('_', 2)[-1]
-            match_exp = fnm.filter(expfiles, '*/T0*_{}_mRNA*'.format(pat))
+            match_exp = fnm.filter(expfiles, '*/T*_{}_mRNA*'.format(pat))
         try:
             assert match_exp, 'No matched expression files for group {} / pattern {} / {}'.format(group, pat, files)
         except AssertionError as ae:
@@ -419,7 +423,7 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                           'datafiles': datafiles, 'info': extgid}
                                 tmp = cmd.format(**params)
                                 arglist.append([roi['path'], outpath, tmp, jobcall])
-    if mapfiles:
+    if mapfiles and mapepibundles:
         assert arglist, 'No argument list for building test datasets created'
     return arglist
 
@@ -437,6 +441,7 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
 
     arglist = []
     done = set()
+    test_data_missing = False
     for model in all_models:
         fp, fn = os.path.split(model)
         subdir = os.path.split(fp)[-1]
@@ -448,12 +453,19 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
         out_prefix = groupid + '_trg-{}_qry-{}_'.format(mtrg, mqry)
         out_model = '_model-{}-{}-{}'.format(eid, tid, mcell) + '.' + modeldesc
         datasets = fnm.filter(all_testdata, '*/{}_*'.format(groupid))
-        assert datasets, 'No test datasets for group: {}'.format(groupid)
+        if not datasets:
+            test_data_missing = True
+            continue
+        # assert datasets, 'No test datasets for group: {}'.format(groupid)
         for dat in datasets:
             fp2, fn2 = os.path.split(dat)
             assert fn2.startswith(groupid), 'Group mismatch: {} vs {}'.format(groupid, fn2)
             dqry, fr, dtrg = (os.path.split(fp2)[-1]).split('_')
             assert fr == 'from', 'Unexpected folder structure: {}'.format(fp2)
+            # pairing all models and data files seems not to provide additional/useful
+            # information, so restrict to matching pairs
+            if dqry != mqry or dtrg != mtrg:
+                continue
             dataparts = fn2.split('.')[0].split('_')
             out_data = 'data-{}-{}-{}-{}-from-{}'.format(dataparts[1], dataparts[2], dataparts[4], dqry, dtrg)
             outname = out_prefix + out_data + out_model + '.json'
@@ -469,7 +481,7 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
                 arglist.append([[dat, model], outpath, tmp, jobcall])
             else:
                 arglist.append([[dat, model], outpath, cmd, jobcall])
-    if all_models:
+    if all_models and not test_data_missing:
         assert arglist, 'No apply parameters created'
     return arglist
 
@@ -547,6 +559,9 @@ def annotate_test_output(paramset, datasets, groupings, cellmatches, task, outfi
     :param outfile:
     :return:
     """
+    if not os.path.isdir(os.path.dirname(outfile)):
+        # pipeline potentially restarted, folder does not yet exist
+        return 1
     cmatches = cellmatches['matchtypes']
     collect_runs = col.defaultdict(list)
     for p in paramset:
@@ -626,7 +641,8 @@ def build_pipeline(args, config, sci_obj):
     dir_maps = config.get('Pipeline', 'refmaps')
 
     # base work path for processing
-    workbase = config.get('Pipeline', 'workdir')
+    # workbase = config.get('Pipeline', 'workdir')
+    workbase = os.path.join(config.get('Pipeline', 'workdir'), 'norm')
 
     # collect raw input data in HDF format
     inputfiles = []
@@ -877,7 +893,7 @@ def build_pipeline(args, config, sci_obj):
     dir_sub_cmpf_testdataexp = os.path.join(dir_task_testdataexp_groups, 'compfeat_groups', '{query}_from_{target}')
     mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
-    expfiles = collect_full_paths(dir_indata, '*/T0*.h5')
+    expfiles = collect_full_paths(dir_indata, '*/T*.h5')
     groupinfos = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'groupinfo_ro.json')
     matchings = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'cellmatches_ro.json')
     cmd = config.get('Pipeline', 'testdataexp').replace('\n', ' ')
