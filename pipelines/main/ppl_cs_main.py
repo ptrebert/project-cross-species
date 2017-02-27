@@ -371,6 +371,38 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
     return arglist
 
 
+def make_meta_traindata(infiles, outdir, cmd, jobcall):
+    """
+    :param infiles:
+    :param outdir:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    sort_files = col.defaultdict(list)
+    for inpf in infiles:
+        base, to, query, _, _ = os.path.basename(inpf).split('.')
+        assert to == 'to', 'Unexpected filename: {}'.format(inpf)
+        _, eid, tid, target, cell = base.split('_')
+        sort_files[(target, query)].append(('_'.join([eid, tid, cell]), inpf))
+    arglist = []
+    done = set()
+    for (target, query), values in sort_files.items():
+        call_inputs = []
+        label_inputs = ''
+        for label, fp in values:
+            call_inputs.append(fp)
+            label_inputs += '{}::{} '.format(label, fp)
+        tmp = cmd.format(**{'mergefiles': label_inputs, 'target': target, 'query': query})
+        outfile = '{}_to_{}_meta.feat.h5'.format(target, query)
+        outpath = os.path.join(outdir, outfile)
+        assert outpath not in done, 'Created duplicate: {}'.format(outpath)
+        arglist.append([call_inputs, outpath, tmp, jobcall])
+    if infiles:
+        assert arglist, 'No call parameters create for meta train datasets'
+    return arglist
+
+
 def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, outraw, cmd, jobcall):
     """
     :param mapfiles:
@@ -443,6 +475,8 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
     done = set()
     test_data_missing = False
     for model in all_models:
+        if '_meta' in model:
+            continue
         fp, fn = os.path.split(model)
         subdir = os.path.split(fp)[-1]
         mtrg, to, mqry = subdir.split('_')
@@ -472,6 +506,60 @@ def params_predict_testdata(modelroot, dataroot, outroot, cmd, jobcall, addmd=Fa
             if addmd:
                 mdname = outname.replace('rfreg', 'rfcls')
                 mdfull = os.path.join(mdpath, groupid, mdname)
+            outbase = outroot.format(**{'groupid': groupid})
+            outpath = os.path.join(outbase, outname)
+            assert outpath not in done, 'Duplicate created: {}'.format(outname)
+            done.add(outpath)
+            if addmd:
+                tmp = cmd.format(**{'mdfile': mdfull})
+                arglist.append([[dat, model], outpath, tmp, jobcall])
+            else:
+                arglist.append([[dat, model], outpath, cmd, jobcall])
+    if all_models and not test_data_missing:
+        assert arglist, 'No apply parameters created'
+    return arglist
+
+
+def params_predict_testdata_meta(modelroot, dataroot, outroot, cmd, jobcall, addmd=False, mdpath=''):
+    """
+    :param modelroot:
+    :param dataroot:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    all_models = collect_full_paths(modelroot, '*.pck', True, True)
+    all_testdata = collect_full_paths(dataroot, '*feat.h5', True, True)
+
+    arglist = []
+    done = set()
+    test_data_missing = False
+    for model in all_models:
+        fp, fn = os.path.split(model)
+        subdir = os.path.split(fp)[-1]
+        assert subdir == 'meta', 'Unexpected path for meta models: {}'.format(model)
+        mtrg, to, mqry = fn.split('_')[:3]
+        assert to == 'to', 'Unexpected filename: {}'.format(fn)
+        modeldesc = (fn.split('.', 1)[-1]).rsplit('.', 1)[0]
+        out_model = '_model-meta.to.{}'.format(mqry) + '.' + modeldesc
+        datasets = fnm.filter(all_testdata, '*/{}_from_{}/G*'.format(mqry, mtrg))
+        if not datasets:
+            test_data_missing = True
+            continue
+        # assert datasets, 'No test datasets for group: {}'.format(groupid)
+        for dat in datasets:
+            fp2, fn2 = os.path.split(dat)
+            assert '.from.{}'.format(mtrg) in fn2 and mqry in fn2, 'Target/query mismatch: {} vs {}'.format(fn, fn2)
+            dqry, fr, dtrg = (os.path.split(fp2)[-1]).split('_')
+            assert fr == 'from', 'Unexpected folder structure: {}'.format(fp2)
+            dataparts = fn2.split('.')[0].split('_')
+            groupid = dataparts[0]
+            out_data = 'data-{}-{}-{}-{}-from-{}'.format(dataparts[1], dataparts[2], dataparts[4], dqry, dtrg)
+            out_prefix = '{}_trg-{}_qry-{}_'.format(groupid, mtrg, mqry)
+            outname = out_prefix + out_data + out_model + '.json'
+            if addmd:
+                mdname = outname.replace('rfreg', 'rfcls')
+                mdfull = os.path.join(mdpath, mdname)
             outbase = outroot.format(**{'groupid': groupid})
             outpath = os.path.join(outbase, outname)
             assert outpath not in done, 'Duplicate created: {}'.format(outname)
@@ -764,9 +852,17 @@ def build_pipeline(args, config, sci_obj):
                                                                 dir_indata, dir_mrg_train_datasets, cmd, jobcall),
                                         name='mrgtraindataexp_groups').mkdir(os.path.split(dir_mrg_train_datasets)[0]).follows(traindataexp_groups)
 
+    dir_meta_traindatasets = os.path.join(dir_task_traindata_exp, 'meta_datasets')
+    cmd = config.get('Pipeline', 'metatraindataexp').replace('\n', ' ')
+    metatraindataexp = pipe.files(sci_obj.get_jobf('ins_out'),
+                                  make_meta_traindata(collect_full_paths(os.path.join(dir_task_traindata_exp, 'train_datasets'),
+                                                                         '*.feat.h5', topdown=True, allow_none=True),
+                                                      dir_meta_traindatasets, cmd, jobcall),
+                                  name='metatraindataexp').follows(mrgtraindataexp_groups).mkdir(dir_meta_traindatasets)
+
     task_traindata_exp = pipe.merge(task_func=touch_checkfile,
                                     name='task_traindata_exp',
-                                    input=output_from(traindataexp_groups, mrgtraindataexp_groups),
+                                    input=output_from(traindataexp_groups, mrgtraindataexp_groups, metatraindataexp),
                                     output=os.path.join(dir_task_traindata_exp, 'run_task_traindata_exp.chk'))
 
     #
@@ -797,6 +893,15 @@ def build_pipeline(args, config, sci_obj):
                                                                '{SAMPLE[0]}.rfcls.seq.uw.geq1.pck'),
                                            extras=[cmd, jobcall]).mkdir(dir_exp_statone)
 
+    trainmeta_expone_seq = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                          name='trainmeta_expone_seq',
+                                          input=output_from(metatraindataexp),
+                                          filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                          output=os.path.join(dir_exp_statone,
+                                                              'meta',
+                                                              '{SAMPLE[0]}.rfcls.seq.uw.geq1.pck'),
+                                          extras=[cmd, jobcall]).mkdir(dir_exp_statone)
+
     cmd = config.get('Pipeline', 'trainmodel_expone_sig').replace('\n', ' ')
     trainmodel_expone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                            name='trainmodel_expone_sig',
@@ -807,6 +912,15 @@ def build_pipeline(args, config, sci_obj):
                                                                '{SAMPLE[0]}.rfcls.sig.uw.geq1.pck'),
                                            extras=[cmd, jobcall]).mkdir(dir_exp_statone)
 
+    trainmeta_expone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                          name='trainmeta_expone_sig',
+                                          input=output_from(metatraindataexp),
+                                          filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                          output=os.path.join(dir_exp_statone,
+                                                              'meta',
+                                                              '{SAMPLE[0]}.rfcls.sig.uw.geq1.pck'),
+                                          extras=[cmd, jobcall]).mkdir(dir_exp_statone)
+
     cmd = config.get('Pipeline', 'trainmodel_expone_full').replace('\n', ' ')
     trainmodel_expone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                             name='trainmodel_expone_full',
@@ -816,6 +930,15 @@ def build_pipeline(args, config, sci_obj):
                                                                 '{subdir[0][0]}',
                                                                 '{SAMPLE[0]}.rfcls.full.uw.geq1.pck'),
                                             extras=[cmd, jobcall]).mkdir(dir_exp_statone)
+
+    trainmeta_expone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                           name='trainmeta_expone_full',
+                                           input=output_from(metatraindataexp),
+                                           filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                           output=os.path.join(dir_exp_statone,
+                                                               'meta',
+                                                               '{SAMPLE[0]}.rfcls.full.uw.geq1.pck'),
+                                           extras=[cmd, jobcall]).mkdir(dir_exp_statone)
 
     # Subtask
     # train models to regress expression value for subset TPM >= 1
@@ -831,6 +954,15 @@ def build_pipeline(args, config, sci_obj):
                                                                   '{SAMPLE[0]}.rfreg.seq.uw.geq1.pck'),
                                               extras=[cmd, jobcall]).mkdir(dir_exp_valone)
 
+    trainmeta_expvalone_seq = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                             name='trainmeta_expvalone_seq',
+                                             input=output_from(metatraindataexp),
+                                             filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                             output=os.path.join(dir_exp_valone,
+                                                                 'meta',
+                                                                 '{SAMPLE[0]}.rfreg.seq.uw.geq1.pck'),
+                                             extras=[cmd, jobcall]).mkdir(dir_exp_valone)
+
     cmd = config.get('Pipeline', 'trainmodel_expvalone_sig').replace('\n', ' ')
     trainmodel_expvalone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                               name='trainmodel_expvalone_sig',
@@ -841,6 +973,15 @@ def build_pipeline(args, config, sci_obj):
                                                                   '{SAMPLE[0]}.rfreg.sig.uw.geq1.pck'),
                                               extras=[cmd, jobcall]).mkdir(dir_exp_valone)
 
+    trainmeta_expvalone_sig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                             name='trainmeta_expvalone_sig',
+                                             input=output_from(metatraindataexp),
+                                             filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                             output=os.path.join(dir_exp_valone,
+                                                                 'meta',
+                                                                 '{SAMPLE[0]}.rfreg.sig.uw.geq1.pck'),
+                                             extras=[cmd, jobcall]).mkdir(dir_exp_valone)
+
     cmd = config.get('Pipeline', 'trainmodel_expvalone_full').replace('\n', ' ')
     trainmodel_expvalone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                                name='trainmodel_expvalone_full',
@@ -850,6 +991,15 @@ def build_pipeline(args, config, sci_obj):
                                                                    '{subdir[0][0]}',
                                                                    '{SAMPLE[0]}.rfreg.full.uw.geq1.pck'),
                                                extras=[cmd, jobcall]).mkdir(dir_exp_valone)
+
+    trainmeta_expvalone_full = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                              name='trainmeta_expvalone_full',
+                                              input=output_from(metatraindataexp),
+                                              filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                              output=os.path.join(dir_exp_valone,
+                                                                  'meta',
+                                                                  '{SAMPLE[0]}.rfreg.full.uw.geq1.pck'),
+                                              extras=[cmd, jobcall]).mkdir(dir_exp_valone)
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -870,7 +1020,9 @@ def build_pipeline(args, config, sci_obj):
                                      name='task_trainmodel_exp',
                                      input=output_from(trainmodel_expone_seq, trainmodel_expone_sig, trainmodel_expone_full,
                                                        trainmodel_expvalone_seq, trainmodel_expvalone_sig, trainmodel_expvalone_full,
-                                                       collect_train_metrics),
+                                                       collect_train_metrics, trainmeta_expone_seq, trainmeta_expone_sig,
+                                                       trainmeta_expone_full, trainmeta_expvalone_seq, trainmeta_expvalone_sig,
+                                                       trainmeta_expvalone_full),
                                      output=os.path.join(dir_task_trainmodel_exp, 'task_trainmodel_exp.chk'))
 
     #
@@ -960,6 +1112,22 @@ def build_pipeline(args, config, sci_obj):
                                     .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
     params_applyexpstatone = list()
 
+    # same again for meta estimator
+    dir_apply_statusone_meta = os.path.join(dir_task_applymodels_exp, 'sub_status', 'active_geq1', 'meta')
+    cmd = config.get('Pipeline', 'applyexpstatone').replace('\n', ' ')
+    params_applyexpstatone_meta = params_predict_testdata_meta(os.path.join(dir_exp_statone, 'meta'),
+                                                               os.path.split(dir_mrg_test_datasets)[0],
+                                                               dir_apply_statusone_meta, cmd, jobcall)
+
+    applyexpstatone_meta = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                      params_applyexpstatone_meta,
+                                      name='applyexpstatone_meta')\
+                                      .mkdir(dir_apply_statusone_meta)\
+                                      .follows(task_testdata_exp)\
+                                      .follows(task_trainmodel_exp)
+
+    params_applyexpstatone_meta = list()
+
     # subtask: predict gene expression level (using true TPM-based status)
     dir_apply_valueone = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_geq1', '{groupid}')
     cmd = config.get('Pipeline', 'applyexpvalone').replace('\n', ' ')
@@ -972,9 +1140,24 @@ def build_pipeline(args, config, sci_obj):
     applyexpvalone = pipe.files(sci_obj.get_jobf('inpair_out'),
                                 params_applyexpvalone_true,
                                 name='applyexpvalone')\
-                                    .mkdir(os.path.split(dir_apply_valueone)[0])\
-                                    .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
+                                .mkdir(os.path.split(dir_apply_valueone)[0])\
+                                .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
     params_applyexpvalone_true = list()
+
+    # same again for meta estimator
+    dir_apply_valueone_true_meta = os.path.join(dir_task_applymodels_exp, 'sub_value', 'true_status', 'active_geq1', 'meta')
+    cmd = config.get('Pipeline', 'applyexpvalone').replace('\n', ' ')
+    params_applyexpvalone_true_meta = params_predict_testdata_meta(os.path.join(dir_exp_valone, 'meta'),
+                                                                   os.path.split(dir_mrg_test_datasets)[0],
+                                                                   dir_apply_valueone_true_meta, cmd, jobcall)
+
+    applyexpvalone_true_meta = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                          params_applyexpvalone_true_meta,
+                                          name='applyexpvalone_true_meta')\
+                                          .mkdir(dir_apply_valueone_true_meta)\
+                                          .follows(task_testdata_exp)\
+                                          .follows(task_trainmodel_exp)
+    params_applyexpvalone_true_meta = list()
 
     # subtask: predict gene expression level (using predicted TPM-based status)
     dir_apply_valueonepred = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_geq1', '{groupid}')
@@ -992,6 +1175,22 @@ def build_pipeline(args, config, sci_obj):
                                         .mkdir(os.path.split(dir_apply_valueonepred)[0])\
                                         .follows(mrgtestdataexp_groups).follows(task_trainmodel_exp)
     params_applyexpvalone_est = list()
+
+    # same again for meta estimator
+    dir_apply_valueone_pred_meta = os.path.join(dir_task_applymodels_exp, 'sub_value', 'pred_status', 'active_geq1', 'meta')
+    cmd = config.get('Pipeline', 'applyexpvalonepred').replace('\n', ' ')
+    params_applyexpvalone_pred_meta = params_predict_testdata_meta(os.path.join(dir_exp_valone, 'meta'),
+                                                                   os.path.split(dir_mrg_test_datasets)[0],
+                                                                   dir_apply_valueone_pred_meta, cmd, jobcall,
+                                                                   True, dir_apply_statusone_meta)
+
+    applyexpvalone_pred_meta = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                          params_applyexpvalone_pred_meta,
+                                          name='applyexpvalone_pred_meta')\
+                                          .mkdir(dir_apply_valueone_pred_meta)\
+                                          .follows(task_testdata_exp)\
+                                          .follows(task_trainmodel_exp)
+    params_applyexpvalone_pred_meta = list()
 
     cmd = config.get('Pipeline', 'mrgtestmd')
     mrgtestmd = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
@@ -1011,7 +1210,11 @@ def build_pipeline(args, config, sci_obj):
     #
     # END: major task apply gene expression models
     # ==============================
-    #
+
+
+
+
+
     # run_all = pipe.merge(task_func=touch_checkfile,
     #                      name='run_task_all',
     #                      input=output_from(run_task_sigcorr, run_task_sigmap,
