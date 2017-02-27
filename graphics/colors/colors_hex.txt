@@ -1,4 +1,4 @@
-hsa hg19 484996
+hsa hg19 8E78FF
 mmu mm9 36383F
 bta bosTau7 5E9371
 cfa canFam3 CEA354

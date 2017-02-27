@@ -1,0 +1,11 @@
+{
+  "liver": "Li/He",
+  "hepa": "Li/He",
+  "MEL": "Leuk",
+  "K562": "Leuk",
+  "CH12": "Lym",
+  "GM12878": "Lym",
+  "ESE14": "ESC",
+  "H1hESC": "ESC",
+  "default": "n/a"
+}
