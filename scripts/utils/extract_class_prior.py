@@ -6,6 +6,7 @@ import sys as sys
 import traceback as trb
 import argparse as argp
 import json as js
+import pandas as pd
 
 
 def parse_command_line():
@@ -13,7 +14,7 @@ def parse_command_line():
     :return:
     """
     parser = argp.ArgumentParser()
-    parser.add_argument('--train-file', '-ff', type=str, dest='trainfile')
+    parser.add_argument('--train-file', '-tf', type=str, dest='trainfile')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
     args = parser.parse_args()
     return args
@@ -31,7 +32,19 @@ def main():
     with open(load_file, 'r') as dumped:
         train_infos = js.load(dumped)
         sample_names = train_infos['sample_info']['names']
+        true_class_probs = train_infos['training_info']['true_class_prob']
+        true_class = train_infos['sample_info']['targets']
+    for n, p, c in zip(sample_names, true_class_probs, true_class):
+        # probabilities * 100:
+        # expressed in percent just by convention of other feature definitions
+        if c == 1:
+            class_priors.append([n, p * 100])
+        else:
+            class_priors.append([n, (1 - p) * 100])
+    df = pd.DataFrame(class_priors, columns=['name', 'ftprior_pct_active'])
 
+    with pd.HDFStore(args.outputfile, 'w', complib='blosc', complevel=9) as hdf:
+        hdf.put('prior', df, format='fixed')
 
     return
 
