@@ -1,5 +1,5 @@
-hsa hg19 8E78FF
-mmu mm9 36383F
+hsa hg19 6E51FF
+mmu mm9 A51526
 bta bosTau7 5E9371
 cfa canFam3 CEA354
-ssc susScr2 7F111E
+ssc susScr2 36383F
