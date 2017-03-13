@@ -459,7 +459,13 @@ def match_prior_testdata(testdata, priordata, suffix, cmd, jobcall):
         gid, eid, tid, dqry, cell = dset.split('_')
         assert dqry == qry, 'Query species mismatch: {} vs {}'.format(species_match, tfn)
         use_priors = fnm.filter(priordata, '*{}*{}-{}-{}-{}-from-{}.*.h5'.format(gid, eid, tid, cell, qry, trg))
-        assert len(use_priors) == 1, 'No/ambig. metadata with run information selected: {}'.format(use_priors)
+        try:
+            assert len(use_priors) == 1, 'No/ambig. metadata with run information selected: {}'.format(use_priors)
+        except AssertionError:
+            if len(use_priors) == 0:
+                raise AssertionError('No prior information available for group: {}'.format(gid))
+            else:
+                raise AssertionError('Ambig. prior information selected: {}'.format(use_priors))
         pdata_file = use_priors[0]
         outname = tfn.replace('.h5', '{}.h5'.format(suffix))
         outpath = os.path.join(tfp, outname)
@@ -1460,6 +1466,214 @@ def build_pipeline(args, config, sci_obj):
     # ===============================================
     # below: rank/level prediction for active subset
 
+    sci_obj.set_config_env(dict(config.items('CVParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    # Subtask
+    # train augmented signal model to regress gene expression rank
+    dir_train_exprank = os.path.join(dir_task_trainmodel_exp, 'sub_rank')
+
+    cmd = config.get('Pipeline', 'trainmodel_exprank_act').replace('\n', ' ')
+    trainmodel_exprank_act = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                            name='trainmodel_exprank_act',
+                                            input=output_from(addtrain_asig_out),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.asigout\.h5'),
+                                            output=os.path.join(dir_train_exprank,
+                                                                'act',
+                                                                '{subdir[0][0]}',
+                                                                '{SAMPLE[0]}.rfreg.rk.act.pck'),
+                                            extras=[cmd, jobcall])
+    trainmodel_exprank_act = trainmodel_exprank_act.mkdir(os.path.join(dir_train_exprank, 'act'))
+
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'extrain_rank_act').replace('\n', ' ')
+    extrain_rank_act = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                      name='extrain_rank_act',
+                                      input=output_from(trainmodel_exprank_act),
+                                      filter=formatter('(?P<SAMPLE>[\w\.]+).rfreg.rk.act.pck'),
+                                      output='{path[0]}/{SAMPLE[0]}.rank-act.h5',
+                                      extras=[cmd, jobcall])
+
+    cmd = config.get('Pipeline', 'addtrain_rank_act').replace('\n', ' ')
+    params_addtrain_rank_act = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
+                                                                        pattern='*feat.h5'),
+                                                     collect_full_paths(os.path.join(dir_train_exprank, 'act'),
+                                                                        pattern='*rank-act.h5',
+                                                                        allow_none=True),
+                                                     '.rk-act', cmd, jobcall)
+
+    addtrain_rank_act = pipe.files(sci_obj.get_jobf('ins_out'),
+                                   params_addtrain_rank_act,
+                                   name='addtrain_rank_act')
+    addtrain_rank_act = addtrain_rank_act.follows(extrain_rank_act)
+    addtrain_rank_act = addtrain_rank_act.follows(task_asig_cls_model)
+    params_addtrain_rank_act = list()
+
+    # apply rank model to test data
+    dir_apply_exprank = os.path.join(dir_task_applymodel_exp, 'sub_rank')
+
+    cmd = config.get('Pipeline', 'apply_exprank_act').replace('\n', ' ')
+    params_apply_exprank_act = params_predict_testdata(os.path.join(dir_train_exprank, 'act'),
+                                                       collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
+                                                                          pattern='*asigout.h5',
+                                                                          allow_none=True),
+                                                       os.path.join(dir_apply_exprank, 'act', '{groupid}'),
+                                                       cmd, jobcall)
+
+    apply_exprank_act = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                   params_apply_exprank_act,
+                                   name='apply_exprank_act')
+    apply_exprank_act = apply_exprank_act.mkdir(os.path.join(dir_apply_exprank, 'act'))
+    apply_exprank_act = apply_exprank_act.follows(addtrain_rank_act)
+    params_apply_exprank_act = list()
+
+    # extract asig model predictions for test data and add to test datasets
+    cmd = config.get('Pipeline', 'extest_rank_act').replace('\n', ' ')
+    extest_rank_act = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                                   name='extest_rank_act',
+                                   input=output_from(apply_exprank_act),
+                                   filter=formatter('(?P<GID>G[0-9]{4})_.+(?P<DSET>data-[a-zA-Z0-9-]+)_model.+rk\.act\.json'),
+                                   output='{path[0]}/{GID[0]}_{DSET[0]}.rk-act.h5',
+                                   extras=[cmd, jobcall])
+
+    # add extracted asig model predictions to test datasets
+    cmd = config.get('Pipeline', 'addtest_rank_act').replace('\n', ' ')
+    params_addtest_rank_act = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
+                                                                      '*.feat.h5'),
+                                                   collect_full_paths(os.path.join(dir_apply_exprank, 'act'),
+                                                                      '*.rk-act.h5', allow_none=True),
+                                                   '.rkact', cmd, jobcall)
+
+    addtest_rank_act = pipe.files(sci_obj.get_jobf('ins_out'),
+                                  params_addtest_rank_act,
+                                  name='addtest_rank_act')
+    addtest_rank_act = addtest_rank_act.follows(apply_exprank_act)
+    addtest_rank_act = addtest_rank_act.follows(extest_rank_act)
+    params_addtest_rank_act = list()
+
+    task_rank_act_model = pipe.merge(task_func=touch_checkfile,
+                                     name='task_rank_act_model',
+                                     input=output_from(trainmodel_exprank_act,
+                                                       extrain_rank_act,
+                                                       addtrain_rank_act,
+                                                       apply_exprank_act,
+                                                       extest_rank_act,
+                                                       addtest_rank_act),
+                                     output=os.path.join(workbase, 'task_rank_act_model.chk'))
+
+    # Subtask
+    # Using sample ranks as additional feature, make final prediction of actual expression level (TPM)
+
+    sci_obj.set_config_env(dict(config.items('CVParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    dir_train_explevel = os.path.join(dir_task_trainmodel_exp, 'sub_level')
+
+    cmd = config.get('Pipeline', 'trainmodel_explevel_act').replace('\n', ' ')
+    trainmodel_explevel_act = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                             name='trainmodel_explevel_act',
+                                             input=output_from(addtrain_rank_act),
+                                             filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.rk-act\.h5'),
+                                             output=os.path.join(dir_train_explevel,
+                                                                 'act',
+                                                                 '{subdir[0][0]}',
+                                                                 '{SAMPLE[0]}.rfreg.tpm.act.pck'),
+                                             extras=[cmd, jobcall])
+    trainmodel_explevel_act = trainmodel_explevel_act.mkdir(os.path.join(dir_train_explevel, 'act'))
+
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'extrain_level_act').replace('\n', ' ')
+    extrain_level_act = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                       name='extrain_level_act',
+                                       input=output_from(trainmodel_explevel_act),
+                                       filter=formatter('(?P<SAMPLE>[\w\.]+).rfreg.tpm.act.pck'),
+                                       output='{path[0]}/{SAMPLE[0]}.level-act.h5',
+                                       extras=[cmd, jobcall])
+
+    cmd = config.get('Pipeline', 'addtrain_level_act').replace('\n', ' ')
+    params_addtrain_level_act = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
+                                                                         pattern='*feat.rk-act.h5',
+                                                                         allow_none=True),
+                                                      collect_full_paths(os.path.join(dir_train_explevel, 'act'),
+                                                                         pattern='*level-act.h5',
+                                                                         allow_none=True),
+                                                      '.lvl-act', cmd, jobcall)
+
+    addtrain_level_act = pipe.files(sci_obj.get_jobf('ins_out'),
+                                    params_addtrain_level_act,
+                                    name='addtrain_level_act')
+    addtrain_level_act = addtrain_level_act.follows(extrain_level_act)
+    addtrain_level_act = addtrain_level_act.follows(task_rank_act_model)
+    params_addtrain_level_act = list()
+
+    # apply exp level model to test data
+    dir_apply_explevel = os.path.join(dir_task_applymodel_exp, 'sub_level')
+
+    cmd = config.get('Pipeline', 'apply_explevel_act').replace('\n', ' ')
+    params_apply_explevel_act = params_predict_testdata(os.path.join(dir_train_explevel, 'act'),
+                                                        collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
+                                                                           pattern='*rkact.h5',
+                                                                           allow_none=True),
+                                                        os.path.join(dir_apply_explevel, 'act', '{groupid}'),
+                                                        cmd, jobcall)
+
+    apply_explevel_act = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                    params_apply_explevel_act,
+                                    name='apply_explevel_act')
+    apply_explevel_act = apply_explevel_act.mkdir(os.path.join(dir_apply_explevel, 'act'))
+    apply_explevel_act = apply_explevel_act.follows(addtrain_level_act)
+    params_apply_explevel_act = list()
+
+    # extract asig model predictions for test data and add to test datasets
+    cmd = config.get('Pipeline', 'extest_level_act').replace('\n', ' ')
+    extest_level_act = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                                    name='extest_level_act',
+                                    input=output_from(apply_explevel_act),
+                                    filter=formatter('(?P<GID>G[0-9]{4})_.+(?P<DSET>data-[a-zA-Z0-9-]+)_model.+tpm\.act\.json'),
+                                    output='{path[0]}/{GID[0]}_{DSET[0]}.level-act.h5',
+                                    extras=[cmd, jobcall])
+
+    # add extracted asig model predictions to test datasets
+    cmd = config.get('Pipeline', 'addtest_level_act').replace('\n', ' ')
+    params_addtest_level_act = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
+                                                                       '*.feat.rkact.h5',
+                                                                       allow_none=True),
+                                                    collect_full_paths(os.path.join(dir_apply_explevel, 'act'),
+                                                                       '*.level-act.h5', allow_none=True),
+                                                    '.lvl-act', cmd, jobcall)
+
+    addtest_level_act = pipe.files(sci_obj.get_jobf('ins_out'),
+                                   params_addtest_level_act,
+                                   name='addtest_level_act')
+    addtest_level_act = addtest_level_act.follows(apply_explevel_act)
+    addtest_level_act = addtest_level_act.follows(extest_level_act)
+    params_addtest_level_act = list()
+
+    task_level_act_model = pipe.merge(task_func=touch_checkfile,
+                                      name='task_level_act_model',
+                                      input=output_from(trainmodel_explevel_act,
+                                                        extrain_level_act,
+                                                        addtrain_level_act,
+                                                        apply_explevel_act,
+                                                        extest_level_act,
+                                                        addtest_level_act),
+                                      output=os.path.join(workbase, 'task_level_act_model.chk'))
 
 
 
@@ -1473,18 +1687,6 @@ def build_pipeline(args, config, sci_obj):
     #                                                      trainmodel_expvalone_full),
     #                                    output=os.path.join(dir_task_trainmodel_exp, 'models_train_metrics.h5'),
     #                                    extras=[cmd, jobcall])
-    #
-    # task_trainmodel_exp = pipe.merge(task_func=touch_checkfile,
-    #                                  name='task_trainmodel_exp',
-    #                                  input=output_from(trainmodel_expone_seq, trainmodel_expone_psig, trainmodel_expone_full,
-    #                                                    trainmodel_expvalone_seq, trainmodel_expvalone_psig_sub,
-    #                                                    trainmodel_expvalone_full, trainmodel_expvalone_psig_all,
-    #                                                    collect_train_metrics),
-    #                                  output=os.path.join(dir_task_trainmodel_exp, 'task_trainmodel_exp.chk'))
-    #
-    # #
-    # # END: major task train model for gene expression prediction
-    # # ==============================
     #
 
     #
