@@ -28,7 +28,6 @@ def parse_command_line():
     parser.add_argument('--orthologs', '-orth', type=str, dest='orthologs')
     parser.add_argument('--ortho-path', '-orthp', type=str, dest='orthopath',
                         default='/orthologs/subset/proteincoding')
-    parser.add_argument('--bio-samples', '-bsam', type=str, dest='biosamples')
     parser.add_argument('--debug', '-dbg', action='store_true', default=False, dest='debug')
     parser.add_argument('--json-out', '-jo', type=str, dest='jsonout')
     parser.add_argument('--hdf-out', '-ho', type=str, dest='hdfout')
@@ -66,21 +65,17 @@ def load_orthologs(fpath, loadpath):
     return data, species1, species2
 
 
-def read_biosample_map(fpath):
+def get_biosample_map():
     """
-    :param fpath:
     :return:
     """
+    samples = "K562 MEL GM12878 CH12 H1hESC ESE14 liver hepa".split()
     bsmap = dict()
-    with open(fpath, 'r') as infile:
-        for line in infile:
-            if not line.strip():
-                continue
-            p1, p2 = line.strip().split()
-            assert p1 not in bsmap, 'Sample {} already in mapping'.format(p1)
-            bsmap[p1] = p2
-            assert p2 not in bsmap, 'Sample {} already in mapping'.format(p2)
-            bsmap[p2] = p1
+    for s in range(0, len(samples), 2):
+        assert samples[s] not in bsmap, 'Conflict: {}'.format(samples)
+        bsmap[samples[s]] = samples[s+1]
+        assert samples[s+1] not in bsmap, 'Conflict: {}'.format(samples)
+        bsmap[samples[s+1]] = samples[s]
     return bsmap
 
 
@@ -235,7 +230,7 @@ def main():
     """
     args = parse_command_line()
     logger = init_logger(args.debug)
-    bsmap = read_biosample_map(args.biosamples)
+    bsmap = get_biosample_map()
     orthos, spec1, spec2 = load_orthologs(args.orthologs, args.orthopath)
     logger.debug('Orthologs loaded: {}'.format(orthos.shape))
     logger.debug('Matching {} to {} and {} to {}'.format(spec1, args.assemblya, spec2, args.assemblyb))

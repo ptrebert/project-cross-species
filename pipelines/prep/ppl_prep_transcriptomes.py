@@ -426,6 +426,29 @@ def build_pipeline(args, config, sci_obj):
                           output=os.path.join(aggout, '{ASSM[0]}_agg_exp.genes.h5'),
                           extras=[cmd, jobcall]).mkdir(aggout)
 
+    cmd = config.get('Pipeline', 'hcop_orth').replace('\n', ' ')
+    ortho_pred_out = os.path.join(config.get('EnvPaths', 'workdir'), 'processing', 'norm', 'task_ortho_pred')
+    hcop_orth = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                             name='hcop_orth',
+                             input=[os.path.join(aggout, fn) for fn in ['hg19_agg_exp.genes.h5',
+                                                                        'mm9_agg_exp.genes.h5']],
+                             filter=formatter(),
+                             output=os.path.join(ortho_pred_out, 'hg19_mm9_hcop_ortho-pred.h5'),
+                             extras=[cmd, jobcall])
+    hcop_orth = hcop_orth.mkdir(ortho_pred_out)
+    hcop_ortholog_file = os.path.join(config.get('Pipeline', 'refdatabase'), 'orthologs', 'hdf', 'hg19_mm9_hcop_orthologs.h5')
+    hcop_orth = hcop_orth.active_if(os.path.isfile(hcop_ortholog_file))
+
+    cmd = config.get('Pipeline', 'orthodb_orth').replace('\n', ' ')
+    orthodb_orth = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                              name='orthodb_orth',
+                              input=output_from(hdfagg),
+                              output=os.path.join(ortho_pred_out, '5spec_orthodb_ortho-pred.h5'),
+                              extras=[cmd, jobcall])
+    orthodb_orth = orthodb_orth.follows(hcop_orth)
+    orthodb_ortholog_file = os.path.join(config.get('Pipeline', 'refdatabase'), 'orthologs', 'hdf', 'orthoDB_2015-v9_5vert.h5')
+    orthodb_orth = orthodb_orth.active_if(os.path.isfile(orthodb_ortholog_file))
+
     bedout = os.path.join(workbase, 'conv', 'bed')
     trans_bed_init = pipe.originate(lambda x: x,
                                     collect_full_paths(bedout, '*.bed.gz'),

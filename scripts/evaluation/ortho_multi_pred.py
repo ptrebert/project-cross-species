@@ -22,7 +22,7 @@ def parse_command_line():
     return args
 
 
-def load_orthologs(fpath):
+def load_orthologs(fpath, metadata):
     """
     :param fpath:
     :return:
@@ -32,6 +32,9 @@ def load_orthologs(fpath):
         dataset = hdf['/shared/subset']
     indexer = dataset.loc[dataset['chrom'].isin(['chrX', 'chrY']), 'og_id']
     dataset = dataset.loc[~dataset['og_id'].isin(indexer), :]
+    for s in dataset['species'].unique():
+        spec_genes = dataset.loc[dataset['species'] == s, 'gene_name'].unique().size
+        metadata['num_orthologs_{}'.format(s)] = int(spec_genes)
     return dataset
 
 
@@ -54,7 +57,7 @@ def normalize_col_names(cnames, species):
     return norm, datacols
 
 
-def load_expression_data(fpath, orthologs):
+def load_expression_data(fpath, orthologs, metadata):
     """
     :param fpath:
     :param orthologs:
@@ -68,6 +71,7 @@ def load_expression_data(fpath, orthologs):
     species = spec_orth['species'].unique()
     assert species.size == 1, 'More than one species: {}'.format(species)
     species = species[0]
+    metadata['num_genes_{}'.format(species)] = int(tpm_data.index.size)
     indexer = tpm_data.index.isin(spec_orth['gene_name'])
     tpm_data = tpm_data.loc[indexer, :]
     rank_data = rank_data.loc[indexer, :]
@@ -75,10 +79,10 @@ def load_expression_data(fpath, orthologs):
     tpm_data = tpm_data.reset_index(drop=True)
     rank_data['gene_name'] = rank_data.index
     rank_data = rank_data.reset_index(drop=True)
-    return species, tpm_data, rank_data, spec_orth
+    return species, tpm_data, rank_data, spec_orth, metadata
 
 
-def process_species_data(species, tpm, rank, orthologs):
+def process_species_data(species, tpm, rank, orthologs, metadata):
     """
     :param tpm:
     :param rank:
@@ -91,7 +95,11 @@ def process_species_data(species, tpm, rank, orthologs):
     tpm_orth = orthologs.merge(tpm, on='gene_name', copy=True)
     tpm_strict = tpm_orth.loc[tpm_orth['group_size'] == 5, select_cols]
     tpm_strict = tpm_strict.groupby('og_id').mean()
-    tpm_balanced = tpm_orth.loc[tpm_orth['group_balanced'] == 1, select_cols]
+    tpm_balanced = tpm_orth.loc[tpm_orth['group_balanced'] == 1, select_cols + ['species', 'gene_name']]
+    for s in tpm_balanced['species'].unique():
+        gbal = tpm_balanced.loc[tpm_balanced['species'] == s, 'gene_name'].unique().size
+        metadata['balanced_genes_{}'.format(s)] = int(gbal)
+    tpm_balanced.drop(['species', 'gene_name'], axis=1, inplace=True)
     tpm_balanced = tpm_balanced.groupby('og_id').mean()
     tpm_all = tpm_orth.loc[:, select_cols]
     tpm_all = tpm_all.groupby('og_id').mean()
@@ -109,8 +117,9 @@ def process_species_data(species, tpm, rank, orthologs):
     rank_all = rank_orth.loc[:, select_cols]
     rank_all = rank_all.groupby('og_id').median()
     rank_all = rank_all.round(decimals=0)
-    return {'strict': tpm_strict, 'balanced': tpm_balanced, 'all': tpm_all},\
-           {'strict': rank_strict, 'balanced': rank_balanced, 'all': rank_all}
+    tpm_data = {'strict': tpm_strict, 'balanced': tpm_balanced, 'all': tpm_all}
+    rank_data = {'strict': rank_strict, 'balanced': rank_balanced, 'all': rank_all}
+    return tpm_data, rank_data, metadata
 
 
 def main():
@@ -118,12 +127,13 @@ def main():
     :return:
     """
     args = parse_command_line()
-    orths = load_orthologs(args.orthofile)
+    metadata = {}
+    orths = load_orthologs(args.orthofile, metadata)
     df_tpm = {'strict': None, 'balanced': None, 'all': None}
     df_rank = {'strict': None, 'balanced': None, 'all': None}
     for ef in args.expfiles:
-        spec, tpm, rank, spec_orth = load_expression_data(ef, orths)
-        tpms, ranks = process_species_data(spec, tpm, rank, spec_orth)
+        spec, tpm, rank, spec_orth, metadata = load_expression_data(ef, orths, metadata)
+        tpms, ranks, metadata = process_species_data(spec, tpm, rank, spec_orth, metadata)
         for k, df in df_tpm.items():
             dset_df = tpms[k]
             if df is None:
@@ -144,6 +154,10 @@ def main():
         hdf.flush()
         for k, df in df_rank.items():
             hdf.put('/rank/{}'.format(k), df, format='fixed')
+        mdf = pd.DataFrame.from_dict(metadata, orient='index')
+        mdf.columns = ['value']
+        mdf = mdf.sort_index(axis=0)
+        hdf.put('/metadata', mdf, format='table')
         hdf.flush()
     return
 
