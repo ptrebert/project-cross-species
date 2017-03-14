@@ -1,5 +1,5 @@
-hsa hg19 6E51FF
-mmu mm9 A51526
-bta bosTau7 5E9371
-cfa canFam3 CEA354
-ssc susScr2 36383F
+human hsa hg19 6E51FF
+mouse mmu mm9 A51526
+cow bta bosTau7 5E9371
+dog cfa canFam3 CEA354
+pig ssc susScr2 36383F
