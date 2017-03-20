@@ -1675,7 +1675,23 @@ def build_pipeline(args, config, sci_obj):
                                                         addtest_level_act),
                                       output=os.path.join(workbase, 'task_level_act_model.chk'))
 
+    # summarize statistics
+    dir_summarize = os.path.join(workbase, 'task_summarize')
+    cmd = config.get('Pipeline', 'summtt_hg19').replace('\n', ' ')
+    summtt_hg19 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                 name='summtt_hg19',
+                                 input=output_from(task_level_act_model),
+                                 filter=formatter(),
+                                 output=os.path.join(dir_summarize, 'hg19_train_test_stat.tsv'),
+                                 extras=[cmd, jobcall]).mkdir(dir_summarize)
 
+    cmd = config.get('Pipeline', 'summtt_mm9').replace('\n', ' ')
+    summtt_mm9 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                name='summtt_mm9',
+                                input=output_from(task_level_act_model),
+                                filter=formatter(),
+                                output=os.path.join(dir_summarize, 'mm9_train_test_stat.tsv'),
+                                extras=[cmd, jobcall]).mkdir(dir_summarize)
 
 
     # cmd = config.get('Pipeline', 'collect_train_metrics').replace('\n', ' ')
