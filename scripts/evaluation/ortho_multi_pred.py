@@ -4,8 +4,28 @@
 import os as os
 import sys as sys
 import traceback as trb
-import pandas as pd
 import argparse as argp
+
+import pandas as pd
+import numpy as np
+from scipy.stats import kendalltau as ktau
+from sklearn.metrics import accuracy_score as acc
+from sklearn.metrics import r2_score as r2s
+
+
+SPECIES_MAP = {'human': 'hg19',
+               'mouse': 'mm9',
+               'dog': 'canFam3',
+               'cow': 'bosTau7',
+               'chicken': 'galGal3',
+               'pig': 'susScr2'}
+
+TISSUE_MAP = {('hepa', 'liver'): 1,
+              ('GM12878', 'CH12'): 1,
+              ('K562', 'MEL'): 1,
+              ('liver', 'hepa'): 1,
+              ('ESE14', 'H1hESC'): 1,
+              ('H1hESC', 'ESE14'): 1}
 
 
 def parse_command_line():
@@ -14,28 +34,24 @@ def parse_command_line():
     """
     parser = argp.ArgumentParser()
 
-    parser.add_argument('--exp-files', '-ef', type=str, nargs='+', dest='expfiles')
+    parser.add_argument('--exp-files', '-exp', type=str, nargs='+', dest='expfiles')
     parser.add_argument('--ortho-file', '-orth', type=str, dest='orthofile')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
+    parser.add_argument('--group-root', '-gr', type=str, dest='grouproot', default='/auto/pairs')
 
     args = parser.parse_args()
     return args
 
 
-def load_orthologs(fpath, metadata):
+def kendall_tau_scorer(x, y):
     """
-    :param fpath:
+    :param x:
+    :param y:
     :return:
     """
+    statistic, p_value = ktau(x, y, nan_policy='raise')
+    return statistic
 
-    with pd.HDFStore(fpath, 'r') as hdf:
-        dataset = hdf['/shared/subset']
-    indexer = dataset.loc[dataset['chrom'].isin(['chrX', 'chrY']), 'og_id']
-    dataset = dataset.loc[~dataset['og_id'].isin(indexer), :]
-    for s in dataset['species'].unique():
-        spec_genes = dataset.loc[dataset['species'] == s, 'gene_name'].unique().size
-        metadata['num_orthologs_{}'.format(s)] = int(spec_genes)
-    return dataset
 
 
 def normalize_col_names(cnames, species):
@@ -55,31 +71,6 @@ def normalize_col_names(cnames, species):
             norm.append(new_c)
             datacols.append(new_c)
     return norm, datacols
-
-
-def load_expression_data(fpath, orthologs, metadata):
-    """
-    :param fpath:
-    :param orthologs:
-    :return:
-    """
-    with pd.HDFStore(fpath, 'r') as hdf:
-        tpm_data = hdf['/norm/tpm']
-        rank_data = hdf['/norm/ranks']
-    indexer = orthologs['gene_name'].isin(tpm_data.index)
-    spec_orth = orthologs.loc[indexer, :]
-    species = spec_orth['species'].unique()
-    assert species.size == 1, 'More than one species: {}'.format(species)
-    species = species[0]
-    metadata['num_genes_{}'.format(species)] = int(tpm_data.index.size)
-    indexer = tpm_data.index.isin(spec_orth['gene_name'])
-    tpm_data = tpm_data.loc[indexer, :]
-    rank_data = rank_data.loc[indexer, :]
-    tpm_data['gene_name'] = tpm_data.index
-    tpm_data = tpm_data.reset_index(drop=True)
-    rank_data['gene_name'] = rank_data.index
-    rank_data = rank_data.reset_index(drop=True)
-    return species, tpm_data, rank_data, spec_orth, metadata
 
 
 def process_species_data(species, tpm, rank, orthologs, metadata):
@@ -122,43 +113,173 @@ def process_species_data(species, tpm, rank, orthologs, metadata):
     return tpm_data, rank_data, metadata
 
 
+def identify_species_pairs(fpath, grouproot):
+    """
+    :param fpath:
+    :return:
+    """
+    if not grouproot.startswith('/'):
+        grouproot = '/' + grouproot
+    with pd.HDFStore(fpath, 'r') as hdf:
+        load_groups = [k for k in hdf.keys() if k.startswith(grouproot)]
+        assert load_groups, 'No data groups to load from HDF for root: {}'.format(grouproot)
+    species = []
+    for path in load_groups:
+        tmp = path.replace(grouproot, '')
+        a, b = os.path.split(tmp)
+        assert a != b, 'Invalid species pair: {} and {}'.format(a, b)
+        species.append((a.strip('/'), b.strip('/'), path))
+    return species
+
+
+def load_expression_data(species, expfiles):
+    """
+    :param species:
+    :param expfiles:
+    :return:
+    """
+    assm = SPECIES_MAP[species.strip('/')]
+    expf = [fp for fp in expfiles if os.path.basename(fp).startswith(assm)]
+    assert len(expf) == 1, 'Could not identify expression file: {}'.format(expf)
+    with pd.HDFStore(expf[0], 'r') as hdf:
+        tpm = hdf['/norm/tpm']
+        ranks = hdf['/norm/ranks']
+    assert sorted(tpm.columns) == sorted(ranks.columns), 'Incompatible column names in expression data'
+    return tpm, ranks
+
+
+def tissue_match(a, b):
+    """
+    :param a:
+    :param b:
+    :return:
+    """
+    m = (a == b) or ((a, b) in TISSUE_MAP) or ((b, a) in TISSUE_MAP)
+    return m
+
+
+def make_ortholog_pred(species_a, tpm_a, ranks_a,
+                       species_b, tpm_b, ranks_b,
+                       orthologs, outputfile):
+    """
+    :param tpm_a:
+    :param ranks_a:
+    :param tpm_b:
+    :param ranks_b:
+    :param orthologs:
+    :param outputfile:
+    :return:
+    """
+    name_a, name_b = '{}_name'.format(species_a), '{}_name'.format(species_b)
+    ortho_rel = orthologs.loc[:, [name_a, name_b]].copy()
+    select_a = tpm_a.index.isin(orthologs.loc[:, name_a])
+    select_b = tpm_b.index.isin(orthologs.loc[:, name_b])
+
+    sub_tpm_a = tpm_a.loc[select_a, :].copy()
+    sub_tpm_a[name_a] = sub_tpm_a.index
+
+    sub_tpm_b = tpm_b.loc[select_b, :].copy()
+    sub_tpm_b[name_b] = sub_tpm_b.index
+    tpm = ortho_rel.merge(sub_tpm_a, how='outer', on=name_a, copy=True)
+    tpm = tpm.merge(sub_tpm_b, how='outer', on=name_b, copy=True)
+
+    sub_ranks_a = ranks_a.loc[select_a, :].copy()
+    sub_ranks_a[name_a] = sub_ranks_a.index
+    sub_ranks_b = ranks_b.loc[select_b, :].copy()
+    sub_ranks_b[name_b] = sub_ranks_b.index
+    ranks = ortho_rel.merge(sub_ranks_a, how='outer', on=name_a, copy=True)
+    ranks = ranks.merge(sub_ranks_b, how='outer', on=name_b, copy=True)
+    new_cols = []
+    for c in ranks.columns:
+        if c.endswith('name'):
+            new_cols.append(c)
+        else:
+            c = c.replace('mRNA', 'rank')
+            new_cols.append(c)
+    ranks.columns = new_cols
+
+    num_orthologs = tpm.shape[0]
+    for ca in sub_tpm_a.columns:
+        if ca.endswith('_name'):
+            continue
+        norm_a = ca.rsplit('_', 1)[0]
+        tissue_a = norm_a.rsplit('_', 1)[-1]
+        spec_a_labels = tpm[ca] >= 1
+        spec_a_active = spec_a_labels.sum()
+        spec_a_inactive = num_orthologs - spec_a_active
+        zero_wt = 0.5 / spec_a_inactive
+        one_wt = 0.5 / spec_a_active
+        wt_vec = [zero_wt if val < 1 else one_wt for val in tpm[ca]]
+        for cb in sub_tpm_b.columns:
+            if cb.endswith('_name'):
+                continue
+            norm_b = cb.rsplit('_', 1)[0]
+            tissue_b = norm_b.rsplit('_', 1)[-1]
+            spec_b_labels = tpm[cb] >= 1
+            spec_b_active = spec_b_labels.sum()
+            spec_b_inactive = num_orthologs - spec_b_active
+
+            # record performance metrics for whole dataset
+            acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
+            r2_score_all = r2s(tpm[cb], tpm[ca])
+            ktau_score_all = kendall_tau_scorer(tpm[ca], tpm[cb])
+
+            # record performance metrics for subset predicted as active
+            active_subset = tpm.loc[spec_a_labels, :].copy()
+            assert active_subset.shape[0] == spec_a_active, \
+                'Selecting active subset failed: should be {}, is {}'.format(spec_a_active, active_subset.shape[0])
+            r2_score_act = r2s(active_subset[cb], active_subset[ca])
+            ktau_score_act = kendall_tau_scorer(active_subset[ca], active_subset[cb])
+
+            num_tp = (np.logical_and(tpm[ca] >= 1, tpm[cb] >= 1)).sum()
+            num_fp = (np.logical_and(tpm[ca] >= 1, tpm[cb] < 1)).sum()
+            num_tn = (np.logical_and(tpm[ca] < 1, tpm[cb] < 1)).sum()
+            num_fn = (np.logical_and(tpm[ca] < 1, tpm[cb] >= 1)).sum()
+
+            dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
+            dataset.columns = [name_a, norm_a, name_b, norm_b]
+            dataset['{}_weights'.format(species_a)] = wt_vec
+            dataset = dataset.merge(ranks.loc[:, (name_a, norm_a + '_rank')], on=name_a, how='outer', copy=True)
+            dataset = dataset.merge(ranks.loc[:, (name_b, norm_b + '_rank')], on=name_b, how='outer', copy=True)
+
+            metadata = {'num_orthologs': num_orthologs,
+                        name_a + '_active': spec_a_active, name_a + '_inactive': spec_a_inactive,
+                        name_b + '_inactive': spec_b_inactive, name_b + '_inactive': spec_b_inactive,
+                        'perf_wt_acc': acc_score, 'perf_r2_all': r2_score_all, 'perf_ktau_all': ktau_score_all,
+                        'perf_r2_active': r2_score_act, 'perf_ktau_active': ktau_score_act,
+                        'perf_num_tp': num_tp, 'perf_num_fp': num_fp, 'perf_num_tn': num_tn, 'perf_num_fn': num_fn}
+            metadata = pd.DataFrame.from_dict(metadata, orient='index')
+
+            if tissue_match(tissue_a, tissue_b):
+                base_group = '/pos/{}/{}/{}/{}'.format(species_a, species_b, norm_a, norm_b)
+                with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
+                    hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
+                    hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
+                    hdf.flush()
+            else:
+                base_group = '/neg/{}/{}/{}/{}'.format(species_a, species_b, norm_a, norm_b)
+                with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
+                    hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
+                    hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
+                    hdf.flush()
+    return
+
+
 def main():
     """
     :return:
     """
     args = parse_command_line()
-    metadata = {}
-    orths = load_orthologs(args.orthofile, metadata)
-    df_tpm = {'strict': None, 'balanced': None, 'all': None}
-    df_rank = {'strict': None, 'balanced': None, 'all': None}
-    for ef in args.expfiles:
-        spec, tpm, rank, spec_orth, metadata = load_expression_data(ef, orths, metadata)
-        tpms, ranks, metadata = process_species_data(spec, tpm, rank, spec_orth, metadata)
-        for k, df in df_tpm.items():
-            dset_df = tpms[k]
-            if df is None:
-                df = dset_df
-            else:
-                df = pd.concat([df, dset_df], axis=1, join='outer', ignore_index=False)
-            df_tpm[k] = df
-        for k, df in df_rank.items():
-            dset_df = ranks[k]
-            if df is None:
-                df = dset_df
-            else:
-                df = pd.concat([df, dset_df], axis=1, join='outer', ignore_index=False)
-            df_rank[k] = df
-    with pd.HDFStore(args.outputfile, 'w', complib='blosc', complevel=9) as hdf:
-        for k, df in df_tpm.items():
-            hdf.put('/tpm/{}'.format(k), df, format='fixed')
-        hdf.flush()
-        for k, df in df_rank.items():
-            hdf.put('/rank/{}'.format(k), df, format='fixed')
-        mdf = pd.DataFrame.from_dict(metadata, orient='index')
-        mdf.columns = ['value']
-        mdf = mdf.sort_index(axis=0)
-        hdf.put('/metadata', mdf, format='table')
-        hdf.flush()
+
+    species_pairs = identify_species_pairs(args.orthofile, args.grouproot)
+    for spec_a, spec_b, group in species_pairs:
+        tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles)
+        tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles)
+        with pd.HDFStore(args.orthofile, 'r') as hdf:
+            orthologs = hdf[group]
+        make_ortholog_pred(spec_a, tpm_a, ranks_a,
+                           spec_b, tpm_b, ranks_b,
+                           orthologs, args.outputfile)
     return
 
 
