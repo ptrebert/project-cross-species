@@ -374,12 +374,15 @@ def build_pipeline(args, config, sci_obj):
                              input=output_from(sratrans_init),
                              filter=formatter('(?P<SRARUN>SRR[0-9]+)\.sra'),
                              output=os.path.join(tempfolder, '*{SRARUN[0]}*.fastq.gz'),
-                             extras=[tempfolder, '*{SRARUN[0]}*.fastq.gz', cmd, jobcall]).mkdir(tempfolder)
+                             extras=[tempfolder, '*{SRARUN[0]}*.fastq.gz', cmd, jobcall])
+    sradump = sradump.mkdir(tempfolder)
 
     sratrans_fq = pipe.originate(lambda x: x,
                                  link_sra_transcriptomes(tempfolder, sra_metadata,
                                                          dataset_ids, linkfolder),
-                                 name='sratrans_fq').follows(sradump).active_if(len(collect_full_paths(tempfolder, '*.fastq.gz', False)) > 0)
+                                 name='sratrans_fq')
+    sratrans_fq = sratrans_fq.follows(sradump)
+    sratrans_fq = sratrans_fq.active_if(len(collect_full_paths(tempfolder, '*.fastq.gz', False)) > 0)
 
     sci_obj.set_config_env(dict(config.items('MemJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -394,7 +397,9 @@ def build_pipeline(args, config, sci_obj):
                                 input=output_from(sratrans_fq, enctrans_init, deeptrans_init),
                                 filter=formatter('(?P<FILEID>[\w\-]+)\.fastq\.gz'),
                                 output=os.path.join(reports_raw, '{FILEID[0]}_fastqc.html'),
-                                extras=[cmd, jobcall]).mkdir(reports_raw)
+                                extras=[cmd, jobcall])
+    fastqc_raw = fastqc_raw.mkdir(reports_raw)
+    fastqc_raw = fastqc_raw.follows(sratrans_fq)
 
     sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -409,7 +414,9 @@ def build_pipeline(args, config, sci_obj):
                         make_qall_calls(collect_full_paths(linkfolder, '*r1_pe*.gz', False),
                                         collect_full_paths(linkfolder, '*r2_pe*.gz', False),
                                         tmpquant, qidxfolder, cmd, jobcall),
-                        name='qallpe').mkdir(tmpquant)
+                        name='qallpe')
+    qallpe = qallpe.mkdir(tmpquant)
+    qallpe = qallpe.follows(fastqc_raw)
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -426,33 +433,34 @@ def build_pipeline(args, config, sci_obj):
                           output=os.path.join(aggout, '{ASSM[0]}_agg_exp.genes.h5'),
                           extras=[cmd, jobcall]).mkdir(aggout)
 
-    cmd = config.get('Pipeline', 'hcop_orth').replace('\n', ' ')
-    ortho_pred_out = os.path.join(config.get('EnvPaths', 'workdir'), 'processing', 'norm', 'task_ortho_pred')
-    hcop_orth = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
-                             name='hcop_orth',
-                             input=[os.path.join(aggout, fn) for fn in ['hg19_agg_exp.genes.h5',
-                                                                        'mm9_agg_exp.genes.h5']],
-                             filter=formatter(),
-                             output=os.path.join(ortho_pred_out, 'hg19_mm9_hcop_ortho-pred.h5'),
-                             extras=[cmd, jobcall])
-    hcop_orth = hcop_orth.mkdir(ortho_pred_out)
-    hcop_ortholog_file = os.path.join(config.get('Pipeline', 'refdatabase'), 'orthologs', 'hdf', 'hg19_mm9_hcop_orthologs.h5')
-    hcop_orth = hcop_orth.active_if(os.path.isfile(hcop_ortholog_file))
+    dir_ortho_pred = os.path.join(config.get('EnvPaths', 'workdir'), 'processing', 'norm', 'task_ortho_pred')
+    cmd = config.get('Pipeline', 'odb_pred').replace('\n', ' ')
+    odb_pred = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                          name='odb_pred',
+                          input=output_from(hdfagg),
+                          output=os.path.join(dir_ortho_pred, 'orthopred_odb_6species.h5'),
+                          extras=[cmd, jobcall])
+    odb_pred = odb_pred.mkdir(dir_ortho_pred)
+    odb_orth_file = os.path.join(config.get('Pipeline', 'orthdir'), 'hdf', 'odb9_6species.h5')
+    odb_pred = odb_pred.active_if(os.path.isfile(odb_orth_file))
 
-    cmd = config.get('Pipeline', 'orthodb_orth').replace('\n', ' ')
-    orthodb_orth = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
-                              name='orthodb_orth',
-                              input=output_from(hdfagg),
-                              output=os.path.join(ortho_pred_out, '5spec_orthodb_ortho-pred.h5'),
-                              extras=[cmd, jobcall])
-    orthodb_orth = orthodb_orth.follows(hcop_orth)
-    orthodb_ortholog_file = os.path.join(config.get('Pipeline', 'refdatabase'), 'orthologs', 'hdf', 'orthoDB_2015-v9_5vert.h5')
-    orthodb_orth = orthodb_orth.active_if(os.path.isfile(orthodb_ortholog_file))
+    cmd = config.get('Pipeline', 'hcop_pred').replace('\n', ' ')
+    hcop_pred = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                           name='hcop_pred',
+                           input=output_from(hdfagg),
+                           output=os.path.join(dir_ortho_pred, 'orthopred_hcop_6species.h5'),
+                           extras=[cmd, jobcall])
+    hcop_pred = hcop_pred.mkdir(dir_ortho_pred)
+    hcop_orth_file = os.path.join(config.get('Pipeline', 'orthdir'), 'hdf', 'hcop_6species.h5')
+    hcop_pred = hcop_pred.active_if(os.path.isfile(hcop_orth_file))
 
     bedout = os.path.join(workbase, 'conv', 'bed')
+    exp_bed_files = collect_full_paths(bedout, '*.bed.gz', allow_none=True)
     trans_bed_init = pipe.originate(lambda x: x,
-                                    collect_full_paths(bedout, '*.bed.gz'),
-                                    name='trans_bed_init').follows(hdfagg)
+                                    exp_bed_files,
+                                    name='trans_bed_init')
+    trans_bed_init = trans_bed_init.follows(hdfagg)
+    trans_bed_init = trans_bed_init.active_if(len(exp_bed_files) > 0)
 
     hdfout = os.path.join(workbase, 'conv', 'hdf')
     cmd = config.get('Pipeline', 'hdfconv').replace('\n', ' ')
@@ -467,7 +475,8 @@ def build_pipeline(args, config, sci_obj):
     task_preptr = pipe.merge(task_func=touch_checkfile,
                              name='task_preptr',
                              input=output_from(fastqc_raw, qallpe, hdfagg,
-                                               trans_bed_init, hdfconv),
+                                               trans_bed_init, hdfconv,
+                                               odb_pred, hcop_pred),
                              output=os.path.join(workbase, 'run_task_preptr.chk'))
 
     return pipe
