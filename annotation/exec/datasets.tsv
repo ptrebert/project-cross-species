@@ -37,3 +37,9 @@ TS19	transcriptome	SRA	mm9	liver	un	EWHA	mmuliver	pe	complete	na
 TS20	transcriptome	SRA	mm9	kidney	un	EWHA	mmukidney	pe	complete	na
 TD21	transcriptome	DEEP	hg19	hepa	ad	MDCB	na	pe	complete	na
 TD22	transcriptome	DEEP	hg19	hepa	ad	IKMB	na	pe	complete	na
+TS23	transcriptome	SRA	bosTau7	liver	un	MIT	btaliver	pe	complete	na
+TS24	transcriptome	SRA	bosTau7	kidney	un	MIT	btakidney	pe	complete	na
+TS25	transcriptome	SRA	mm9	liver	un	MIT	mmuliver	pe	complete	na
+TS26	transcriptome	SRA	mm9	kidney	un	MIT	mmukidney	pe	complete	na
+TS27	transcriptome	SRA	galGal3	liver	un	MIT	ggaliver	pe	complete	na
+TS28	transcriptome	SRA	galGal3	kidney	un	MIT	ggakidney	pe	complete	na
