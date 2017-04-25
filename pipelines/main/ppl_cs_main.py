@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os as os
+import sys as sys
 import re as re
 import json as js
 import csv as csv
@@ -21,7 +22,7 @@ def collect_mapfiles(folder, targets, queries):
     :param queries:
     :return:
     """
-    fpaths = collect_full_paths(folder, '*.map.h5', False)
+    fpaths = collect_full_paths(folder, '*.idx.h5', False)
     mapfiles = list()
     for fp in fpaths:
         target, query = os.path.basename(fp).split('.')[0].split('_to_')
@@ -335,7 +336,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
         try:
             assert match_exp, 'No matched expression files for group {} / pattern {} / {}'.format(group, pat, files)
         except AssertionError as ae:
-            if '_ESE14' in pat:
+            if not mapped:
                 continue
             else:
                 raise ae
@@ -463,7 +464,13 @@ def match_prior_testdata(testdata, priordata, suffix, cmd, jobcall):
             assert len(use_priors) == 1, 'No/ambig. metadata with run information selected: {}'.format(use_priors)
         except AssertionError:
             if len(use_priors) == 0:
-                raise AssertionError('No prior information available for group: {}'.format(gid))
+                sys.stderr.write('\nNo priors for {} - {} - {}'.format(gid, trg, qry))
+                # this can happen during incomplete pipeline runs, i.e. some prior information
+                # is available and match_prior_testdata is executed; return empty here instead of
+                # raising AssertionError
+                # raise AssertionError('No prior information available for group: {} - TRG {} - QRY {}'.format(gid, trg, qry))
+                arglist = []
+                break
             else:
                 raise AssertionError('Ambig. prior information selected: {}'.format(use_priors))
         pdata_file = use_priors[0]
@@ -559,7 +566,12 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
     for model in all_models:
         fp, fn = os.path.split(model)
         subdir = os.path.split(fp)[-1]
-        mtrg, to, mqry = subdir.split('_')
+        try:
+            mtrg, to, mqry = subdir.split('_')
+        except ValueError:
+            # subdirs do not yet exist
+            test_data_missing = True
+            break
         assert to == 'to', 'Unexpected folder structure: {}'.format(fp)
         modelparts = fn.split('.')[0].split('_')
         groupid, eid, tid, massm, mcell = modelparts[:5]
@@ -878,7 +890,7 @@ def build_pipeline(args, config, sci_obj):
     inputfiles.extend(tmpf)
 
     mapfiles = []
-    tmpf = collect_full_paths(dir_maps, '*.map.h5', False)
+    tmpf = collect_full_paths(dir_maps, '*.idx.h5', False)
     mapfiles.extend(tmpf)
 
     # targets and queries to process
@@ -983,14 +995,17 @@ def build_pipeline(args, config, sci_obj):
                                      annotate_training_groups(mapfiles, roifiles, dir_indata,
                                                               groupfile, dir_subtask_traindata_exp_groups,
                                                               cmd, jobcall),
-                                     name='traindataexp_groups').mkdir(os.path.split(dir_subtask_traindata_exp_groups)[0])
+                                     name='traindataexp_groups')
+    traindataexp_groups = traindataexp_groups.mkdir(os.path.split(dir_subtask_traindata_exp_groups)[0])
 
     dir_mrg_train_datasets = os.path.join(dir_task_traindata_exp, 'train_datasets', '{target}_to_{query}')
     cmd = config.get('Pipeline', 'mrgtraindataexp').replace('\n', ' ')
     mrgtraindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
                                         merge_augment_featfiles(os.path.split(dir_subtask_traindata_exp_groups)[0],
                                                                 dir_indata, dir_mrg_train_datasets, cmd, jobcall),
-                                        name='mrgtraindataexp_groups').mkdir(os.path.split(dir_mrg_train_datasets)[0]).follows(traindataexp_groups)
+                                        name='mrgtraindataexp_groups')
+    mrgtraindataexp_groups = mrgtraindataexp_groups.mkdir(os.path.split(dir_mrg_train_datasets)[0])
+    mrgtraindataexp_groups = mrgtraindataexp_groups.follows(traindataexp_groups)
 
     task_traindata_exp = pipe.merge(task_func=touch_checkfile,
                                     name='task_traindata_exp',
@@ -1089,7 +1104,7 @@ def build_pipeline(args, config, sci_obj):
 
     cmd = config.get('Pipeline', 'addtrain_seq_out').replace('\n', ' ')
     params_addtrain_seq_out = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                       pattern='*.feat.h5'),
+                                                                       pattern='*.feat.h5', allow_none=True),
                                                     collect_full_paths(os.path.join(dir_train_expstat, 'seq'),
                                                                        pattern='*seq-cprob.h5',
                                                                        allow_none=True),
@@ -1130,7 +1145,7 @@ def build_pipeline(args, config, sci_obj):
     # add sequence model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_seq_out').replace('\n', ' ')
     params_addtest_seq_out = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                     '*.feat.h5'),
+                                                                     '*.feat.h5', allow_none=True),
                                                   collect_full_paths(os.path.join(dir_apply_expstat, 'seq'),
                                                                      '*.seq-cprob.h5', allow_none=True),
                                                   '.seqout', cmd, jobcall)
@@ -1188,7 +1203,7 @@ def build_pipeline(args, config, sci_obj):
 
     cmd = config.get('Pipeline', 'addtrain_asig_out').replace('\n', ' ')
     params_addtrain_asig_out = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                        pattern='*feat.h5'),
+                                                                        pattern='*feat.h5', allow_none=True),
                                                      collect_full_paths(os.path.join(dir_train_expstat, 'asig'),
                                                                         pattern='*asig-cprob.h5',
                                                                         allow_none=True),
@@ -1229,7 +1244,7 @@ def build_pipeline(args, config, sci_obj):
     # add asig model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_asig_cls_out').replace('\n', ' ')
     params_addtest_asig_cls_out = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                          '*.feat.h5'),
+                                                                          '*.feat.h5', allow_none=True),
                                                        collect_full_paths(os.path.join(dir_apply_expstat, 'asig'),
                                                                           '*.asig-cprob.h5', allow_none=True),
                                                        '.asigout', cmd, jobcall)
@@ -1273,7 +1288,7 @@ def build_pipeline(args, config, sci_obj):
                                             output=os.path.join(dir_train_exprank,
                                                                 'all',
                                                                 '{subdir[0][0]}',
-                                                                '{SAMPLE[0]}.rfreg.asig.all.pck'),
+                                                                '{SAMPLE[0]}.rfreg.rk.all.pck'),
                                             extras=[cmd, jobcall])
     trainmodel_exprank_all = trainmodel_exprank_all.mkdir(os.path.join(dir_train_exprank, 'all'))
 
@@ -1287,13 +1302,13 @@ def build_pipeline(args, config, sci_obj):
     extrain_rank_all = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                       name='extrain_rank_all',
                                       input=output_from(trainmodel_exprank_all),
-                                      filter=formatter('(?P<SAMPLE>[\w\.]+).rfreg.asig.all.pck'),
+                                      filter=formatter('(?P<SAMPLE>[\w\.]+).rfreg.rk.all.pck'),
                                       output='{path[0]}/{SAMPLE[0]}.rank-all.h5',
                                       extras=[cmd, jobcall])
 
     cmd = config.get('Pipeline', 'addtrain_rank_all').replace('\n', ' ')
     params_addtrain_rank_all = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                        pattern='*feat.h5'),
+                                                                        pattern='*feat.h5', allow_none=True),
                                                      collect_full_paths(os.path.join(dir_train_exprank, 'all'),
                                                                         pattern='*rank-all.h5',
                                                                         allow_none=True),
@@ -1329,18 +1344,17 @@ def build_pipeline(args, config, sci_obj):
     extest_rank_all = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                                    name='extest_rank_all',
                                    input=output_from(apply_exprank_all),
-                                   filter=formatter('(?P<GID>G[0-9]{4})_.+(?P<DSET>data-[a-zA-Z0-9-]+)_model.+asig\.all\.json'),
+                                   filter=formatter('(?P<GID>G[0-9]{4})_.+(?P<DSET>data-[a-zA-Z0-9-]+)_model.+rk\.all\.json'),
                                    output='{path[0]}/{GID[0]}_{DSET[0]}.rk-all.h5',
                                    extras=[cmd, jobcall])
 
     # add extracted asig model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_rank_all').replace('\n', ' ')
     params_addtest_rank_all = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                      '*.feat.h5'),
+                                                                      '*.feat.h5', allow_none=True),
                                                    collect_full_paths(os.path.join(dir_apply_exprank, 'all'),
                                                                       '*.rk-all.h5', allow_none=True),
                                                    '.rkall', cmd, jobcall)
-
     addtest_rank_all = pipe.files(sci_obj.get_jobf('ins_out'),
                                   params_addtest_rank_all,
                                   name='addtest_rank_all')
@@ -1397,7 +1411,7 @@ def build_pipeline(args, config, sci_obj):
 
     cmd = config.get('Pipeline', 'addtrain_level_all').replace('\n', ' ')
     params_addtrain_level_all = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                         pattern='*feat.rk-all.h5'),
+                                                                         pattern='*feat.rk-all.h5', allow_none=True),
                                                       collect_full_paths(os.path.join(dir_train_explevel, 'all'),
                                                                          pattern='*level-all.h5',
                                                                          allow_none=True),
@@ -1440,7 +1454,7 @@ def build_pipeline(args, config, sci_obj):
     # add extracted asig model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_level_all').replace('\n', ' ')
     params_addtest_level_all = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                       '*.feat.rkall.h5'),
+                                                                       '*.feat.rkall.h5', allow_none=True),
                                                     collect_full_paths(os.path.join(dir_apply_explevel, 'all'),
                                                                        '*.level-all.h5', allow_none=True),
                                                     '.lvl-all', cmd, jobcall)
@@ -1504,7 +1518,7 @@ def build_pipeline(args, config, sci_obj):
 
     cmd = config.get('Pipeline', 'addtrain_rank_act').replace('\n', ' ')
     params_addtrain_rank_act = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                        pattern='*feat.h5'),
+                                                                        pattern='*feat.h5', allow_none=True),
                                                      collect_full_paths(os.path.join(dir_train_exprank, 'act'),
                                                                         pattern='*rank-act.h5',
                                                                         allow_none=True),
@@ -1547,7 +1561,7 @@ def build_pipeline(args, config, sci_obj):
     # add extracted asig model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_rank_act').replace('\n', ' ')
     params_addtest_rank_act = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                      '*.feat.h5'),
+                                                                      '*.feat.h5', allow_none=True),
                                                    collect_full_paths(os.path.join(dir_apply_exprank, 'act'),
                                                                       '*.rk-act.h5', allow_none=True),
                                                    '.rkact', cmd, jobcall)
@@ -1675,24 +1689,33 @@ def build_pipeline(args, config, sci_obj):
                                                         addtest_level_act),
                                       output=os.path.join(workbase, 'task_level_act_model.chk'))
 
-    # summarize statistics
-    dir_summarize = os.path.join(workbase, 'task_summarize')
-    cmd = config.get('Pipeline', 'summtt_hg19').replace('\n', ' ')
-    summtt_hg19 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
-                                 name='summtt_hg19',
-                                 input=output_from(task_level_act_model),
-                                 filter=formatter(),
-                                 output=os.path.join(dir_summarize, 'hg19_train_test_stat.tsv'),
-                                 extras=[cmd, jobcall]).mkdir(dir_summarize)
+    # training and applying models done
 
-    cmd = config.get('Pipeline', 'summtt_mm9').replace('\n', ' ')
-    summtt_mm9 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
-                                name='summtt_mm9',
-                                input=output_from(task_level_act_model),
-                                filter=formatter(),
-                                output=os.path.join(dir_summarize, 'mm9_train_test_stat.tsv'),
-                                extras=[cmd, jobcall]).mkdir(dir_summarize)
+    run_all = pipe.merge(task_func=touch_checkfile,
+                         name='run_task_all',
+                         input=output_from(task_sigmap, task_traindata_exp, task_testdata_exp,
+                                           task_seq_model, task_asig_cls_model,
+                                           task_rank_all_model, task_rank_act_model,
+                                           task_level_all_model, task_level_act_model),
+                         output=os.path.join(workbase, 'run_task_all.chk'))
 
+    # # summarize statistics
+    # dir_summarize = os.path.join(workbase, 'task_summarize')
+    # cmd = config.get('Pipeline', 'summtt_hg19').replace('\n', ' ')
+    # summtt_hg19 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+    #                              name='summtt_hg19',
+    #                              input=output_from(task_level_act_model),
+    #                              filter=formatter(),
+    #                              output=os.path.join(dir_summarize, 'hg19_train_test_stat.tsv'),
+    #                              extras=[cmd, jobcall]).mkdir(dir_summarize)
+    #
+    # cmd = config.get('Pipeline', 'summtt_mm9').replace('\n', ' ')
+    # summtt_mm9 = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+    #                             name='summtt_mm9',
+    #                             input=output_from(task_level_act_model),
+    #                             filter=formatter(),
+    #                             output=os.path.join(dir_summarize, 'mm9_train_test_stat.tsv'),
+    #                             extras=[cmd, jobcall]).mkdir(dir_summarize)
 
     # cmd = config.get('Pipeline', 'collect_train_metrics').replace('\n', ' ')
     # collect_train_metrics = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
@@ -1822,11 +1845,5 @@ def build_pipeline(args, config, sci_obj):
     #
     #
     #
-    # # run_all = pipe.merge(task_func=touch_checkfile,
-    # #                      name='run_task_all',
-    # #                      input=output_from(run_task_sigcorr, run_task_sigmap,
-    # #                                        run_task_traindata_exp, run_task_testdata_exp,
-    # #                                        run_task_trainmodel_exp, run_task_applymodels_exp),
-    # #                      output=os.path.join(workbase, 'run_task_all.chk'))
 
     return pipe
