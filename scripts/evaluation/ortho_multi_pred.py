@@ -207,9 +207,6 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
         spec_a_labels = tpm[ca] >= 1
         spec_a_active = spec_a_labels.sum()
         spec_a_inactive = num_orthologs - spec_a_active
-        zero_wt = 0.5 / spec_a_inactive
-        one_wt = 0.5 / spec_a_active
-        wt_vec = [zero_wt if val < 1 else one_wt for val in tpm[ca]]
         for cb in sub_tpm_b.columns:
             if cb.endswith('_name'):
                 continue
@@ -218,18 +215,20 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             spec_b_labels = tpm[cb] >= 1
             spec_b_active = spec_b_labels.sum()
             spec_b_inactive = num_orthologs - spec_b_active
-
+            zero_wt = 0.5 / spec_b_inactive
+            one_wt = 0.5 / spec_b_active
+            wt_vec = [zero_wt if val < 1 else one_wt for val in tpm[cb]]
             # record performance metrics for whole dataset
             acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
             r2_score_all = r2s(tpm[cb], tpm[ca])
-            ktau_score_all = kendall_tau_scorer(tpm[ca], tpm[cb])
+            ktau_score_all = kendall_tau_scorer(tpm[cb], tpm[ca])
 
             # record performance metrics for subset predicted as active
             active_subset = tpm.loc[spec_a_labels, :].copy()
             assert active_subset.shape[0] == spec_a_active, \
                 'Selecting active subset failed: should be {}, is {}'.format(spec_a_active, active_subset.shape[0])
             r2_score_act = r2s(active_subset[cb], active_subset[ca])
-            ktau_score_act = kendall_tau_scorer(active_subset[ca], active_subset[cb])
+            ktau_score_act = kendall_tau_scorer(active_subset[cb], active_subset[ca])
 
             num_tp = (np.logical_and(tpm[ca] >= 1, tpm[cb] >= 1)).sum()
             num_fp = (np.logical_and(tpm[ca] >= 1, tpm[cb] < 1)).sum()
@@ -238,7 +237,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
 
             dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
             dataset.columns = [name_a, norm_a, name_b, norm_b]
-            dataset['{}_weights'.format(species_a)] = wt_vec
+            dataset['{}_weights'.format(species_b)] = wt_vec
             dataset = dataset.merge(ranks.loc[:, (name_a, norm_a + '_rank')], on=name_a, how='outer', copy=True)
             dataset = dataset.merge(ranks.loc[:, (name_b, norm_b + '_rank')], on=name_b, how='outer', copy=True)
 
