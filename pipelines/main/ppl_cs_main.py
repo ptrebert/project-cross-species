@@ -1699,6 +1699,22 @@ def build_pipeline(args, config, sci_obj):
                                            task_level_all_model, task_level_act_model),
                          output=os.path.join(workbase, 'run_task_all.chk'))
 
+    # aggregate training and testing performances
+    dir_summary = os.path.join(workbase, 'task_summarize')
+    cmd = config.get('Pipeline', 'summ_perf').replace('\n', ' ')
+    summarize_perf = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                                name='summarize_perf',
+                                input=output_from(trainmodel_expstat_seq, trainmodel_expstat_asig,
+                                                  trainmodel_exprank_all, trainmodel_exprank_act,
+                                                  trainmodel_explevel_all, trainmodel_explevel_act,
+                                                  apply_expstat_seq, apply_expstat_asig,
+                                                  apply_exprank_all, apply_exprank_act,
+                                                  apply_explevel_all, apply_explevel_act),
+                                output=os.path.join(dir_summary, 'train_test_perf_agg.h5'),
+                                extras=[cmd, jobcall])
+    summarize_perf = summarize_perf.mkdir(dir_summary)
+    summarize_perf = summarize_perf.follows(run_all)
+
     # # summarize statistics
     # dir_summarize = os.path.join(workbase, 'task_summarize')
     # cmd = config.get('Pipeline', 'summtt_hg19').replace('\n', ' ')
