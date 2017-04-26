@@ -245,7 +245,8 @@ def store_cell_matches(groupfile, matchings, matchtypes):
             js.dump({'timestamp': timestr, 'matchings': {}, 'matchtypes': {}}, dump, indent=1, sort_keys=True)
     rewrite = False
     with open(filepath, 'r') as dumped:
-        cmi = js.load(dumped)['matchings']
+        full_dump = js.load(dumped)
+        cmi = full_dump['matchings']
         if cmi != serialize:
             rewrite = True
     if rewrite:
