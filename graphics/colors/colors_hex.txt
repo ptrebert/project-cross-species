@@ -1,5 +1,6 @@
-human hsa hg19 6E51FF
-mouse mmu mm9 A51526
-cow bta bosTau7 5E9371
-dog cfa canFam3 CEA354
-pig ssc susScr2 36383F
+human hsa hg19 5F5BBA blue
+mouse mmu mm9 E2B500 yellow
+cow bta bosTau7 36383F grey
+dog cfa canFam3 66A61E green
+pig ssc susScr2 D3308A pink
+chicken gga galGal3 00D8D8 turquoise
