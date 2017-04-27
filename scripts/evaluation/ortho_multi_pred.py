@@ -53,7 +53,6 @@ def kendall_tau_scorer(x, y):
     return statistic
 
 
-
 def normalize_col_names(cnames, species):
     """
     :param cnames:
@@ -264,6 +263,36 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
     return
 
 
+def make_group_matrix(tpm_data, ortho_group):
+    """
+    :param tpm_data:
+    :param ortho_group:
+    :return:
+    """
+
+    for spec, tpm in tpm_data:
+        shared_keys = set(tpm.columns).intersection(ortho_group.columns)
+        ortho_group = ortho_group.merge(tpm, how='outer', on=list(shared_keys),
+                                        suffixes=('', ''), indicator=False, copy=True)
+    # normalize columns
+    new_cols = []
+    to_drop = []
+    for c in ortho_group.columns:
+        if c.endswith('_name') or c.endswith('_symbol'):
+            new_cols.append(c)
+        elif c.endswith('_mRNA'):
+            new_c = c.replace('_mRNA', '')
+            new_cols.append(new_c)
+        else:
+            to_drop.append(c)
+            new_cols.append(c)
+    ortho_group.columns = new_cols
+    if to_drop:
+        ortho_group.drop(to_drop, axis=1, inplace=True)
+    ortho_group.dropna(how='any', axis=0, inplace=True)
+    return ortho_group
+
+
 def main():
     """
     :return:
@@ -271,6 +300,8 @@ def main():
     args = parse_command_line()
 
     species_pairs = identify_species_pairs(args.orthofile, args.grouproot)
+    all_tpms = []
+    spec_done = set()
     for spec_a, spec_b, group in species_pairs:
         tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles)
         tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles)
@@ -279,6 +310,22 @@ def main():
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
                            orthologs, args.outputfile)
+        if spec_a not in spec_done:
+            tpm_a['{}_name'.format(spec_a)] = tpm_a.index
+            tpm_a = tpm_a.reset_index(drop=True, inplace=False)
+            all_tpms.append((spec_a, tpm_a))
+            spec_done.add(spec_a)
+        if spec_b not in spec_done:
+            tpm_b['{}_name'.format(spec_b)] = tpm_b.index
+            tpm_b = tpm_b.reset_index(drop=True, inplace=False)
+            all_tpms.append((spec_b, tpm_b))
+            spec_done.add(spec_b)
+    with pd.HDFStore(args.orthofile, 'r') as hdf:
+        group_genes = hdf['/auto/groups']
+    mat = make_group_matrix(all_tpms, group_genes)
+    with pd.HDFStore(args.outputfile, 'a', complevel=9, complib='blosc') as hdf:
+        hdf.put('/matrix/auto/data', mat, format='table')
+        hdf.flush()
     return
 
 
