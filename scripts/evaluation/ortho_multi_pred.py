@@ -159,7 +159,7 @@ def tissue_match(a, b):
 
 def make_ortholog_pred(species_a, tpm_a, ranks_a,
                        species_b, tpm_b, ranks_b,
-                       orthologs, outputfile):
+                       orthologs, comp, outputfile):
     """
     :param tpm_a:
     :param ranks_a:
@@ -169,7 +169,12 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
     :param outputfile:
     :return:
     """
+    assert pd.notnull(tpm_a).all(axis=0).all(), 'Data for A {} contain NaN/NULL values'.format(species_a)
+    assert pd.notnull(tpm_b).all(axis=0).all(), 'Data for B {} contain NaN/NULL values'.format(species_b)
     name_a, name_b = '{}_name'.format(species_a), '{}_name'.format(species_b)
+    # for HCOP, this may happen
+    if name_a not in orthologs.columns or name_b not in orthologs.columns:
+        return
     ortho_rel = orthologs.loc[:, [name_a, name_b]].copy()
     select_a = tpm_a.index.isin(orthologs.loc[:, name_a])
     select_b = tpm_b.index.isin(orthologs.loc[:, name_b])
@@ -179,8 +184,11 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
 
     sub_tpm_b = tpm_b.loc[select_b, :].copy()
     sub_tpm_b[name_b] = sub_tpm_b.index
+
     tpm = ortho_rel.merge(sub_tpm_a, how='outer', on=name_a, copy=True)
     tpm = tpm.merge(sub_tpm_b, how='outer', on=name_b, copy=True)
+    assert pd.notnull(tpm).all(axis=0).all(),\
+        'Merged TPM dataframe contains NULL/NaN: {} and {}'.format(species_a, species_b)
 
     sub_ranks_a = ranks_a.loc[select_a, :].copy()
     sub_ranks_a[name_a] = sub_ranks_a.index
@@ -214,9 +222,17 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             spec_b_labels = tpm[cb] >= 1
             spec_b_active = spec_b_labels.sum()
             spec_b_inactive = num_orthologs - spec_b_active
+            # if spec_b_active == 0:
+            #     one_wt = 0
+            #     zero_wt = 1 / spec_b_inactive
+            # elif spec_b_inactive == 0:
+            #     one_wt = 1 / spec_b_inactive
+            #     zero_wt = 0
+            # else:
             zero_wt = 0.5 / spec_b_inactive
             one_wt = 0.5 / spec_b_active
-            wt_vec = [zero_wt if val < 1 else one_wt for val in tpm[cb]]
+            wt_vec = np.array([zero_wt if val < 1 else one_wt for val in tpm[cb]], dtype=np.float64)
+            assert np.isclose(wt_vec.sum(), 1), 'Weight vector does not sum to 1: {}...'.format(wt_vec[:5])
             # record performance metrics for whole dataset
             acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
             r2_score_all = r2s(tpm[cb], tpm[ca])
@@ -249,13 +265,13 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             metadata = pd.DataFrame.from_dict(metadata, orient='index')
 
             if tissue_match(tissue_a, tissue_b):
-                base_group = '/pos/{}/{}/{}/{}'.format(species_a, species_b, norm_a, norm_b)
+                base_group = '/pos/{}/{}/{}/{}/{}'.format(comp, species_a, species_b, norm_a, norm_b)
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
                     hdf.flush()
             else:
-                base_group = '/neg/{}/{}/{}/{}'.format(species_a, species_b, norm_a, norm_b)
+                base_group = '/neg/{}/{}/{}/{}/{}'.format(comp, species_a, species_b, norm_a, norm_b)
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
@@ -309,7 +325,12 @@ def main():
             orthologs = hdf[group]
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
-                           orthologs, args.outputfile)
+                           orthologs, 'pair', args.outputfile)
+        with pd.HDFStore(args.orthofile, 'r') as hdf:
+            orthologs = hdf['/auto/groups']
+        make_ortholog_pred(spec_a, tpm_a, ranks_a,
+                           spec_b, tpm_b, ranks_b,
+                           orthologs, 'group', args.outputfile)
         if spec_a not in spec_done:
             tpm_a['{}_name'.format(spec_a)] = tpm_a.index
             tpm_a = tpm_a.reset_index(drop=True, inplace=False)
@@ -320,6 +341,7 @@ def main():
             tpm_b = tpm_b.reset_index(drop=True, inplace=False)
             all_tpms.append((spec_b, tpm_b))
             spec_done.add(spec_b)
+
     with pd.HDFStore(args.orthofile, 'r') as hdf:
         group_genes = hdf['/auto/groups']
     mat = make_group_matrix(all_tpms, group_genes)
