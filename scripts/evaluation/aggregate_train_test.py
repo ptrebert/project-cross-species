@@ -65,16 +65,28 @@ def aggregate_testing_data(mdfiles, trainperf, orthologs, outfile):
     :return:
     """
     saved = 0
+    skipped = 0
     for mdf in mdfiles:
         dump = js.load(open(mdf, 'r'))
         modelfile = dump['run_info']['model_file'].rsplit('.', 1)[0]
         if modelfile not in trainperf:
-            # some skipped, see aggregate_training_data
+            # this does not work properly, filtered manually below
+            # as for training data...
+            skipped += 1
             continue
         datafile = dump['run_info']['data_file'].rsplit('.', 1)[0]
         datainfo, _, qry, mtype = modelfile.split('.', 3)
         gid, _, _, trg, biosample = datainfo.split('_')
         trg_spec, qry_spec = ASSM_SPECIES_MAP[trg], ASSM_SPECIES_MAP[qry]
+        # same as for training data
+        if trg_spec == 'mouse' and qry_spec == 'human' and gid == 'G0951':
+            # this skips over the hepa/kidney pairing
+            skipped += 1
+            continue
+        if trg_spec == 'human' and qry_spec == 'mouse' and gid == 'G0951':
+            # this skips over the redundant hepa/liver pairing (same as G0151)
+            skipped += 1
+            continue
         if 'rfcls' in modelfile:
             class_0 = [t[0] for t in dump['testing_info']['probabilities']['all']]
             class_1 = [t[1] for t in dump['testing_info']['probabilities']['all']]
