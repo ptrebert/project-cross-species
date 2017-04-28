@@ -1716,6 +1716,14 @@ def build_pipeline(args, config, sci_obj):
     summarize_perf = summarize_perf.mkdir(dir_summary)
     summarize_perf = summarize_perf.follows(run_all)
 
+    cmd = config.get('Pipeline', 'summ_expest')
+    summarize_exp_est = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                       name='summarize_exp_est',
+                                       input=output_from(summarize_perf),
+                                       filter=formatter(),
+                                       output=os.path.join(dir_summary, 'exp_est_agg.h5'),
+                                       extras=[cmd, jobcall])
+
     # # summarize statistics
     # dir_summarize = os.path.join(workbase, 'task_summarize')
     # cmd = config.get('Pipeline', 'summtt_hg19').replace('\n', ' ')
