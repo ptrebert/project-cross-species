@@ -247,7 +247,7 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     with open(filepath, 'r') as dumped:
         full_dump = js.load(dumped)
         cmi = full_dump['matchings']
-        if cmi != serialize:
+        if cmi != serialize['matchings']:
             rewrite = True
     if rewrite:
         with open(filepath, 'w') as dump:
