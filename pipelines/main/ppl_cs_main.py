@@ -252,7 +252,6 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     if rewrite:
         with open(filepath, 'w') as dump:
             js.dump({'timestamp': timestr, 'matchings': serialize, 'matchtypes': matchtypes}, dump, indent=1, sort_keys=True)
-    raise
     return
 
 
