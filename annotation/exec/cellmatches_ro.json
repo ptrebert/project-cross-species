@@ -19,8 +19,8 @@
    "K562"
   ],
   "hepa": [
-   "liver",
-   "kidney"
+   "kidney",
+   "liver"
   ],
   "kidney": [
    "hepa"
@@ -50,5 +50,5 @@
   "liver-hepa": "pos",
   "liver-liver": "pos"
  },
- "timestamp": "Friday_2017-04-28_12:21:53"
+ "timestamp": "Friday_2017-04-28_12:27:45"
 }

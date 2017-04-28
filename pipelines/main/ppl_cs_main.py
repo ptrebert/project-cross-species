@@ -237,7 +237,7 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     """
     serialize = dict()
     for key, vals in matchings.items():
-        serialize[key] = list(vals)
+        serialize[key] = sorted(list(vals))
     timestr = dt.datetime.now().strftime('%A_%Y-%m-%d_%H:%M:%S')
     filepath = os.path.join(os.path.dirname(groupfile), 'cellmatches_ro.json')
     if not os.path.isfile(filepath):
@@ -247,11 +247,12 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     with open(filepath, 'r') as dumped:
         full_dump = js.load(dumped)
         cmi = full_dump['matchings']
-        if cmi != serialize['matchings']:
+        if cmi != serialize:
             rewrite = True
     if rewrite:
         with open(filepath, 'w') as dump:
             js.dump({'timestamp': timestr, 'matchings': serialize, 'matchtypes': matchtypes}, dump, indent=1, sort_keys=True)
+    raise
     return
 
 
