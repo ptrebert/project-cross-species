@@ -148,6 +148,19 @@ def aggregate_testing_data(mdfiles, trainperf, orthologs, outfile):
     return saved
 
 
+def score_rank_consistency(data, slack):
+    """
+    :param data:
+    :param slack:
+    :return:
+    """
+    pct_ranks = data.rank(axis=0, method='dense', pct=True)
+    deltas = np.abs(pct_ranks['true'] - pct_ranks['pred']) < slack
+    consistent = deltas.sum()
+    inconsistent = deltas.size - consistent
+    return int(consistent), int(inconsistent)
+
+
 def collect_test_reg_perf(dataset, ortho_names, scoring):
     """
     :param dataset:
@@ -166,14 +179,39 @@ def collect_test_reg_perf(dataset, ortho_names, scoring):
     num_samples = dataset.shape[0]
     raw_perf = scorer(dataset['true'], dataset['pred'])
     perf_md = {'raw_num_samples': str(num_samples), 'raw_perf_' + score_name: str(raw_perf)}
+    if score_name == 'ktau':
+        cons, incons = score_rank_consistency(dataset.loc[:, ['true', 'pred']].copy(), 0.05)
+        perf_md['raw_num_consistent_5'] = str(cons)
+        perf_md['raw_num_inconsistent_5'] = str(incons)
+
+        cons, incons = score_rank_consistency(dataset.loc[:, ['true', 'pred']].copy(), 0.1)
+        perf_md['raw_num_consistent_10'] = str(cons)
+        perf_md['raw_num_inconsistent_10'] = str(incons)
     for name in ortho_names:
         try:
             subset = dataset.loc[dataset['ortho_pair_' + name] == 1, :].copy()
             perf_md[name + '_pair_num_samples'] = str(subset.shape[0])
             perf_md[name + '_pair_perf_' + score_name] = str(scorer(subset['true'], subset['pred']))
+            if score_name == 'ktau':
+                cons, incons = score_rank_consistency(subset.loc[:, ['true', 'pred']].copy(), 0.05)
+                perf_md[name + '_pair_num_consistent_5'] = str(cons)
+                perf_md[name + '_pair_num_inconsistent_5'] = str(incons)
+
+                cons, incons = score_rank_consistency(subset.loc[:, ['true', 'pred']].copy(), 0.1)
+                perf_md[name + '_pair_num_consistent_10'] = str(cons)
+                perf_md[name + '_pair_num_inconsistent_10'] = str(incons)
+
             subset = dataset.loc[dataset['ortho_group_' + name] == 1, :].copy()
             perf_md[name + '_group_num_samples'] = str(subset.shape[0])
             perf_md[name + '_group_perf_' + score_name] = str(scorer(subset['true'], subset['pred']))
+            if score_name == 'ktau':
+                cons, incons = score_rank_consistency(subset.loc[:, ['true', 'pred']].copy(), 0.05)
+                perf_md[name + '_group_num_consistent_5'] = str(cons)
+                perf_md[name + '_group_num_inconsistent_5'] = str(incons)
+
+                cons, incons = score_rank_consistency(subset.loc[:, ['true', 'pred']].copy(), 0.1)
+                perf_md[name + '_group_num_consistent_10'] = str(cons)
+                perf_md[name + '_group_num_inconsistent_10'] = str(incons)
         except KeyError:
             # HCOP
             continue

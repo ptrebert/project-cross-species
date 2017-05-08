@@ -210,6 +210,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
         if ca.endswith('_name'):
             continue
         norm_a = ca.rsplit('_', 1)[0]
+        rca = norm_a + '_rank'
         tissue_a = norm_a.rsplit('_', 1)[-1]
         spec_a_labels = tpm[ca] >= 1
         spec_a_active = spec_a_labels.sum()
@@ -218,17 +219,12 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             if cb.endswith('_name'):
                 continue
             norm_b = cb.rsplit('_', 1)[0]
+            rcb = norm_b + '_rank'
             tissue_b = norm_b.rsplit('_', 1)[-1]
             spec_b_labels = tpm[cb] >= 1
             spec_b_active = spec_b_labels.sum()
             spec_b_inactive = num_orthologs - spec_b_active
-            # if spec_b_active == 0:
-            #     one_wt = 0
-            #     zero_wt = 1 / spec_b_inactive
-            # elif spec_b_inactive == 0:
-            #     one_wt = 1 / spec_b_inactive
-            #     zero_wt = 0
-            # else:
+
             zero_wt = 0.5 / spec_b_inactive
             one_wt = 0.5 / spec_b_active
             wt_vec = np.array([zero_wt if val < 1 else one_wt for val in tpm[cb]], dtype=np.float64)
@@ -238,12 +234,30 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             r2_score_all = r2s(tpm[cb], tpm[ca])
             ktau_score_all = kendall_tau_scorer(tpm[cb], tpm[ca])
 
+            ranked = ranks.loc[:, [rca, rcb]].copy().rank(axis=0, method='dense', pct=True)
+            deltas = np.abs(ranked[rca] - ranked[rcb]) < 0.05
+            num_consistent_all_5 = deltas.sum()
+            num_inconsistent_all_5 = deltas.size - num_consistent_all_5
+
+            deltas = np.abs(ranked[rca] - ranked[rcb]) < 0.1
+            num_consistent_all_10 = deltas.sum()
+            num_inconsistent_all_10 = deltas.size - num_consistent_all_10
+
             # record performance metrics for subset predicted as active
             active_subset = tpm.loc[spec_a_labels, :].copy()
             assert active_subset.shape[0] == spec_a_active, \
                 'Selecting active subset failed: should be {}, is {}'.format(spec_a_active, active_subset.shape[0])
             r2_score_act = r2s(active_subset[cb], active_subset[ca])
             ktau_score_act = kendall_tau_scorer(active_subset[cb], active_subset[ca])
+
+            active_rank_subset = ranks.loc[spec_a_labels, [rca, rcb]].copy().rank(axis=0, method='dense', pct=True)
+            deltas = np.abs(active_rank_subset[rca] - active_rank_subset[rcb]) < 0.05
+            num_consistent_act_5 = deltas.sum()
+            num_inconsistent_act_5 = deltas.size - num_consistent_act_5
+
+            deltas = np.abs(active_rank_subset[rca] - active_rank_subset[rcb]) < 0.1
+            num_consistent_act_10 = deltas.sum()
+            num_inconsistent_act_10 = deltas.size - num_consistent_act_10
 
             num_tp = (np.logical_and(tpm[ca] >= 1, tpm[cb] >= 1)).sum()
             num_fp = (np.logical_and(tpm[ca] >= 1, tpm[cb] < 1)).sum()
@@ -261,7 +275,11 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                         name_b + '_inactive': spec_b_inactive, name_b + '_inactive': spec_b_inactive,
                         'perf_wt_acc': acc_score, 'perf_r2_all': r2_score_all, 'perf_ktau_all': ktau_score_all,
                         'perf_r2_active': r2_score_act, 'perf_ktau_active': ktau_score_act,
-                        'perf_num_tp': num_tp, 'perf_num_fp': num_fp, 'perf_num_tn': num_tn, 'perf_num_fn': num_fn}
+                        'perf_num_tp': num_tp, 'perf_num_fp': num_fp, 'perf_num_tn': num_tn, 'perf_num_fn': num_fn,
+                        'perf_num_consistent_all_5': num_consistent_all_5, 'perf_num_inconsistent_all_5': num_inconsistent_all_5,
+                        'perf_num_consistent_all_10': num_consistent_all_10, 'perf_num_inconsistent_all_10': num_inconsistent_all_10,
+                        'perf_num_consistent_act_5': num_consistent_act_5, 'perf_num_inconsistent_act_5': num_inconsistent_act_5,
+                        'perf_num_consistent_act_10': num_consistent_act_10, 'perf_num_inconsistent_act_10': num_inconsistent_act_10}
             metadata = pd.DataFrame.from_dict(metadata, orient='index')
 
             if tissue_match(tissue_a, tissue_b):
