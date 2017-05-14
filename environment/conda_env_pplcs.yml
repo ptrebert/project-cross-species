@@ -16,9 +16,12 @@ dependencies:
   - twobitreader=3.1.4
   - ucsc-bigwigtobedgraph
   - pytables=3.2.*
-  - sra-tools=2.7.*
+  - sra-tools
   - fastqc=0.11.*
   - cutadapt=1.12
   - khmer=2.0
   - salmon=0.8.2
   - trim-galore=0.4.1
+  - bowtie2
+  - samtools
+  - deeptools

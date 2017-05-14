@@ -2,6 +2,7 @@
 
 import os as os
 import re as re
+import csv as csv
 import collections as col
 
 from ruffus import *
@@ -167,6 +168,135 @@ def make_norm_calls(inputfiles, outdir, components, cmd, jobcall):
     return arglist, expected_output
 
 
+def parse_bp_sra_acc(acc_file, url_file, outbase, cmd, jobcall):
+    """
+    :param acc_file:
+    :param url_file:
+    :param outbase:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    accessions = []
+    with open(acc_file, 'r') as accfile:
+        for line in accfile:
+            if not line.strip():
+                continue
+            accessions.append(line.strip())
+    args = []
+    with open(url_file, 'r', newline='') as ena_file:
+        rows = csv.DictReader(ena_file, delimiter='\t')
+        for entry in rows:
+            acc = entry['run_accession']
+            if acc in accessions:
+                for rn, path in enumerate(entry['fastq_ftp'].split(';'), start=1):
+                    tmp = cmd.format(**{'outputdir': outbase, 'ftp_url': path,
+                                        'repnum': str(rn), 'sra_acc': acc})
+                    outfile = os.path.join(outbase, acc + '_r' + str(rn) + '_md.csv')
+                    args.append([acc_file, outfile, tmp, jobcall])
+    assert args, 'No arguments created for BP download'
+    return args
+
+
+def create_blueprint_annotation(metadata_files, outputfile):
+    """
+    :param metadata_files:
+    :return:
+    """
+    # this annotation is based on manual inspection of the annotation
+    # in EBI/ENA
+    # examples: SAMEA3928330 and SAMEA3855949
+    tcell = {'full_biosample': 'naive_CD4p_Tcells', 'short_biosample': 'CD4pTN'}
+    bcell = {'full_biosample': 'mature_resting_Bcells', 'short_biosample': 'Bcells'}
+    collection = []
+    delete_keys = set()
+    for md in metadata_files:
+        with open(md, 'r', newline='') as mdf:
+            rows = csv.DictReader(mdf, delimiter=',')
+            for r in rows:
+                path, fn = os.path.split(md)
+                fid, rn, _ = fn.split('_')
+                if r['LibraryLayout'] == 'SINGLE':
+                    fqn = os.path.join(path, fid + '.fastq.gz')
+                else:
+                    if int(rn.strip('r')) == 1:
+                        fqn = os.path.join(path, fid + '_1.fastq.gz')
+                    elif int(rn.strip('r')) == 2:
+                        fqn = os.path.join(path, fid + '_2.fastq.gz')
+                    else:
+                        raise ValueError('Unexpected read number: {}'.format(rn))
+                r['fastq_path'] = fqn
+                _, _, _, _, ab_trg, ct, _, sex, brep = r['Subject_ID'].split('_')
+                if ct == 'T':
+                    r.update(tcell)
+                elif ct == 'B':
+                    r.update(bcell)
+                else:
+                    raise ValueError('Unexpected bio sample type: {}'.format(r['Subject_ID']))
+                r['Experiment_target'] = ab_trg
+                r['Sex'] = sex
+                r['Biological_replicate'] = brep
+                for k, v in r.items():
+                    if not v.strip():
+                        r[k] = 'n/a'
+                        delete_keys.add(k)
+                collection.append(r)
+    collection = sorted(collection, key=lambda x: x['Subject_ID'])
+    select_keys = set(collection[0].keys()) - delete_keys
+    with open(outputfile, 'w', newline='') as dump:
+        writer = csv.DictWriter(dump, fieldnames=list(select_keys),
+                                restval='n/a', delimiter='\t',
+                                extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(collection)
+    return outputfile
+
+
+def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
+    """
+    :param mdfile:
+    :param se_cmd:
+    :param pe_cmd:
+    :param outdir:
+    :return:
+    """
+    args = []
+    if not os.path.isfile(mdfile):
+        return args
+    done = set()
+    with open(mdfile, 'r', newline='') as mdf:
+        rows = csv.DictReader(mdf, delimiter='\t')
+        for r in rows:
+            outname = 'bp_mm9_{}_s{}b{}_{}_{}.bam'.format(r['Experiment'],
+                                                          r['Sex'][0],
+                                                          r['Biological_replicate'],
+                                                          r['short_biosample'],
+                                                          r['Experiment_target'])
+            outpath = os.path.join(outdir, outname)
+            metfile = outpath.replace('.bam', '.txt')
+            if r['LibraryLayout'] == 'SINGLE':
+                inpath = r['fastq_path']
+                assert outpath not in done, 'Duplicate creation: {}'.format(outname)
+                tmp = se_cmd.format(**{'read1': inpath, 'metricsfile': metfile})
+                args.append([inpath, outpath, tmp, jobcall])
+                done.add(outpath)
+            else:
+                if outpath in done:
+                    # pair already handled
+                    continue
+                if '_1.fastq.gz' in r['fastq_path']:
+                    r1 = r['fastq_path']
+                    r2 = r1.replace('_1.fastq.gz', '_2.fastq.gz')
+                else:
+                    r2 = r['fastq_path']
+                    r1 = r2.replace('_2.fastq.gz', '_1.fastq.gz')
+                tmp = pe_cmd.format(**{'read1': r1, 'read2': r2,
+                                       'metricsfile': metfile})
+                args.append([r1, outpath, tmp, jobcall])
+                done.add(outpath)
+    return args
+
+
 def build_pipeline(args, config, sci_obj):
     """
     :param args:
@@ -183,6 +313,9 @@ def build_pipeline(args, config, sci_obj):
     # Special files
     enc_metadata = config.get('SpecialFiles', 'encmetadata')
     deep_metadata = config.get('SpecialFiles', 'deepmetadata')
+    bp_metadata = config.get('SpecialFiles', 'bpmetadata')
+    bp_sra_acc = config.get('SpecialFiles', 'bp_sra_acc')
+    bp_ena_url = config.get('SpecialFiles', 'bp_ena_url')
     dataset_ids = config.get('SpecialFiles', 'datasetids')
 
     # Init task: link input epigenomes with readable names
@@ -202,6 +335,43 @@ def build_pipeline(args, config, sci_obj):
                                                        dataset_ids,
                                                        linkfolder),
                                   name='deepepi_init')
+
+    # ==========================
+    # Download Blueprint data
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        runjob = sci_obj.ruffus_gridjob()
+    else:
+        runjob = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'bp_fqdl').replace('\n', ' ')
+    params_bp_sra_dl = parse_bp_sra_acc(bp_sra_acc, bp_ena_url, dlfolder, cmd, runjob)
+    bpdl = pipe.files(sci_obj.get_jobf('in_out'),
+                      params_bp_sra_dl,
+                      name='bpdl')
+    bpdl = bpdl.active_if(os.path.isfile(bp_sra_acc))
+
+    bpann = pipe.merge(task_func=create_blueprint_annotation,
+                       name='bpann',
+                       input=output_from(bpdl),
+                       output=bp_metadata)
+
+    sci_obj.set_config_env(dict(config.items('NodeJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        runjob = sci_obj.ruffus_gridjob()
+    else:
+        runjob = sci_obj.ruffus_localjob()
+
+    cmd_se = config.get('Pipeline', 'bp_map_se').replace('\n', ' ')
+    cmd_pe = config.get('Pipeline', 'bp_map_pe').replace('\n', ' ')
+    sr_map_dir = os.path.join(workbase, 'srmap')
+    bp_map_params = build_bp_srm_params(bp_metadata, cmd_se, cmd_pe, sr_map_dir, runjob)
+    bpmap = pipe.files(sci_obj.get_jobf('in_out'),
+                       bp_map_params,
+                       name='bpmap')
+    bpmap = bpmap.mkdir(sr_map_dir)
+    bpmap = bpmap.active_if(os.path.isfile(bp_metadata))
+    bpmap = bpmap.follows(bpann)
 
     # ===========
     # Major task: convert all epigenomes from init tasks to HDF
