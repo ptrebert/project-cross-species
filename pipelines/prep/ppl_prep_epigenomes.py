@@ -373,6 +373,37 @@ def build_pipeline(args, config, sci_obj):
     bpmap = bpmap.active_if(os.path.isfile(bp_metadata))
     bpmap = bpmap.follows(bpann)
 
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        runjob = sci_obj.ruffus_gridjob()
+    else:
+        runjob = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'samsort')
+    samsort = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                             name='samsort',
+                             input=output_from(bpmap),
+                             filter=formatter('(?P<SAMPLE>\w+)\.bam'),
+                             output=os.path.join(sr_map_dir, '{SAMPLE[0]}.srt.bam'),
+                             extras=[cmd, runjob])
+
+    cmd = config.get('Pipeline', 'samidx')
+    samidx = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                            name='samidx',
+                            input=output_from(samsort),
+                            filter=suffix('.bam'),
+                            output='.bam.bai',
+                            extras=[cmd, runjob])
+
+    cmd = config.get('Pipeline', 'bamcov').replace('\n', ' ')
+    bp_bwcov = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                              name='bp_bwcov',
+                              input=output_from(samsort),
+                              filter=suffix('.bam'),
+                              output='.bw',
+                              extras=[cmd, runjob])
+    bp_bwcov = bp_bwcov.follows(samidx)
+
     # ===========
     # Major task: convert all epigenomes from init tasks to HDF
     #
