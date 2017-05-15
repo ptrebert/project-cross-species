@@ -32,7 +32,8 @@ USE_MD_FIELDS = ['File accession', 'File format', 'Output type', 'Experiment acc
 
 NORMALIZE = {'Biosample term name': {'CH12.LX': 'CH12', 'ES-Bruce4': 'ESB4', 'ES-E14': 'ESE14',
                                      'GM12878': 'GM12878', 'H1-hESC': 'H1hESC', 'HepG2': 'HepG2',
-                                     'K562': 'K562', 'MEL cell line': 'MEL', 'liver': 'liver', 'kidney': 'kidney'},
+                                     'K562': 'K562', 'MEL cell line': 'MEL', 'liver': 'liver',
+                                     'kidney': 'kidney', 'heart': 'heart'},
              'Biosample life stage': {'adult': 'ad', 'embryonic': 'em', 'unknown': 'un',
                                       'default': 'un', 'child': 'ch', 'fetal': 'fe'},
              'Biosample organism': {'Homo sapiens': 'hsa', 'Mus musculus': 'mmu'},
