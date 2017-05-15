@@ -2,6 +2,7 @@ name: pplcs
 channels:
   - bioconda
   - conda-forge
+  - r
 dependencies:
   - python=3.5.*
   - pytz
@@ -26,3 +27,10 @@ dependencies:
   - samtools
   - deeptools
   - openssl>=1.0.2k
+  - boost
+  - r-base>=3.1.*
+  - r-snow
+  - r-snowfall
+  - r-bitops
+  - r-catools
+  - bioconductor-rsamtools
