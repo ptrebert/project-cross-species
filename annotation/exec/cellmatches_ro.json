@@ -18,15 +18,26 @@
   "MEL": [
    "K562"
   ],
+  "heart": [
+   "hepa",
+   "ncd4"
+  ],
   "hepa": [
+   "heart",
    "kidney",
-   "liver"
+   "liver",
+   "ncd4"
   ],
   "kidney": [
    "hepa"
   ],
   "liver": [
    "hepa"
+  ],
+  "ncd4": [
+   "heart",
+   "hepa",
+   "ncd4"
   ]
  },
  "matchtypes": {
@@ -42,13 +53,21 @@
   "K562-MEL": "pos",
   "MEL-K562": "pos",
   "MEL-MEL": "pos",
+  "heart-heart": "pos",
+  "heart-hepa": "neg",
+  "heart-ncd4": "neg",
+  "hepa-heart": "neg",
   "hepa-hepa": "pos",
   "hepa-kidney": "neg",
   "hepa-liver": "pos",
+  "hepa-ncd4": "neg",
   "kidney-hepa": "neg",
   "kidney-kidney": "pos",
   "liver-hepa": "pos",
-  "liver-liver": "pos"
+  "liver-liver": "pos",
+  "ncd4-heart": "neg",
+  "ncd4-hepa": "neg",
+  "ncd4-ncd4": "pos"
  },
- "timestamp": "Friday_2017-04-28_12:27:45"
+ "timestamp": "Thursday_2017-05-18_17:43:39"
 }
