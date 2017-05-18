@@ -136,6 +136,40 @@ def link_deep_epigenomes(folder, mdfile, idfile, outfolder):
     return linked_files
 
 
+def link_blueprint_epigenomes(folder, idfile, outfolder):
+    """
+    :param folder:
+    :param idfile:
+    :param outfolder:
+    :return:
+    """
+    os.makedirs(outfolder, exist_ok=True)
+    bwfiles = collect_full_paths(folder, '*ncd4_H3*.bw', allow_none=True)
+    if not bwfiles:
+        return []
+    eids = prep_dset_ids(idfile, 'BLUEPRINT', 'epigenome')
+    mark_counter = col.Counter()
+    # bp_mm9_ERX1489055_pe-b1_CD4pTN_H3K36me3.bw
+    linked_files = []
+    for bwf in bwfiles:
+        fp, fn = os.path.split(bwf)
+        _, assm, _, _, tissue, mark = fn.split('.')[0].split('_')
+        if tissue == 'ncd4':
+            pass
+        else:
+            raise ValueError('Unexpected BLUEPRINT tissue {}'.format(tissue))
+        eid = eids[(assm, tissue, 'ad', 'AFSCAM')]
+        mark_counter[mark] += 1
+        c = mark_counter[mark]
+        newname = '_'.join([eid, assm, tissue, mark, str(c)]) + '.bw'
+        outpath = os.path.join(outfolder, newname)
+        if not os.path.islink(outpath):
+            os.link(bwf, outpath)
+        linked_files.append(outpath)
+    assert linked_files, 'No BLUEPRINT files linked to destination: {}'.format(outfolder)
+    return linked_files
+
+
 def make_norm_calls(inputfiles, outdir, components, cmd, jobcall):
     """
     :param inputfiles:
@@ -203,11 +237,11 @@ def create_blueprint_annotation(metadata_files, outputfile):
     :param metadata_files:
     :return:
     """
-    # this annotation is based on manual inspection of the annotation
+    # this annotation is based on manual inspection of the metadata
     # in EBI/ENA
     # examples: SAMEA3928330 and SAMEA3855949
-    tcell = {'full_biosample': 'naive_CD4p_Tcells', 'short_biosample': 'CD4pTN'}
-    bcell = {'full_biosample': 'mature_resting_Bcells', 'short_biosample': 'Bcells'}
+    tcell = {'full_biosample': 'naive_CD4p_Tcells', 'short_biosample': 'ncd4'}
+    bcell = {'full_biosample': 'mature_resting_Bcells', 'short_biosample': 'bcell'}
     collection = []
     delete_keys = set()
     for md in metadata_files:
@@ -252,6 +286,19 @@ def create_blueprint_annotation(metadata_files, outputfile):
     return outputfile
 
 
+def calc_lower_insertsize(size):
+    """
+    :param size:
+    :return:
+    """
+    l = size - 25
+    i, r = divmod(l, 25)
+    if r != 0:
+        l = i * 25
+    assert 150 <= l < size, 'Invalid insert size: {}'.format()
+    return l
+
+
 def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
     """
     :param mdfile:
@@ -267,8 +314,9 @@ def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
     with open(mdfile, 'r', newline='') as mdf:
         rows = csv.DictReader(mdf, delimiter='\t')
         for r in rows:
-            outname = 'bp_mm9_{}_s{}b{}_{}_{}.bam'.format(r['Experiment'],
-                                                          r['Sex'][0],
+            liblayout = 'se' if r['LibraryLayout'] == 'SINGLE' else 'pe'
+            outname = 'bp_mm9_{}_{}-b{}_{}_{}.bam'.format(r['Experiment'],
+                                                          liblayout,
                                                           r['Biological_replicate'],
                                                           r['short_biosample'],
                                                           r['Experiment_target'])
@@ -284,6 +332,7 @@ def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
                 if outpath in done:
                     # pair already handled
                     continue
+                insert = calc_lower_insertsize(int(r['InsertSize']))
                 if '_1.fastq.gz' in r['fastq_path']:
                     r1 = r['fastq_path']
                     r2 = r1.replace('_1.fastq.gz', '_2.fastq.gz')
@@ -291,9 +340,38 @@ def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
                     r2 = r['fastq_path']
                     r1 = r2.replace('_2.fastq.gz', '_1.fastq.gz')
                 tmp = pe_cmd.format(**{'read1': r1, 'read2': r2,
-                                       'metricsfile': metfile})
+                                       'metricsfile': metfile, 'insert': insert})
                 args.append([r1, outpath, tmp, jobcall])
                 done.add(outpath)
+    return args
+
+
+def build_bp_bamcovse_params(qcfiles, cmd, jobcall):
+    """
+    :param qcfiles:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    args = []
+    if not qcfiles:
+        return args
+    for qcf in qcfiles:
+        dir_path = os.path.dirname(qcf)
+        with open(qcf, 'r') as infile:
+            infos = infile.read().strip().split()
+        bamfile = infos[0].strip()
+        fraglen = infos[2].split(',')[0]
+        try:
+            _ = int(fraglen)
+        except ValueError:
+            raise ValueError('Invalid fragment length estimate: {}'.format(infos[2]))
+        outfile = bamfile.replace('srt.bam', 'bw')
+        outpath = os.path.join(dir_path, outfile)
+        inpath = os.path.join(dir_path, bamfile)
+        assert os.path.isfile(inpath), 'No BAM file detected: {}'.format(bamfile)
+        tmp = cmd.format(**{'fraglen': fraglen})
+        args.append([inpath, outpath, tmp, jobcall])
     return args
 
 
@@ -351,10 +429,27 @@ def build_pipeline(args, config, sci_obj):
                       name='bpdl')
     bpdl = bpdl.active_if(os.path.isfile(bp_sra_acc))
 
+    bp_fq_init = pipe.originate(lambda x: x,
+                                collect_full_paths(dlfolder, '*ERR*.fastq.gz',
+                                                   topdown=False, allow_none=False),
+                                name='bp_fq_init')
+
+    reports_bp = os.path.join(workbase, 'reports', 'bpchip')
+    cmd = config.get('Pipeline', 'fastqc_raw')
+    bpfastqc = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                              name='bpfastqc',
+                              input=output_from(bp_fq_init),
+                              filter=formatter('(?P<FILEID>\w+)\.fastq\.gz'),
+                              output=os.path.join(reports_bp, '{FILEID[0]}_fastqc.html'),
+                              extras=[cmd, runjob])
+    bpfastqc = bpfastqc.mkdir(reports_bp)
+    bpfastqc = bpfastqc.follows(bp_fq_init)
+
     bpann = pipe.merge(task_func=create_blueprint_annotation,
                        name='bpann',
                        input=output_from(bpdl),
                        output=bp_metadata)
+    bpann = bpann.follows(bpfastqc)
 
     sci_obj.set_config_env(dict(config.items('NodeJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -383,7 +478,7 @@ def build_pipeline(args, config, sci_obj):
     samsort = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                              name='samsort',
                              input=output_from(bpmap),
-                             filter=formatter('(?P<SAMPLE>\w+)\.bam'),
+                             filter=formatter('(?P<SAMPLE>[\w\-]+)\.bam'),
                              output=os.path.join(sr_map_dir, '{SAMPLE[0]}.srt.bam'),
                              extras=[cmd, runjob])
 
@@ -395,14 +490,40 @@ def build_pipeline(args, config, sci_obj):
                             output='.bam.bai',
                             extras=[cmd, runjob])
 
-    cmd = config.get('Pipeline', 'bamcov').replace('\n', ' ')
-    bp_bwcov = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
-                              name='bp_bwcov',
+    cmd = config.get('Pipeline', 'bamcovpe').replace('\n', ' ')
+    bamcovpe = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                              name='bamcovpe',
                               input=output_from(samsort),
-                              filter=suffix('.bam'),
-                              output='.bw',
+                              filter=formatter('(?P<SAMPLE>bp_mm9_ERX[0-9]+_pe\-\w+)\.srt\.bam'),
+                              output=os.path.join('{path[0]}', '{SAMPLE[0]}.bw'),
                               extras=[cmd, runjob])
-    bp_bwcov = bp_bwcov.follows(samidx)
+    bamcovpe = bamcovpe.follows(samidx)
+
+    cmd = config.get('Pipeline', 'estfraglen')
+    estfraglen = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                name='estfraglen',
+                                input=output_from(samsort),
+                                filter=formatter('(?P<SAMPLE>bp_mm9_ERX[0-9]+_se\-\w+)\.srt\.bam'),
+                                output=os.path.join('{path[0]}', '{SAMPLE[0]}.qc.tsv'),
+                                extras=[cmd, runjob])
+
+    cmd = config.get('Pipeline', 'bamcovse').replace('\n', ' ')
+    qcfiles = collect_full_paths(sr_map_dir, '*.qc.tsv', allow_none=True)
+    bamcovse_params = build_bp_bamcovse_params(qcfiles, cmd, runjob)
+    bamcovse = pipe.files(sci_obj.get_jobf('in_out'),
+                          bamcovse_params,
+                          name='bamcovse')
+    bamcovse = bamcovse.follows(estfraglen)
+    bamcovse = bamcovse.follows(samidx)
+
+    # link BLUEPRINT bigWig files; now similar state as for
+    # readily available DEEP and ENCODE signal tracks
+    linked_bp_files = link_blueprint_epigenomes(sr_map_dir, dataset_ids, linkfolder)
+    bpepi_init = pipe.originate(lambda x: x,
+                                linked_bp_files,
+                                name='bpepi_init')
+    bpepi_init = bpepi_init.follows(bamcovpe)
+    bpepi_init = bpepi_init.follows(bamcovse)
 
     # ===========
     # Major task: convert all epigenomes from init tasks to HDF
@@ -417,7 +538,7 @@ def build_pipeline(args, config, sci_obj):
     cmd = config.get('Pipeline', 'bwtobg')
     bwtobg = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                             name='bwtobg',
-                            input=output_from(encepi_init, deepepi_init),
+                            input=output_from(encepi_init, deepepi_init, bpepi_init),
                             filter=suffix('.bw'),
                             output='.bg.gz',
                             output_dir=bgout,
@@ -449,6 +570,16 @@ def build_pipeline(args, config, sci_obj):
                             syscalls,
                             name='normenc').active_if(any([fn not in existing_output for fn in exp_output]))
 
+    cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
+    re_filter = '(?P<EID>EB[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    bgtohdfbp = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                             name='bgtohdfbp',
+                             input=output_from(bwtobg),
+                             filter=formatter(re_filter),
+                             output=os.path.join(sighdf_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
+                             extras=[cmd, runjob])
+    bgtohdfbp = bgtohdfbp.mkdir(sighdf_out)
+
     cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
     re_filter = '(?P<EID>ED[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfdeep = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
@@ -460,8 +591,8 @@ def build_pipeline(args, config, sci_obj):
 
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',
-                                  input=output_from(bgtohdfenc, bgtohdfdeep,
-                                                    normenc),
+                                  input=output_from(bgtohdfenc, bgtohdfdeep, bgtohdfbp,
+                                                    normenc, bamcovpe, bamcovse),
                                   output=os.path.join(workbase, 'run_task_convepi.chk'))
     #
     # End of major task: convert epigenomes to HDF
