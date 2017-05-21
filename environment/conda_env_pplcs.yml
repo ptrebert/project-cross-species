@@ -11,7 +11,7 @@ dependencies:
   - scikit-learn
   - numexpr
   - hdf5
-  - pandas
+  - pandas=0.19.*
   - psutil
   - statsmodels
   - twobitreader=3.1.4
@@ -33,4 +33,8 @@ dependencies:
   - r-snowfall
   - r-bitops
   - r-catools
+  - bioconductor-biocinstaller
   - bioconductor-rsamtools
+  # LOLA
+  # source("http://bioconductor.org/biocLite.R")
+  # biocLite("LOLA")
