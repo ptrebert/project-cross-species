@@ -74,6 +74,7 @@ def make_groups_compatible(groupings, epibundles):
     cmatches = col.defaultdict(set)
     dupgroups = col.defaultdict(list)
     match_types = dict()
+    uniq_extids = set()
     with open(groupings, 'r', newline='') as inf:
         rows = csv.DictReader(inf, delimiter='\t')
         for r in rows:
@@ -93,6 +94,8 @@ def make_groups_compatible(groupings, epibundles):
             p2_params = ' '.join([x['param'] for x in p2])
             gid = r['gid']
             extgid = gid + str(h) + str(d)
+            assert extgid not in uniq_extids, 'Duplicate extended group ID: {}'.format(extgid)
+            uniq_extids.add(extgid)
             entry = {'partner1': p1, 'partner2': p2, 'params1': p1_params, 'params2': p2_params, 'extgid': extgid}
             groups[gid] = entry
             c1, c2 = r['comment'].split('-')
@@ -306,7 +309,7 @@ def merge_augment_featfiles(featdir, expdir, outraw, cmd, jobcall, mapped=False,
         assert matchings is not None, 'Need to specify cell type matchings for mapped data'
         matchings = js.load(open(matchings, 'r'))['matchings']
     featfiles = collect_full_paths(featdir, '*/G[0-9]*.h5', True, True)
-    expfiles = collect_full_paths(expdir, '*/T*.h5', False, False)
+    expfiles = collect_full_paths(expdir, '*/T*genes.h5', False, False)
     collector = col.defaultdict(list)
     for fp in featfiles:
         parts = os.path.basename(fp).split('.')
@@ -415,8 +418,12 @@ def match_prior_traindata(traindata, priordata, suffix, cmd, jobcall):
     :return:
     """
     if traindata and priordata:
-        assert len(traindata) == len(priordata),\
-            'Length mismatch: {} train vs {} priors'.format(len(traindata), len(priordata))
+        #assert len(traindata) == len(priordata),\
+        #    'Length mismatch: {} train vs {} priors'.format(len(traindata), len(priordata))
+        if len(traindata) != len(priordata):
+            sys.stderr.write('\nWarning: only {} derived feature datasets for {} training datasets. '
+                             'Return empty.\n'.format(len(priordata), len(traindata)))
+            return []
     arglist = []
     for tf, pf in zip(sorted(traindata), sorted(priordata)):
         tfp, tfn = os.path.split(tf)
@@ -500,6 +507,7 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
     groupings = js.load(open(groupfile, 'r'))['groupinfo']
     arglist = []
     uniq = set()
+    debug_record = dict()
     for mapf in mapfiles:
         target, query = mapf['target'], mapf['query']
         for (eid, trg, qry), bundle in mapepibundles.items():
@@ -529,13 +537,27 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                 outfile = '_'.join([extgid, eid, query, cell])
                                 outfile += '.'.join(['', 'from', target, roi['regtype'], 'h5'])
                                 outpath = os.path.join(outfolder, outfile)
-                                assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
+                                try:
+                                    assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
+                                except AssertionError:
+                                    if extgid == 'G1140':
+                                        # Problem here: ncd4 datasets are the only ones that
+                                        # exist with the same name for mouse and human, so the
+                                        # hepa-ncd4 group is selected twice in the above if statement
+                                        # Manual fix to avoid too much rewriting
+                                        continue
+                                    else:
+                                        raise AssertionError('Duplicate created: {}\n\n{}\n\n{}\n'.format(outpath, debug_record[outpath], exp_cells))
                                 uniq.add(outpath)
+                                debug_record[outpath] = (exp_cells, extgid, roi, ginfo)
                                 params = {'target': target, 'query': query, 'genome': query,
                                           'regtype': roi['regtype'], 'mapfile': mapf['path'],
                                           'datafiles': datafiles, 'info': extgid}
                                 tmp = cmd.format(**params)
                                 arglist.append([roi['path'], outpath, tmp, jobcall])
+                        else:
+                            #print('Skipped {} with {} and {}'.format(exp_cell, gid, eid))
+                            pass
     if mapfiles and mapepibundles:
         assert arglist, 'No argument list for building test datasets created'
     return arglist
@@ -1033,7 +1055,7 @@ def build_pipeline(args, config, sci_obj):
     dir_sub_cmpf_testdataexp = os.path.join(dir_task_testdataexp_groups, 'compfeat_groups', '{query}_from_{target}')
     mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
-    expfiles = collect_full_paths(dir_indata, '*/T*.h5')
+    expfiles = collect_full_paths(dir_indata, '*/T*genes.h5')
     groupinfos = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'groupinfo_ro.json')
     matchings = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'cellmatches_ro.json')
     cmd = config.get('Pipeline', 'testdataexp').replace('\n', ' ')
