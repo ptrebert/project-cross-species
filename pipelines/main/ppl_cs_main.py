@@ -163,7 +163,10 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
         for mapf in assm1_maps:
             target, query = mapf['target'], mapf['query']
             if query not in ['mm9', 'hg19']:
-                if cell1 not in ['liver', 'kidney', 'hepa'] and cell2 not in ['liver', 'kidney', 'hepa']:
+                # avoid using cell lines for non-human/murine datasets
+                # would be pretty pointless
+                if cell1 not in ['liver', 'kidney', 'hepa', 'heart', 'ncd4'] and \
+                                cell2 not in ['liver', 'kidney', 'hepa', 'heart', 'ncd4']:
                     continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
@@ -184,7 +187,9 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
         for mapf in assm2_maps:
             target, query = mapf['target'], mapf['query']
             if query not in ['mm9', 'hg19']:
-                if cell1 not in ['liver', 'kidney', 'hepa'] and cell2 not in ['liver', 'kidney', 'hepa']:
+                # same as above
+                if cell1 not in ['liver', 'kidney', 'hepa', 'heart', 'ncd4'] and \
+                                cell2 not in ['liver', 'kidney', 'hepa', 'heart', 'ncd4']:
                     continue
             for roi in compat_roi:
                 outfolder = outraw.format(**{'target': target, 'query': query})
@@ -472,7 +477,7 @@ def match_prior_testdata(testdata, priordata, suffix, cmd, jobcall):
             assert len(use_priors) == 1, 'No/ambig. metadata with run information selected: {}'.format(use_priors)
         except AssertionError:
             if len(use_priors) == 0:
-                sys.stderr.write('\nNo priors for {} - {} - {}'.format(gid, trg, qry))
+                sys.stderr.write('\nNo priors for {} - {} - {} - {}'.format(gid, trg, qry, tfn))
                 # this can happen during incomplete pipeline runs, i.e. some prior information
                 # is available and match_prior_testdata is executed; return empty here instead of
                 # raising AssertionError
@@ -540,7 +545,8 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                 try:
                                     assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
                                 except AssertionError:
-                                    if extgid == 'G1140':
+                                    if extgid in ['G1140', 'G1340']:
+                                        sys.stderr.write('\nWarning: skipping group duplicate {}\n'.format(outfile))
                                         # Problem here: ncd4 datasets are the only ones that
                                         # exist with the same name for mouse and human, so the
                                         # hepa-ncd4 group is selected twice in the above if statement
