@@ -48,8 +48,8 @@ TS26	transcriptome	SRA	mm9	kidney	un	MIT	mmukidney	pe	complete	na
 TS27	transcriptome	SRA	galGal3	liver	un	MIT	ggaliver	pe	complete	na
 TS28	transcriptome	SRA	galGal3	kidney	un	MIT	ggakidney	pe	complete	na
 TD29	transcriptome	DEEP	hg19	ncd4	ad	MDCB	na	pe	complete	na
-TS30	transcriptome	SRA	mm9	ncd4	ad	CCHMC	mmucd4n	pe	complete	na
-TS31	transcriptome	SRA	mm9	ncd4	ad	LLSDBI	mmucd4n	pe	complete	na
+TS30	transcriptome	SRA	mm9	ncd4	un	CCHMC	mmuncd4	pe	complete	na
+TS31	transcriptome	SRA	mm9	ncd4	un	LLSDBI	mmuncd4	pe	complete	na
 TS32	transcriptome	SRA	bosTau7	brain	un	EWHA	btabrain	pe	complete	na
 TS33	transcriptome	SRA	mm9	brain	un	EWHA	mmubrain	pe	complete	na
 TS34	transcriptome	SRA	canFam3	brain	un	EWHA	cfabrain	pe	complete	na
