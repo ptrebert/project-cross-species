@@ -18,7 +18,7 @@ def annotate_encode_files(fpaths, mddict, eiddict):
     :return:
     """
     annfiles = []
-    narep = 1
+    na_numbers = col.Counter()
     for fp in sorted(fpaths):
         facc = os.path.basename(fp).split('.')[0]
         # by construction, no missing keys
@@ -32,9 +32,11 @@ def annotate_encode_files(fpaths, mddict, eiddict):
         # manual fix
         if rep == '1, 2':  # not sure what this is, maybe 1 of 2? >> file ENCFF001KEH
             rep = 'n/a'
+        na_numbers[eid] += 10
         if rep == 'n/a':
-            rep = str(narep)
-            narep += 1
+            rep = str(na_numbers[eid])
+        else:
+            rep = str(na_numbers[eid] + int(rep))
         if isinstance(eid, list):
             # multi ID
             for i in eid:
