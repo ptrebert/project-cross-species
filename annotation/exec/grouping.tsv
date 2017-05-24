@@ -12,4 +12,5 @@ G10	ED13	EE15	hepa-heart	neg
 G11	ED13	EB16	hepa-ncd4	neg
 G12	ED14	EB16	ncd4-ncd4	pos
 G13	ED14	EE15	ncd4-heart	neg
+G14	EE03	EE07	ESE14-H1hESC	pos
 

@@ -1,7 +1,7 @@
 id	type	project	assembly	biosample	lifestage	lab	experiment	layout	comment	multid
 EE01	epigenome	ENCODE	mm9	CH12	un	BRUCSD	na	na	complete	na
 EE02	epigenome	ENCODE	mm9	CH12	un	RHPSU	na	na	complete	na
-EE03	epigenome	ENCODE	mm9	ESE14	em	BRUCSD	na	na	complete	na
+EE03	epigenome	ENCODE	mm9	ESE14	un	BRUCSD	na	na	complete	na
 EE04	epigenome	ENCODE	mm9	ESE14	em	RHPSU	na	na	complete	na
 EE05	epigenome	ENCODE	hg19	GM12878	ad	BBBRD	na	na	complete	na
 EE06	epigenome	ENCODE	hg19	GM12878	ad	JSUW	na	na	complete	na
