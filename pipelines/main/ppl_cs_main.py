@@ -477,7 +477,7 @@ def match_prior_testdata(testdata, priordata, suffix, cmd, jobcall):
             assert len(use_priors) == 1, 'No/ambig. metadata with run information selected: {}'.format(use_priors)
         except AssertionError:
             if len(use_priors) == 0:
-                sys.stderr.write('\nNo priors for {} - {} - {} - {}'.format(gid, trg, qry, tfn))
+                sys.stderr.write('\n{}: no priors for {} - {} - {} - {}'.format(suffix, gid, trg, qry, tfn))
                 # this can happen during incomplete pipeline runs, i.e. some prior information
                 # is available and match_prior_testdata is executed; return empty here instead of
                 # raising AssertionError
@@ -1069,7 +1069,9 @@ def build_pipeline(args, config, sci_obj):
                                     annotate_test_datasets(mapfiles, roifiles, dir_sub_signal, expfiles,
                                                            groupinfos, dir_sub_cmpf_testdataexp,
                                                            cmd, jobcall),
-                                    name='testdataexp_groups').mkdir(os.path.split(dir_sub_cmpf_testdataexp)[0])
+                                    name='testdataexp_groups')
+    testdataexp_groups = testdataexp_groups.follows(task_sigmap)
+    testdataexp_groups = testdataexp_groups.mkdir(os.path.split(dir_sub_cmpf_testdataexp)[0])
 
     dir_mrg_test_datasets = os.path.join(dir_task_testdataexp_groups, 'test_datasets', '{query}_from_{target}')
     cmd = config.get('Pipeline', 'mrgtestdataexp').replace('\n', ' ')
