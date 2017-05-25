@@ -49,7 +49,7 @@ def nonzero_qnorm(mat):
         # at least one all-zero column
         add_zero_columns = True
         mat = mat[:, col_idx]
-    ranks = np.zeros_like(mat)
+    ranks = np.zeros_like(mat, dtype=np.float64)
     for row_idx in range(mat.shape[0]):
         ranks[row_idx, :] = stats.rankdata(mat[row_idx, :], method='dense')
     mat.sort(axis=1)
