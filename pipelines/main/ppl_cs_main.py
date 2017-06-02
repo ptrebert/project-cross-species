@@ -545,7 +545,7 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                 try:
                                     assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
                                 except AssertionError:
-                                    if extgid in ['G1140', 'G1340']:
+                                    if extgid in ['G1140', 'G1340', 'G1940', 'G1730', 'G1830']:
                                         sys.stderr.write('\nWarning: skipping group duplicate {}\n'.format(outfile))
                                         # Problem here: ncd4 datasets are the only ones that
                                         # exist with the same name for mouse and human, so the
