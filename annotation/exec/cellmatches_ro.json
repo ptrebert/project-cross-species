@@ -4,13 +4,19 @@
    "GM12878"
   ],
   "ESE14": [
-   "H1hESC"
+   "H1hESC",
+   "hepa",
+   "ncd4"
   ],
   "GM12878": [
    "CH12"
   ],
   "H1hESC": [
-   "ESE14"
+   "ESE14",
+   "heart",
+   "kidney",
+   "liver",
+   "ncd4"
   ],
   "K562": [
    "MEL"
@@ -19,22 +25,28 @@
    "K562"
   ],
   "heart": [
+   "H1hESC",
    "hepa",
    "ncd4"
   ],
   "hepa": [
+   "ESE14",
    "heart",
    "kidney",
    "liver",
    "ncd4"
   ],
   "kidney": [
+   "H1hESC",
    "hepa"
   ],
   "liver": [
+   "H1hESC",
    "hepa"
   ],
   "ncd4": [
+   "ESE14",
+   "H1hESC",
    "heart",
    "hepa",
    "ncd4"
@@ -45,29 +57,41 @@
   "CH12-GM12878": "pos",
   "ESE14-ESE14": "pos",
   "ESE14-H1hESC": "pos",
+  "ESE14-hepa": "neg",
+  "ESE14-ncd4": "neg",
   "GM12878-CH12": "pos",
   "GM12878-GM12878": "pos",
   "H1hESC-ESE14": "pos",
   "H1hESC-H1hESC": "pos",
+  "H1hESC-heart": "neg",
+  "H1hESC-kidney": "neg",
+  "H1hESC-liver": "neg",
+  "H1hESC-ncd4": "neg",
   "K562-K562": "pos",
   "K562-MEL": "pos",
   "MEL-K562": "pos",
   "MEL-MEL": "pos",
+  "heart-H1hESC": "neg",
   "heart-heart": "pos",
   "heart-hepa": "neg",
   "heart-ncd4": "neg",
+  "hepa-ESE14": "neg",
   "hepa-heart": "neg",
   "hepa-hepa": "pos",
   "hepa-kidney": "neg",
   "hepa-liver": "pos",
   "hepa-ncd4": "neg",
+  "kidney-H1hESC": "neg",
   "kidney-hepa": "neg",
   "kidney-kidney": "pos",
+  "liver-H1hESC": "neg",
   "liver-hepa": "pos",
   "liver-liver": "pos",
+  "ncd4-ESE14": "neg",
+  "ncd4-H1hESC": "neg",
   "ncd4-heart": "neg",
   "ncd4-hepa": "neg",
   "ncd4-ncd4": "pos"
  },
- "timestamp": "Thursday_2017-05-18_17:43:39"
+ "timestamp": "Thursday_2017-06-01_16:22:55"
 }
