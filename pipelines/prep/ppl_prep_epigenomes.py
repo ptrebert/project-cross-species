@@ -560,17 +560,8 @@ def build_pipeline(args, config, sci_obj):
                               input=output_from(bwtobg),
                               filter=formatter(re_filter),
                               output=os.path.join(sigraw_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
-                              extras=[cmd, runjob]).mkdir(sigraw_out)
-
-    sighdf_out = os.path.join(workbase, 'conv', 'hdf')
-    cmd = config.get('Pipeline', 'normenc').replace('\n', ' ')
-    re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(mm9|hg19))_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'
-    syscalls, exp_output = make_norm_calls(collect_full_paths(sigraw_out, '*EE*.h5'),
-                                           sighdf_out, re_filter, cmd, runjob)
-    existing_output = os.listdir(sighdf_out)
-    normenc = pipe.parallel(sci_obj.get_jobf('raw'),
-                            syscalls,
-                            name='normenc').active_if(any([fn not in existing_output for fn in exp_output]))
+                              extras=[cmd, runjob])
+    bgtohdfenc = bgtohdfenc.mkdir(sigraw_out)
 
     cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
     re_filter = '(?P<EID>EB[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
@@ -578,9 +569,9 @@ def build_pipeline(args, config, sci_obj):
                              name='bgtohdfbp',
                              input=output_from(bwtobg),
                              filter=formatter(re_filter),
-                             output=os.path.join(sighdf_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
+                             output=os.path.join(sigraw_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
                              extras=[cmd, runjob])
-    bgtohdfbp = bgtohdfbp.mkdir(sighdf_out)
+    bgtohdfbp = bgtohdfbp.mkdir(sigraw_out)
 
     cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
     re_filter = '(?P<EID>ED[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
@@ -588,13 +579,25 @@ def build_pipeline(args, config, sci_obj):
                                name='bgtohdfdeep',
                                input=output_from(bwtobg),
                                filter=formatter(re_filter),
-                               output=os.path.join(sighdf_out, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
-                               extras=[cmd, runjob]).mkdir(sighdf_out)
+                               output=os.path.join(sigraw_out, '{EID[0]}_hg19_{CELL[0]}_{MARK[0]}.h5'),
+                               extras=[cmd, runjob])
+    bgtohdfdeep = bgtohdfdeep.mkdir(sigraw_out)
+
+    sighdf_out = os.path.join(workbase, 'conv', 'hdf')
+    cmd = config.get('Pipeline', 'normsig').replace('\n', ' ')
+    re_filter = '(?P<EID>E(E|B|D)[0-9]+)_(?P<ASSM>(mm9|hg19))_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'
+    syscalls, exp_output = make_norm_calls(collect_full_paths(sigraw_out, '*/E*.h5'),
+                                           sighdf_out, re_filter, cmd, runjob)
+    existing_output = os.listdir(sighdf_out)
+    normsig = pipe.parallel(sci_obj.get_jobf('raw'),
+                            syscalls,
+                            name='normsig')
+    normsig = normsig.active_if(any([fn not in existing_output for fn in exp_output]))
 
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',
                                   input=output_from(bgtohdfenc, bgtohdfdeep, bgtohdfbp,
-                                                    normenc, bamcovpe, bamcovse),
+                                                    normsig, bamcovpe, bamcovse),
                                   output=os.path.join(workbase, 'run_task_convepi.chk'))
     #
     # End of major task: convert epigenomes to HDF
