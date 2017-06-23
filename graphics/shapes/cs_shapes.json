@@ -7,6 +7,9 @@
   "GM12878": "p",
   "ESE14": "s",
   "H1hESC": "s",
-  "kidney": "8",
-  "default": "x"
+  "kidney": "v",
+  "heart": "X",
+  "brain": "*",
+  "ncd4": "P",
+  "default": "_"
 }

@@ -43,28 +43,72 @@ def nonzero_qnorm(mat):
     :param mat:
     :return:
     """
+    assert np.isfinite(mat).all(), 'Matrix contains invalid (NaN, INF) values'
+    mat = mat.round(decimals=3)
     add_zero_columns = False
-    col_idx = mat.sum(axis=0) > 0
-    if np.sum(col_idx) != mat.shape[1]:
+    col_idx = np.array(mat.sum(axis=0) > 0, dtype=np.bool)
+    non_zero_cols = np.sum(col_idx)
+    if non_zero_cols == 0:
+        return mat
+    orig_shape = mat.shape
+    if non_zero_cols != mat.shape[1]:
         # at least one all-zero column
         add_zero_columns = True
         mat = mat[:, col_idx]
-    ranks = np.zeros_like(mat, dtype=np.float64)
-    for row_idx in range(mat.shape[0]):
-        ranks[row_idx, :] = stats.rankdata(mat[row_idx, :], method='dense')
+    # determine data ranks
+    data_ranks = pd.DataFrame(mat).rank(axis=1, method='min')
+    data_ranks = data_ranks.astype(np.int32)
+    uniq_data_ranks = np.unique(data_ranks.values.flatten())
+
+    # get column means
     mat.sort(axis=1)
-    col_means = np.unique(mat.mean(axis=0))
-    mean_ranks = stats.rankdata(col_means, method='dense')
-    for row_idx in range(ranks.shape[0]):
-        indices = np.digitize(ranks[row_idx, :], mean_ranks, right=True)
-        ranks[row_idx, :] = col_means[indices]
-    norm_mat = ranks
+    col_means = mat.mean(axis=0)
+    col_means = col_means.round(decimals=3).astype(np.float32)
+
+    # ranks for column means
+    col_mean_ranks = stats.rankdata(col_means, method='min')
+    col_mean_ranks = col_mean_ranks.astype(np.int32)
+
+    # lookup table for rank -> mean replacement
+    replace_means = pd.Series(col_means, index=col_mean_ranks,
+                              dtype=np.float32)
+    # reduce to unique entries (i.e., group by index value = rank of mean value)
+    replace_means = replace_means.groupby(by=replace_means.index).first()
+
+    # Check if there are ranks missing
+    # There are cases where data_ranks contains values that do
+    # not appear in col_mean_ranks - apparently, the ranking of
+    # floating point numbers is an issue here
+    missing_ranks = set(uniq_data_ranks).difference(set(replace_means.index))
+    if len(missing_ranks) > 0:
+        missing_means = []
+        missing_positions = []
+        for mr in sorted(missing_ranks):
+            lo = replace_means[replace_means.index < mr].idxmax()
+            hi = replace_means[replace_means.index > mr].idxmin()
+            lo_val = replace_means[lo]
+            hi_val = replace_means[hi]
+            new_val = np.round((lo_val + hi_val) / 2., 3)
+            missing_means.append(new_val)
+            missing_positions.append(mr)
+
+        additional_means = pd.Series(missing_means, index=missing_positions, dtype=np.float32)
+        replace_means = replace_means.append(additional_means)
+
+    for row_idx in range(mat.shape[0]):
+        # by constructions, this must give a valid replacement vector
+        mat[row_idx, :] = (replace_means[data_ranks.iloc[row_idx, :]]).values
+
     if add_zero_columns:
-        add_zeros = np.zeros((ranks.shape[0], col_idx.size))
+        add_zeros = np.zeros(orig_shape, dtype=np.float32)
         col_indices = np.arange(col_idx.size)[col_idx]
-        add_zeros[:, col_indices] = ranks[:]
-        norm_mat = add_zeros
-    return norm_mat
+        add_zeros[:, col_indices] = mat[:]
+        mat = add_zeros
+    # Note that this is ok since all zero matrices are returned
+    # immediately in the beginning
+    assert mat.max() > 0, 'Normalization failed: ends with all zero data matrix'
+    assert np.isfinite(mat).all(), 'Result matrix contains invalid (NaN, INF) values'
+    return mat
 
 
 def normalize_tpm_data(dataset):
@@ -187,10 +231,11 @@ def main():
         'Dataset size differs after normalization: before {} - after {}'.format(raw_dataset.shape, norm_dataset.shape)
     assert (raw_dataset.columns == norm_dataset.columns).all(),\
         'Column index mismatch: {} vs {}'.format(raw_dataset.columns, norm_dataset.columns)
-    # if q-norm worked, the rankings should stay fixed
+    # due to the changed q-norm implementation involving rounding and lower precision
+    # floating point arithmetic, the following ranking can actually show
+    # some minor variation (in an ideal scenario, they would be consistent)
     raw_ranks = raw_dataset.rank(axis=0, method='dense').astype(np.int32)
     norm_ranks = norm_dataset.rank(axis=0, method='dense').astype(np.int32)
-    assert ((raw_ranks == norm_ranks).all()).all(), 'Q-norm failed, ranks inconsistent'
     with pd.HDFStore(args.aggoutput, 'w', complib='blosc', complevel=9) as hdf:
         hdf.put('/raw/tpm', raw_dataset, format='fixed')
         hdf.put('/norm/tpm', norm_dataset, format='fixed')

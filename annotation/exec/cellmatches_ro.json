@@ -4,8 +4,13 @@
    "GM12878"
   ],
   "ESE14": [
+   "ESE14",
    "H1hESC",
+   "brain",
+   "heart",
    "hepa",
+   "kidney",
+   "liver",
    "ncd4"
   ],
   "GM12878": [
@@ -13,7 +18,10 @@
   ],
   "H1hESC": [
    "ESE14",
+   "H1hESC",
+   "brain",
    "heart",
+   "hepa",
    "kidney",
    "liver",
    "ncd4"
@@ -25,30 +33,53 @@
    "K562"
   ],
   "heart": [
+   "ESE14",
    "H1hESC",
+   "brain",
+   "heart",
    "hepa",
+   "kidney",
+   "liver",
    "ncd4"
   ],
   "hepa": [
    "ESE14",
+   "H1hESC",
+   "brain",
    "heart",
+   "hepa",
    "kidney",
    "liver",
    "ncd4"
   ],
   "kidney": [
+   "ESE14",
    "H1hESC",
-   "hepa"
+   "brain",
+   "heart",
+   "hepa",
+   "kidney",
+   "liver",
+   "ncd4"
   ],
   "liver": [
+   "ESE14",
    "H1hESC",
-   "hepa"
+   "brain",
+   "heart",
+   "hepa",
+   "kidney",
+   "liver",
+   "ncd4"
   ],
   "ncd4": [
    "ESE14",
    "H1hESC",
+   "brain",
    "heart",
    "hepa",
+   "kidney",
+   "liver",
    "ncd4"
   ]
  },
@@ -84,14 +115,18 @@
   "kidney-H1hESC": "neg",
   "kidney-hepa": "neg",
   "kidney-kidney": "pos",
+  "kidney-ncd4": "neg",
   "liver-H1hESC": "neg",
   "liver-hepa": "pos",
   "liver-liver": "pos",
+  "liver-ncd4": "neg",
   "ncd4-ESE14": "neg",
   "ncd4-H1hESC": "neg",
   "ncd4-heart": "neg",
   "ncd4-hepa": "neg",
+  "ncd4-kidney": "neg",
+  "ncd4-liver": "neg",
   "ncd4-ncd4": "pos"
  },
- "timestamp": "Thursday_2017-06-01_16:22:55"
+ "timestamp": "Tuesday_2017-06-06_15:34:35"
 }

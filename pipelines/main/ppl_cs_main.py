@@ -32,15 +32,15 @@ def collect_mapfiles(folder, targets, queries):
     return mapfiles
 
 
-def collect_roi_files(folder):
+def collect_roi_files(folder, ext='*.h5'):
     """
     :param folder:
     :return:
     """
-    fpaths = collect_full_paths(folder, '*.h5', False)
+    fpaths = collect_full_paths(folder, ext, False)
     roifiles = []
     for fp in fpaths:
-        annotid, regtype, _ = os.path.basename(fp).split('.')
+        annotid, regtype, _ = os.path.basename(fp).split('.', 2)
         assembly = annotid.split('_')[1]
         roifiles.append({'assembly': assembly, 'regtype': regtype, 'path': fp})
     assert roifiles, 'No ROI files annotated from path: {}'.format(folder)
@@ -243,9 +243,15 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     :param groupfile:
     :return:
     """
+    primary_mouse = ['ESE14', 'liver', 'heart', 'kidney', 'ncd4', 'brain']
+    primary_human = ['H1hESC', 'hepa', 'ncd4']
+    primary_tissues = primary_human + primary_mouse
     serialize = dict()
     for key, vals in matchings.items():
-        serialize[key] = sorted(list(vals))
+        if key in primary_tissues:
+            serialize[key] = sorted(set(primary_tissues))
+        else:
+            serialize[key] = sorted(list(vals))
     timestr = dt.datetime.now().strftime('%A_%Y-%m-%d_%H:%M:%S')
     filepath = os.path.join(os.path.dirname(groupfile), 'cellmatches_ro.json')
     if not os.path.isfile(filepath):
@@ -545,7 +551,8 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                 try:
                                     assert outpath not in uniq, 'Created duplicate: {} / {}'.format(outpath, mapf)
                                 except AssertionError:
-                                    if extgid in ['G1140', 'G1340', 'G1940', 'G1730', 'G1830']:
+                                    if extgid in ['G1140', 'G1340', 'G1940', 'G1730',
+                                                  'G1830', 'G2340', 'G2440']:
                                         sys.stderr.write('\nWarning: skipping group duplicate {}\n'.format(outfile))
                                         # Problem here: ncd4 datasets are the only ones that
                                         # exist with the same name for mouse and human, so the
@@ -850,6 +857,89 @@ def annotate_test_output(paramset, datasets, groupings, cellmatches, task, outfi
     return 0
 
 
+def make_srcsig_pairs(inputfiles, assemblies, roifiles, outbase, cmd, jobcall):
+    """
+    :param inputfiles:
+    :param assemblies:
+    :param roifiles:
+    :param outbase:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    done = set()
+    arglist = []
+    for trg in assemblies:
+        qry = assemblies[1] if trg == assemblies[0] else assemblies[0]
+        epigenomes = fnm.filter(inputfiles, '*/E*{}*.h5'.format(trg))
+        for e1 in epigenomes:
+            en1 = os.path.basename(e1).split('.')[0]
+            _, _, cell, _ = en1.split('_')
+            if cell in ['K562', 'MEL', 'CH12', 'GM12878']:
+                continue
+            for e2 in epigenomes:
+                en2 = os.path.basename(e2).split('.')[0]
+                _, _, cell, _ = en2.split('_')
+                if cell in ['K562', 'MEL', 'CH12', 'GM12878']:
+                    continue
+                if (e1, e2) in done:
+                    continue
+                done.add((e1, e2))
+                done.add((e2, e1))
+                assm_roi = [(d['path'], d['regtype']) for d in roifiles if d['assembly'] == trg]
+                assert len(assm_roi) == 3, 'ROI file missing'
+                for roip, reg in assm_roi:
+                    tmp = cmd.format(**{'roifile': roip, 'target': trg, 'query': qry})
+                    outfile = '_'.join(['roicorr', en1, 'vs', en2, reg]) + '.json'
+                    outpath = os.path.join(outbase, outfile)
+                    arglist.append([[e1, e2], outpath, tmp, jobcall])
+    if inputfiles:
+        assert arglist, 'No arguments created for signal correlation'
+    return arglist
+
+
+def make_corr_pairs(rawfiles, mapfiles, roifiles, assemblies, fp_cellmatches, outbase, cmd, jobcall):
+    """
+    :param rawfiles:
+    :param mapfiles:
+    :param roifiles:
+    :param assemblies:
+    :param fp_cellmatches:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    with open(fp_cellmatches, 'r') as cm:
+        cellmatches = js.load(cm)['matchings']
+    done = set()
+    arglist = []
+    for rf in rawfiles:
+        fp, fn = os.path.split(rf)
+        _, qry, cell, _ = fn.split('.')[0].split('_')
+        trg = assemblies[0] if qry == assemblies[1] else assemblies[1]
+        if cell in ['K562', 'GM12878', 'CH12', 'MEL']:
+            continue
+        compatible = cellmatches[cell]
+        pair_files = fnm.filter(mapfiles, '*_{}_*.from.{}.mapsig.h5'.format(qry, trg))
+        for pf in pair_files:
+            fp2, fn2 = os.path.split(pf)
+            _, _, cell2, _ = fn2.split('_')
+            if cell2 in compatible:
+                if (rf, pf) in done:
+                    continue
+                done.add((rf, pf))
+                assm_roi = [(d['path'], d['regtype']) for d in roifiles if d['assembly'] == qry]
+                assert len(assm_roi) == 3, 'ROI file missing'
+                for roip, reg in assm_roi:
+                    tmp = cmd.format(**{'roifile': roip, 'target': trg, 'query': qry})
+                    outfile = '_'.join(['roicorr', fn.split('.')[0], 'vs', fn2.rsplit('.', 1)[0], reg]) + '.json'
+                    outpath = os.path.join(outbase, outfile)
+                    arglist.append([[rf, pf], outpath, tmp, jobcall])
+    if rawfiles and mapfiles and roifiles:
+        assert arglist, 'No arguments created for signal map correlation'
+    return arglist
+
+
 def categorize_test_run(datamd, modelmd, cmatches):
     """
     :param datamd:
@@ -933,28 +1023,31 @@ def build_pipeline(args, config, sci_obj):
     # Major task: signal correlation
     # to get a feeling for the "upper" bound for the correlation across species,
     # compute pairwise correlation within species
-    # dir_task_sigcorr = os.path.join(workbase, 'task_signal_correlation')
-    #
-    # # Subtask
-    # # compute correlations of signal in regions of interest
-    # sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
-    # if args.gridmode:
-    #     jobcall = sci_obj.ruffus_gridjob()
-    # else:
-    #     jobcall = sci_obj.ruffus_localjob()
-    #
-    # cmd = config.get('Pipeline', 'corrsigroi').replace('\n', ' ')
-    # dir_sub_sigcorr_roi = os.path.join(dir_task_sigcorr, 'sub_roi')
-    # corrsigroi = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                         make_srcsig_pairs(inputfiles, use_targets,
-    #                                           get_generic_roifiles(config.get('Pipeline', 'refbase')),
-    #                                           dir_sub_sigcorr_roi, cmd, jobcall),
-    #                         name='corrsigroi').mkdir(dir_sub_sigcorr_roi).active_if(False)
-    #
-    # run_task_sigcorr = pipe.merge(task_func=touch_checkfile,
-    #                               name='run_task_sigcorr',
-    #                               input=output_from(corrsigroi),
-    #                               output=os.path.join(dir_task_sigcorr, 'run_task_sigcorr.chk')).active_if(False)
+
+    # compute correlations of signal in regions of interest
+
+    dir_task_sigcorr = os.path.join(workbase, 'task_signal_correlation')
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'corrsigroi').replace('\n', ' ')
+    dir_sub_sigcorr_roi = os.path.join(dir_task_sigcorr, 'sub_roi')
+    dir_refroi_bed = os.path.join(os.path.split(config.get('Pipeline', 'refroiexp'))[0], 'roi_bed')
+    corrsigroi = pipe.files(sci_obj.get_jobf('inpair_out'),
+                            make_srcsig_pairs(inputfiles, use_targets,
+                                              collect_roi_files(dir_refroi_bed, ext='*.bed.gz'),
+                                              dir_sub_sigcorr_roi, cmd, jobcall),
+                            name='corrsigroi')
+    corrsigroi = corrsigroi.mkdir(dir_sub_sigcorr_roi)
+    corrsigroi = corrsigroi.follows(init)
+
+    run_task_sigcorr = pipe.merge(task_func=touch_checkfile,
+                                  name='task_sigcorr',
+                                  input=output_from(corrsigroi),
+                                  output=os.path.join(dir_task_sigcorr, 'run_task_sigcorr.chk'))
 
     #
     # END: major task signal correlation
@@ -981,19 +1074,25 @@ def build_pipeline(args, config, sci_obj):
                                           cmd, jobcall),
                         name='mapsig').mkdir(dir_sub_signal)
 
-    # # Subtask
-    # # compute correlations of mapped to true signal across species in regions of interest
-    # cmd = config.get('Pipeline', 'corrmaproi').replace('\n', ' ')
-    # dir_sub_mapext_corr = os.path.join(dir_task_sigmap, 'sub_mapext', 'corr_roi')
-    # corrmaproi = pipe.files(sci_obj.get_jobf('inpair_out'),
-    #                         make_corr_pairs(inputfiles, use_targets, dir_sub_signal,
-    #                                         get_generic_roifiles(config.get('Pipeline', 'refbase')),
-    #                                         dir_sub_mapext_corr, cmd, jobcall),
-    #                         name='corrmaproi').mkdir(dir_sub_mapext_corr).follows(mapsig).active_if(False)
+    # Subtask
+    # compute correlations of mapped to true signal across species in regions of interest
+    cmd = config.get('Pipeline', 'corrmaproi').replace('\n', ' ')
+    dir_sub_mapcorr = os.path.join(dir_task_sigmap, 'mapcorr', 'corr_roi')
+    cellmatches_file = os.path.join(os.path.split(config.get('Annotations', 'groupfile'))[0], 'cellmatches_ro.json')
+    corrmaproi = pipe.files(sci_obj.get_jobf('inpair_out'),
+                            make_corr_pairs(collect_full_paths(dir_indata, '*/E*.h5', topdown=False, allow_none=False),
+                                            collect_full_paths(dir_sub_signal, '*/E*.h5', topdown=True, allow_none=True),
+                                            collect_roi_files(dir_refroi_bed, ext='*.bed.gz'),
+                                            use_targets, cellmatches_file, dir_sub_mapcorr,
+                                            cmd, jobcall),
+                            name='corrmaproi')
+    corrmaproi = corrmaproi.mkdir(dir_sub_mapcorr)
+    corrmaproi = corrmaproi.follows(mapsig)
+    corrmaproi = corrmaproi.active_if(os.path.isfile(cellmatches_file))
 
     task_sigmap = pipe.merge(task_func=touch_checkfile,
                              name='task_sigmap',
-                             input=output_from(mapsig),
+                             input=output_from(mapsig, corrmaproi),
                              output=os.path.join(dir_task_sigmap, 'task_sigmap.chk'))
 
     #
@@ -1287,6 +1386,15 @@ def build_pipeline(args, config, sci_obj):
     addtest_asig_cls_out = addtest_asig_cls_out.follows(extest_asig_cls_out)
     params_addtest_asig_cls_out = list()
 
+    cmd = config.get('Pipeline', 'summ_perf_status')
+    dir_summary = os.path.join(workbase, 'task_summarize')
+    summ_perf_status = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
+                                  name='summ_perf_status',
+                                  input=output_from(apply_expstat_seq, apply_expstat_asig),
+                                  output=os.path.join(dir_summary, 'agg_expstat_est.h5'),
+                                  extras=[cmd, jobcall])
+    summ_perf_status = summ_perf_status.mkdir(dir_summary)
+
     task_asig_cls_model = pipe.merge(task_func=touch_checkfile,
                                      name='task_asig_cls_model',
                                      input=output_from(trainmodel_expstat_asig,
@@ -1294,7 +1402,8 @@ def build_pipeline(args, config, sci_obj):
                                                        addtrain_asig_out,
                                                        apply_expstat_asig,
                                                        extest_asig_cls_out,
-                                                       addtest_asig_cls_out),
+                                                       addtest_asig_cls_out,
+                                                       summ_perf_status),
                                      output=os.path.join(workbase, 'task_asig_cls_model.chk'))
 
     # above: status prediction
@@ -1731,7 +1840,6 @@ def build_pipeline(args, config, sci_obj):
                          output=os.path.join(workbase, 'run_task_all.chk'))
 
     # aggregate training and testing performances
-    dir_summary = os.path.join(workbase, 'task_summarize')
     cmd = config.get('Pipeline', 'summ_perf').replace('\n', ' ')
     summarize_perf = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
                                 name='summarize_perf',

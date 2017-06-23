@@ -21,3 +21,6 @@ G19	EB16	EE07	ncd4-H1hESC	neg
 G20	EE15	EE07	heart-H1hESC	neg
 G21	EE12	EE07	liver-H1hESC	neg
 G22	EE11	EE07	kidney-H1hESC	neg
+G23	EE11	ED14	kidney-ncd4	neg
+G24	EE12	ED14	liver-ncd4	neg
+

@@ -5,6 +5,8 @@ channels:
   - r
 dependencies:
   - python=3.5.*
+  - curl
+  - conda-forge::readline
   - pytz
   - numpy
   - scipy
@@ -28,13 +30,22 @@ dependencies:
   - deeptools
   - openssl>=1.0.2k
   - boost
-  - r-base>=3.1.*
-  - r-snow
-  - r-snowfall
-  - r-bitops
-  - r-catools
+  - r-base>=3.3.*
+  - r-openssl
+  - r-curl
+  - r-devtools
+  - r-data.table
+  - r-optparse
+  - r-reshape2
+  - bioconductor-biostrings
+  - bioconductor-genomicranges
+  - bioconductor-iranges
   - bioconductor-biocinstaller
-  - bioconductor-rsamtools
   # LOLA
   # source("http://bioconductor.org/biocLite.R")
   # biocLite("LOLA")
+  #
+  # simpleCache
+  # options(unzip = 'internal')
+  # require(devtools)
+  # install_github("databio/simpleCache", ref="dev")
