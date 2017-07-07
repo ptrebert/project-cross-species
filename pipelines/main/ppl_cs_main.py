@@ -47,6 +47,21 @@ def collect_roi_files(folder, ext='*.h5'):
     return roifiles
 
 
+def collect_asc_files(folder, ext='*.tsv'):
+    """
+    :param folder:
+    :param ext:
+    :return:
+    """
+    fpaths = collect_full_paths(folder, ext, False)
+    ascfiles = dict()
+    for fp in fpaths:
+        assembly = os.path.basename(fp).split('_')[0]
+        ascfiles[assembly] = fp
+    assert ascfiles, 'No ASC files annotated from path: {}'.format(folder)
+    return ascfiles
+
+
 def select_compatible_libs(partner1, partner2):
     """
     :param partner1:
@@ -137,7 +152,7 @@ def bundle_epigenomes(folder, mapped=False):
     return collector
 
 
-def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd, jobcall):
+def annotate_training_groups(mapfiles, roifiles, ascfiles, epidir, groupfile, outraw, cmd, jobcall):
     """
     :param mapfiles:
     :param roifiles:
@@ -176,9 +191,17 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
                 outpath = os.path.join(outfolder, outfile)
                 assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
                 uniq.add(outpath)
-                params = {'target': target, 'query': query, 'genome': assm1,
-                          'regtype': roi['regtype'], 'mapfile': mapf['path'],
-                          'datafiles': partners['params1'], 'info': partners['extgid']}
+                if roi['regtype'] != 'reg5p':
+                    params = {'target': target, 'query': query, 'genome': assm1,
+                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                              'datafiles': partners['params1'], 'info': partners['extgid'],
+                              'ascregfile': '', 'ascregfeat': ''}
+                else:
+                    params = {'target': target, 'query': query, 'genome': assm1,
+                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                              'datafiles': partners['params1'], 'info': partners['extgid'],
+                              'ascregfile': '--asc-regions enh:nogroup:' + ascfiles[target],
+                              'ascregfeat': 'asc'}
                 tmp = cmd.format(**params)
                 arglist.append([roi['path'], outpath, tmp, jobcall])
         # same for other group partner
@@ -199,9 +222,17 @@ def annotate_training_groups(mapfiles, roifiles, epidir, groupfile, outraw, cmd,
                 outpath = os.path.join(outfolder, outfile)
                 assert outpath not in uniq, 'Created duplicate: {}'.format(outpath)
                 uniq.add(outpath)
-                params = {'target': target, 'query': query, 'genome': assm2,
-                          'regtype': roi['regtype'], 'mapfile': mapf['path'],
-                          'datafiles': partners['params2'], 'info': partners['extgid']}
+                if roi['regtype'] != 'reg5p':
+                    params = {'target': target, 'query': query, 'genome': assm2,
+                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                              'datafiles': partners['params2'], 'info': partners['extgid'],
+                              'ascregfile': '', 'ascregfeat': ''}
+                else:
+                    params = {'target': target, 'query': query, 'genome': assm2,
+                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                              'datafiles': partners['params2'], 'info': partners['extgid'],
+                              'ascregfile': '--asc-regions enh:nogroup:' + ascfiles[target],
+                              'ascregfeat': 'asc'}
                 tmp = cmd.format(**params)
                 arglist.append([roi['path'], outpath, tmp, jobcall])
     # store group info
@@ -502,7 +533,7 @@ def match_prior_testdata(testdata, priordata, suffix, cmd, jobcall):
     return arglist
 
 
-def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, outraw, cmd, jobcall):
+def annotate_test_datasets(mapfiles, roifiles, ascfiles, mapepidir, expfiles, groupfile, outraw, cmd, jobcall):
     """
     :param mapfiles:
     :param roifiles:
@@ -563,9 +594,17 @@ def annotate_test_datasets(mapfiles, roifiles, mapepidir, expfiles, groupfile, o
                                         raise AssertionError('Duplicate created: {}\n\n{}\n\n{}\n'.format(outpath, debug_record[outpath], exp_cells))
                                 uniq.add(outpath)
                                 debug_record[outpath] = (exp_cells, extgid, roi, ginfo)
-                                params = {'target': target, 'query': query, 'genome': query,
-                                          'regtype': roi['regtype'], 'mapfile': mapf['path'],
-                                          'datafiles': datafiles, 'info': extgid}
+                                if roi['regtype'] != 'reg5p':
+                                    params = {'target': target, 'query': query, 'genome': query,
+                                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                                              'datafiles': datafiles, 'info': extgid,
+                                              'ascregfile': '', 'ascregfeat': ''}
+                                else:
+                                    params = {'target': target, 'query': query, 'genome': query,
+                                              'regtype': roi['regtype'], 'mapfile': mapf['path'],
+                                              'datafiles': datafiles, 'info': extgid,
+                                              'ascregfile': '--asc-regions enh:nogroup:' + ascfiles[query],
+                                              'ascregfeat': 'asc'}
                                 tmp = cmd.format(**params)
                                 arglist.append([roi['path'], outpath, tmp, jobcall])
                         else:
@@ -1116,11 +1155,11 @@ def build_pipeline(args, config, sci_obj):
     dir_subtask_traindata_exp_groups = os.path.join(dir_task_traindata_exp, 'compfeat_groups', '{target}_to_{query}')
     mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
+    ascfiles = collect_asc_files(config.get('Pipeline', 'refascreg'))
     groupfile = config.get('Annotations', 'groupfile')
     cmd = config.get('Pipeline', 'traindataexp').replace('\n', ' ')
-
     traindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
-                                     annotate_training_groups(mapfiles, roifiles, dir_indata,
+                                     annotate_training_groups(mapfiles, roifiles, ascfiles, dir_indata,
                                                               groupfile, dir_subtask_traindata_exp_groups,
                                                               cmd, jobcall),
                                      name='traindataexp_groups')
@@ -1165,7 +1204,7 @@ def build_pipeline(args, config, sci_obj):
     matchings = os.path.join(os.path.dirname(config.get('Annotations', 'groupfile')), 'cellmatches_ro.json')
     cmd = config.get('Pipeline', 'testdataexp').replace('\n', ' ')
     testdataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
-                                    annotate_test_datasets(mapfiles, roifiles, dir_sub_signal, expfiles,
+                                    annotate_test_datasets(mapfiles, roifiles, ascfiles, dir_sub_signal, expfiles,
                                                            groupinfos, dir_sub_cmpf_testdataexp,
                                                            cmd, jobcall),
                                     name='testdataexp_groups')
