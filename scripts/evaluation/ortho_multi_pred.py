@@ -38,6 +38,7 @@ def parse_command_line():
     parser.add_argument('--ortho-file', '-orth', type=str, dest='orthofile')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
     parser.add_argument('--group-root', '-gr', type=str, dest='grouproot', default='/auto/pairs')
+    parser.add_argument('--tpm-threshold', '-tpm', type=int, dest='threshold', default=1)
 
     args = parser.parse_args()
     return args
@@ -83,7 +84,7 @@ def process_species_data(species, tpm, rank, orthologs, metadata):
     select_cols = data_cols + ['og_id']
     tpm.columns = new_cols
     tpm_orth = orthologs.merge(tpm, on='gene_name', copy=True)
-    tpm_strict = tpm_orth.loc[tpm_orth['group_size'] == 5, select_cols]
+    tpm_strict = tpm_orth.loc[tpm_orth['group_size'] == 6, select_cols]
     tpm_strict = tpm_strict.groupby('og_id').mean()
     tpm_balanced = tpm_orth.loc[tpm_orth['group_balanced'] == 1, select_cols + ['species', 'gene_name']]
     for s in tpm_balanced['species'].unique():
@@ -98,7 +99,7 @@ def process_species_data(species, tpm, rank, orthologs, metadata):
     select_cols = data_cols + ['og_id']
     rank.columns = new_cols
     rank_orth = orthologs.merge(rank, on='gene_name', copy=True)
-    rank_strict = rank_orth.loc[rank_orth['group_size'] == 5, select_cols]
+    rank_strict = rank_orth.loc[rank_orth['group_size'] == 6, select_cols]
     rank_strict = rank_strict.groupby('og_id').median()
     rank_strict = rank_strict.round(decimals=0)
     rank_balanced = rank_orth.loc[tpm_orth['group_balanced'] == 1, select_cols]
@@ -159,7 +160,7 @@ def tissue_match(a, b):
 
 def make_ortholog_pred(species_a, tpm_a, ranks_a,
                        species_b, tpm_b, ranks_b,
-                       orthologs, comp, outputfile):
+                       orthologs, threshold, comp, outputfile):
     """
     :param tpm_a:
     :param ranks_a:
@@ -175,6 +176,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
     # for HCOP, this may happen
     if name_a not in orthologs.columns or name_b not in orthologs.columns:
         return
+    tpm_threshold = threshold
     ortho_rel = orthologs.loc[:, [name_a, name_b]].copy()
     select_a = tpm_a.index.isin(orthologs.loc[:, name_a])
     select_b = tpm_b.index.isin(orthologs.loc[:, name_b])
@@ -212,7 +214,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
         norm_a = ca.rsplit('_', 1)[0]
         rca = norm_a + '_rank'
         tissue_a = norm_a.rsplit('_', 1)[-1]
-        spec_a_labels = tpm[ca] >= 1
+        spec_a_labels = tpm[ca] >= tpm_threshold
         spec_a_active = spec_a_labels.sum()
         spec_a_inactive = num_orthologs - spec_a_active
         for cb in sub_tpm_b.columns:
@@ -221,13 +223,13 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             norm_b = cb.rsplit('_', 1)[0]
             rcb = norm_b + '_rank'
             tissue_b = norm_b.rsplit('_', 1)[-1]
-            spec_b_labels = tpm[cb] >= 1
+            spec_b_labels = tpm[cb] >= tpm_threshold
             spec_b_active = spec_b_labels.sum()
             spec_b_inactive = num_orthologs - spec_b_active
 
             zero_wt = 0.5 / spec_b_inactive
             one_wt = 0.5 / spec_b_active
-            wt_vec = np.array([zero_wt if val < 1 else one_wt for val in tpm[cb]], dtype=np.float64)
+            wt_vec = np.array([zero_wt if val < tpm_threshold else one_wt for val in tpm[cb]], dtype=np.float64)
             assert np.isclose(wt_vec.sum(), 1), 'Weight vector does not sum to 1: {}...'.format(wt_vec[:5])
             # record performance metrics for whole dataset
             acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
@@ -259,10 +261,10 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             num_consistent_act_10 = deltas.sum()
             num_inconsistent_act_10 = deltas.size - num_consistent_act_10
 
-            num_tp = (np.logical_and(tpm[ca] >= 1, tpm[cb] >= 1)).sum()
-            num_fp = (np.logical_and(tpm[ca] >= 1, tpm[cb] < 1)).sum()
-            num_tn = (np.logical_and(tpm[ca] < 1, tpm[cb] < 1)).sum()
-            num_fn = (np.logical_and(tpm[ca] < 1, tpm[cb] >= 1)).sum()
+            num_tp = (np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] >= tpm_threshold)).sum()
+            num_fp = (np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] < tpm_threshold)).sum()
+            num_tn = (np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] < tpm_threshold)).sum()
+            num_fn = (np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] >= tpm_threshold)).sum()
 
             dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
             dataset.columns = [name_a, norm_a, name_b, norm_b]
@@ -343,12 +345,12 @@ def main():
             orthologs = hdf[group]
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
-                           orthologs, 'pair', args.outputfile)
+                           orthologs, args.threshold, 'pair', args.outputfile)
         with pd.HDFStore(args.orthofile, 'r') as hdf:
             orthologs = hdf['/auto/groups']
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
-                           orthologs, 'group', args.outputfile)
+                           orthologs, args.threshold, 'group', args.outputfile)
         if spec_a not in spec_done:
             tpm_a['{}_name'.format(spec_a)] = tpm_a.index
             tpm_a = tpm_a.reset_index(drop=True, inplace=False)
