@@ -47,7 +47,7 @@ def collect_roi_files(folder, ext='*.h5'):
     return roifiles
 
 
-def collect_asc_files(folder, ext='*.tsv'):
+def collect_asc_files(folder, ext='*.tsv', key=0):
     """
     :param folder:
     :param ext:
@@ -56,7 +56,7 @@ def collect_asc_files(folder, ext='*.tsv'):
     fpaths = collect_full_paths(folder, ext, False)
     ascfiles = dict()
     for fp in fpaths:
-        assembly = os.path.basename(fp).split('_')[0]
+        assembly = os.path.basename(fp).split('_')[key]
         ascfiles[assembly] = fp
     assert ascfiles, 'No ASC files annotated from path: {}'.format(folder)
     return ascfiles
@@ -1155,7 +1155,7 @@ def build_pipeline(args, config, sci_obj):
     dir_subtask_traindata_exp_groups = os.path.join(dir_task_traindata_exp, 'compfeat_groups', '{target}_to_{query}')
     mapfiles = collect_mapfiles(dir_maps, use_targets, use_queries)
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
-    ascfiles = collect_asc_files(config.get('Pipeline', 'refascreg'))
+    ascfiles = collect_asc_files(config.get('Pipeline', 'refascreg'), key=0)
     groupfile = config.get('Annotations', 'groupfile')
     cmd = config.get('Pipeline', 'traindataexp').replace('\n', ' ')
     traindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
@@ -1336,6 +1336,106 @@ def build_pipeline(args, config, sci_obj):
                                                   addtest_seq_out),
                                 output=os.path.join(workbase, 'task_seq_model.chk'))
 
+    # ========================================
+    # subtask: train model on enhancers only
+
+    sci_obj.set_config_env(dict(config.items('CVParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'trainmodel_expstat_enh').replace('\n', ' ')
+    trainmodel_expstat_enh = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                            name='trainmodel_expstat_enh',
+                                            input=output_from(mrgtraindataexp_groups),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                            output=os.path.join(dir_train_expstat,
+                                                                'enh',
+                                                                '{subdir[0][0]}',
+                                                                '{SAMPLE[0]}.rfcls.enh.all.pck'),
+                                            extras=[cmd, jobcall])
+    trainmodel_expstat_enh = trainmodel_expstat_enh.mkdir(dir_train_expstat, 'enh')
+    trainmodel_expstat_enh = trainmodel_expstat_enh.follows(task_seq_model)
+
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'extrain_enh_out').replace('\n', ' ')
+    extrain_enh_out = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                     name='extrain_enh_out',
+                                     input=output_from(trainmodel_expstat_enh),
+                                     filter=formatter('(?P<SAMPLE>[\w\.]+).rfcls.enh.all.pck'),
+                                     output='{path[0]}/{SAMPLE[0]}.enh-cprob.h5',
+                                     extras=[cmd, jobcall])
+
+    cmd = config.get('Pipeline', 'addtrain_enh_out').replace('\n', ' ')
+    params_addtrain_enh_out = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
+                                                                       pattern='*.feat.seqout.h5', allow_none=True),
+                                                    collect_full_paths(os.path.join(dir_train_expstat, 'enh'),
+                                                                       pattern='*enh-cprob.h5',
+                                                                       allow_none=True),
+                                                    '.enhout', cmd, jobcall)
+
+    addtrain_enh_out = pipe.files(sci_obj.get_jobf('ins_out'),
+                                  params_addtrain_enh_out,
+                                  name='addtrain_enh_out')
+    addtrain_enh_out = addtrain_enh_out.follows(extrain_enh_out)
+    addtrain_enh_out = addtrain_enh_out.follows(task_traindata_exp)
+    params_addtrain_enh_out = list()
+
+    # apply enhancer model to test data
+    
+    cmd = config.get('Pipeline', 'apply_expstat_enh').replace('\n', ' ')
+    params_apply_expstat_enh = params_predict_testdata(os.path.join(dir_train_expstat, 'enh'),
+                                                       os.path.split(dir_mrg_test_datasets)[0],
+                                                       os.path.join(dir_apply_expstat, 'enh', '{groupid}'),
+                                                       cmd, jobcall)
+    apply_expstat_enh = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                   params_apply_expstat_enh,
+                                   name='apply_expstat_enh')
+    apply_expstat_enh = apply_expstat_enh.mkdir(os.path.join(dir_apply_expstat, 'enh'))
+    apply_expstat_enh = apply_expstat_enh.follows(mrgtestdataexp_groups)
+    apply_expstat_enh = apply_expstat_enh.follows(trainmodel_expstat_enh)
+    params_apply_expstat_enh = list()
+    
+    # extract sequence model predictions for test data and add to test datasets
+    cmd = config.get('Pipeline', 'extest_enh_out').replace('\n', ' ')
+    extest_enh_out = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                                  name='extest_enh_out',
+                                  input=output_from(apply_expstat_enh),
+                                  filter=formatter('(?P<GID>G[0-9]{4})_.+(?P<DSET>data-[a-zA-Z0-9-]+)_model.+enh\.all\.json'),
+                                  output='{path[0]}/{GID[0]}_{DSET[0]}.enh-cprob.h5',
+                                  extras=[cmd, jobcall])
+    
+    # add enhancer model predictions to test datasets
+    cmd = config.get('Pipeline', 'addtest_enh_out').replace('\n', ' ')
+    params_addtest_enh_out = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
+                                                                     '*.feat.seqout.h5', allow_none=True),
+                                                  collect_full_paths(os.path.join(dir_apply_expstat, 'enh'),
+                                                                     '*.enh-cprob.h5', allow_none=True),
+                                                  '.enhout', cmd, jobcall)
+    addtest_enh_out = pipe.files(sci_obj.get_jobf('ins_out'),
+                                 params_addtest_enh_out,
+                                 name='addtest_enh_out')
+    addtest_enh_out = addtest_enh_out.follows(apply_expstat_enh)
+    addtest_enh_out = addtest_enh_out.follows(extest_enh_out)
+    addtest_enh_out = addtest_enh_out.follows(task_testdata_exp)
+    params_addtest_enh_out = list()
+    
+    task_enh_model = pipe.merge(task_func=touch_checkfile,
+                                name='task_enh_model',
+                                input=output_from(trainmodel_expstat_enh,
+                                                  extrain_enh_out,
+                                                  addtrain_enh_out,
+                                                  apply_expstat_enh,
+                                                  extest_enh_out,
+                                                  addtest_enh_out),
+                                output=os.path.join(workbase, 'task_enh_model.chk'))
+
     # Subtask
     # train augmented signal model to classify genes as active/inactive (TPM >= 1)
     sci_obj.set_config_env(dict(config.items('CVParallelJobConfig')), dict(config.items('CondaPPLCS')))
@@ -1347,14 +1447,15 @@ def build_pipeline(args, config, sci_obj):
     cmd = config.get('Pipeline', 'trainmodel_expstat_asig').replace('\n', ' ')
     trainmodel_expstat_asig = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                              name='trainmodel_expstat_asig',
-                                             input=output_from(addtrain_seq_out),
-                                             filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.seqout\.h5'),
+                                             input=output_from(addtrain_enh_out),
+                                             filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.seqout\.enhout\.h5'),
                                              output=os.path.join(dir_train_expstat,
                                                                  'asig',
                                                                  '{subdir[0][0]}',
                                                                  '{SAMPLE[0]}.rfcls.asig.all.pck'),
                                              extras=[cmd, jobcall])
     trainmodel_expstat_asig = trainmodel_expstat_asig.mkdir(os.path.join(dir_train_expstat, 'asig'))
+    trainmodel_expstat_asig = trainmodel_expstat_asig.follows(task_enh_model)
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -1372,7 +1473,7 @@ def build_pipeline(args, config, sci_obj):
 
     cmd = config.get('Pipeline', 'addtrain_asig_out').replace('\n', ' ')
     params_addtrain_asig_out = match_prior_traindata(collect_full_paths(os.path.split(dir_mrg_train_datasets)[0],
-                                                                        pattern='*feat.h5', allow_none=True),
+                                                                        pattern='*feat.seqout.enhout.h5', allow_none=True),
                                                      collect_full_paths(os.path.join(dir_train_expstat, 'asig'),
                                                                         pattern='*asig-cprob.h5',
                                                                         allow_none=True),
@@ -1389,7 +1490,7 @@ def build_pipeline(args, config, sci_obj):
     cmd = config.get('Pipeline', 'apply_expstat_asig').replace('\n', ' ')
     params_apply_expstat_asig = params_predict_testdata(os.path.join(dir_train_expstat, 'asig'),
                                                         collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                           pattern='*seqout.h5',
+                                                                           pattern='*seqout.enhout.h5',
                                                                            allow_none=True),
                                                         os.path.join(dir_apply_expstat, 'asig', '{groupid}'),
                                                         cmd, jobcall)
@@ -1413,7 +1514,7 @@ def build_pipeline(args, config, sci_obj):
     # add asig model predictions to test datasets
     cmd = config.get('Pipeline', 'addtest_asig_cls_out').replace('\n', ' ')
     params_addtest_asig_cls_out = match_prior_testdata(collect_full_paths(os.path.split(dir_mrg_test_datasets)[0],
-                                                                          '*.feat.h5', allow_none=True),
+                                                                          '*seqout.enhout.h5', allow_none=True),
                                                        collect_full_paths(os.path.join(dir_apply_expstat, 'asig'),
                                                                           '*.asig-cprob.h5', allow_none=True),
                                                        '.asigout', cmd, jobcall)
@@ -1433,6 +1534,7 @@ def build_pipeline(args, config, sci_obj):
                                   output=os.path.join(dir_summary, 'agg_expstat_est.h5'),
                                   extras=[cmd, jobcall])
     summ_perf_status = summ_perf_status.mkdir(dir_summary)
+    summ_perf_status = summ_perf_status.active_if(False)
 
     task_asig_cls_model = pipe.merge(task_func=touch_checkfile,
                                      name='task_asig_cls_model',
