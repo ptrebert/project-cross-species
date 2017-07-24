@@ -9,7 +9,7 @@ import argparse as argp
 import pandas as pd
 import numpy as np
 from scipy.stats import kendalltau as ktau
-from sklearn.metrics import accuracy_score as acc
+from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import r2_score as r2s
 
 
@@ -36,6 +36,8 @@ def parse_command_line():
 
     parser.add_argument('--exp-files', '-exp', type=str, nargs='+', dest='expfiles')
     parser.add_argument('--ortho-file', '-orth', type=str, dest='orthofile')
+    parser.add_argument('--cons-file', '-cons', type=str, nargs='+', dest='consfiles')
+    parser.add_argument('--select-cons', '-slc', type=str, default='', dest='selectcons')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
     parser.add_argument('--group-root', '-gr', type=str, dest='grouproot', default='/auto/pairs')
     parser.add_argument('--tpm-threshold', '-tpm', type=int, dest='threshold', default=1)
@@ -73,44 +75,21 @@ def normalize_col_names(cnames, species):
     return norm, datacols
 
 
-def process_species_data(species, tpm, rank, orthologs, metadata):
+def load_conservation_scores(consfiles, species, select):
     """
-    :param tpm:
-    :param rank:
-    :param orthologs:
+    :param consfiles:
+    :param species:
     :return:
     """
-    new_cols, data_cols = normalize_col_names(tpm.columns, species)
-    select_cols = data_cols + ['og_id']
-    tpm.columns = new_cols
-    tpm_orth = orthologs.merge(tpm, on='gene_name', copy=True)
-    tpm_strict = tpm_orth.loc[tpm_orth['group_size'] == 6, select_cols]
-    tpm_strict = tpm_strict.groupby('og_id').mean()
-    tpm_balanced = tpm_orth.loc[tpm_orth['group_balanced'] == 1, select_cols + ['species', 'gene_name']]
-    for s in tpm_balanced['species'].unique():
-        gbal = tpm_balanced.loc[tpm_balanced['species'] == s, 'gene_name'].unique().size
-        metadata['balanced_genes_{}'.format(s)] = int(gbal)
-    tpm_balanced.drop(['species', 'gene_name'], axis=1, inplace=True)
-    tpm_balanced = tpm_balanced.groupby('og_id').mean()
-    tpm_all = tpm_orth.loc[:, select_cols]
-    tpm_all = tpm_all.groupby('og_id').mean()
-    # same for ranks
-    new_cols, data_cols = normalize_col_names(rank.columns, species)
-    select_cols = data_cols + ['og_id']
-    rank.columns = new_cols
-    rank_orth = orthologs.merge(rank, on='gene_name', copy=True)
-    rank_strict = rank_orth.loc[rank_orth['group_size'] == 6, select_cols]
-    rank_strict = rank_strict.groupby('og_id').median()
-    rank_strict = rank_strict.round(decimals=0)
-    rank_balanced = rank_orth.loc[tpm_orth['group_balanced'] == 1, select_cols]
-    rank_balanced = rank_balanced.groupby('og_id').median()
-    rank_balanced = rank_balanced.round(decimals=0)
-    rank_all = rank_orth.loc[:, select_cols]
-    rank_all = rank_all.groupby('og_id').median()
-    rank_all = rank_all.round(decimals=0)
-    tpm_data = {'strict': tpm_strict, 'balanced': tpm_balanced, 'all': tpm_all}
-    rank_data = {'strict': rank_strict, 'balanced': rank_balanced, 'all': rank_all}
-    return tpm_data, rank_data, metadata
+    assm = SPECIES_MAP[species]
+    to_load = [f for f in consfiles if os.path.basename(f).startswith(assm)]
+    assert len(to_load) == 1, 'Cannot load conservation data for assembly {}: {}'.format(assm, consfiles)
+    with pd.HDFStore(to_load[0], 'r') as hdf:
+        data = hdf['genes']
+        data = data[['name', select]]
+    data.columns = ['name', 'level']
+    assert not data.empty, 'Conservation score DF is empty'
+    return data
 
 
 def identify_species_pairs(fpath, grouproot):
@@ -160,8 +139,13 @@ def tissue_match(a, b):
 
 def make_ortholog_pred(species_a, tpm_a, ranks_a,
                        species_b, tpm_b, ranks_b,
-                       orthologs, threshold, comp, outputfile):
+                       orthologs, threshold, conservation,
+                       comp, outputfile):
     """
+
+    Assumed directionality: from species A to species B - i.e. labels of
+    species B are "true", labels of species A are "pred"
+
     :param tpm_a:
     :param ranks_a:
     :param tpm_b:
@@ -227,14 +211,41 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             spec_b_active = spec_b_labels.sum()
             spec_b_inactive = num_orthologs - spec_b_active
 
-            zero_wt = 0.5 / spec_b_inactive
-            one_wt = 0.5 / spec_b_active
-            wt_vec = np.array([zero_wt if val < tpm_threshold else one_wt for val in tpm[cb]], dtype=np.float64)
-            assert np.isclose(wt_vec.sum(), 1), 'Weight vector does not sum to 1: {}...'.format(wt_vec[:5])
-            # record performance metrics for whole dataset
-            acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
+            # zero_wt = 0.5 / spec_b_inactive
+            # one_wt = 0.5 / spec_b_active
+            # wt_vec = np.array([zero_wt if val < tpm_threshold else one_wt for val in tpm[cb]], dtype=np.float64)
+            # assert np.isclose(wt_vec.sum(), 1), 'Weight vector does not sum to 1: {}...'.format(wt_vec[:5])
+            # # record performance metrics for whole dataset
+            # acc_score = acc(spec_b_labels, spec_a_labels, sample_weight=wt_vec)
+
+            # average='macro' - both classes have the same weight, irrespective of support
+            prec, recall, f1, _ = precision_recall_fscore_support(spec_b_labels, spec_a_labels,
+                                                                  beta=1.0, pos_label=1, average='macro')
             r2_score_all = r2s(tpm[cb], tpm[ca])
             ktau_score_all = kendall_tau_scorer(tpm[cb], tpm[ca])
+
+            if conservation is not None:
+                cons_levels = sorted(conservation['level'].unique())
+                metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
+                           'positives', 'negatives', 'precision', 'recall', 'f1score']
+                cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
+                                            index=metrics, columns=cons_levels)
+                for lvl in cons_levels:
+                    lvl_genes = conservation.loc[conservation['level'] >= lvl, 'name']
+                    lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
+                    lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
+                    lvl_labels_b = lvl_sub[cb] >= tpm_threshold
+                    lvl_labels_a = lvl_sub[ca] >= tpm_threshold
+                    lvl_posclass = lvl_labels_b.sum()
+                    lvl_negclass = lvl_sub.shape[0] - lvl_posclass
+                    lvl_pos = (lvl_labels_a == lvl_labels_b).sum()
+                    lvl_neg = lvl_sub.shape[0] - lvl_pos
+                    lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_labels_b, lvl_labels_a,
+                                                                                      beta=1.0, pos_label=1,
+                                                                                      average='macro')
+                    lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
+                                        lvl_prec, lvl_recall, lvl_f1])
+                    cons_scoring[lvl] = lvl_metrics
 
             ranked = ranks.loc[:, [rca, rcb]].copy().rank(axis=0, method='dense', pct=True)
             deltas = np.abs(ranked[rca] - ranked[rcb]) < 0.05
@@ -268,14 +279,14 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
 
             dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
             dataset.columns = [name_a, norm_a, name_b, norm_b]
-            dataset['{}_weights'.format(species_b)] = wt_vec
             dataset = dataset.merge(ranks.loc[:, (name_a, norm_a + '_rank')], on=name_a, how='outer', copy=True)
             dataset = dataset.merge(ranks.loc[:, (name_b, norm_b + '_rank')], on=name_b, how='outer', copy=True)
 
             metadata = {'num_orthologs': num_orthologs,
                         name_a + '_active': spec_a_active, name_a + '_inactive': spec_a_inactive,
                         name_b + '_inactive': spec_b_inactive, name_b + '_inactive': spec_b_inactive,
-                        'perf_wt_acc': acc_score, 'perf_r2_all': r2_score_all, 'perf_ktau_all': ktau_score_all,
+                        'perf_prec_all': prec, 'perf_recall_all': recall, 'perf_f1score_all': f1,
+                        'perf_r2_all': r2_score_all, 'perf_ktau_all': ktau_score_all,
                         'perf_r2_active': r2_score_act, 'perf_ktau_active': ktau_score_act,
                         'perf_num_tp': num_tp, 'perf_num_fp': num_fp, 'perf_num_tn': num_tn, 'perf_num_fn': num_fn,
                         'perf_num_consistent_all_5': num_consistent_all_5, 'perf_num_inconsistent_all_5': num_inconsistent_all_5,
@@ -289,12 +300,16 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
+                    if conservation is not None:
+                        hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
                     hdf.flush()
             else:
                 base_group = '/neg/{}/{}/{}/{}/{}'.format(comp, species_a, species_b, norm_a, norm_b)
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
+                    if conservation is not None:
+                        hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
                     hdf.flush()
     return
 
@@ -341,16 +356,22 @@ def main():
     for spec_a, spec_b, group in species_pairs:
         tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles)
         tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles)
+        if (spec_a, spec_b) in [('human', 'mouse'), ('mouse', 'human')]:
+            cons_scores = load_conservation_scores(args.consfiles, spec_b, args.selectcons)
+        else:
+            cons_scores = None
         with pd.HDFStore(args.orthofile, 'r') as hdf:
             orthologs = hdf[group]
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
-                           orthologs, args.threshold, 'pair', args.outputfile)
+                           orthologs, args.threshold,
+                           cons_scores, 'pair', args.outputfile)
         with pd.HDFStore(args.orthofile, 'r') as hdf:
             orthologs = hdf['/auto/groups']
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
-                           orthologs, args.threshold, 'group', args.outputfile)
+                           orthologs, args.threshold,
+                           None, 'group', args.outputfile)
         if spec_a not in spec_done:
             tpm_a['{}_name'.format(spec_a)] = tpm_a.index
             tpm_a = tpm_a.reset_index(drop=True, inplace=False)
