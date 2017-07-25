@@ -12,12 +12,14 @@ import csv as csv
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import precision_recall_fscore_support
 
 __DATASET_FILE__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/datasets.tsv'
 __MATCHTYPES__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/cellmatches_ro.json'
 __APPLY_ROOT__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/processing/norm/task_applymodel_exp/sub_status'
 __ORTHOLOGS__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/orthologs/hdf/odb9_6species.h5'
 __AGG_EXPRESSION__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/agg'
+__CONSERVATION__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/conservation/genes'
 
 
 SPECIES_MAP = {'human': 'hg19',
@@ -35,6 +37,9 @@ TISSUE_MAP = {('hepa', 'liver'): 1,
               ('liver', 'hepa'): 1,
               ('ESE14', 'H1hESC'): 1,
               ('H1hESC', 'ESE14'): 1}
+
+CONS_MAP = {'hg19': os.path.join(__CONSERVATION__, 'hg19_pc-genes_phylop_tsswin.h5'),
+            'mm9': os.path.join(__CONSERVATION__, 'mm9_pc-genes_phylop_tsswin.h5')}
 
 
 def sample_type(sample):
@@ -63,6 +68,8 @@ def parse_command_line():
     parser.add_argument('--base-dir', '-bd', type=str, default=__APPLY_ROOT__, dest='applyroot')
 
     parser.add_argument('--orthologs', '-orth', type=str, default=__ORTHOLOGS__, dest='orthologs')
+    parser.add_argument('--cons-dir', '-cons', type=str, default=__CONSERVATION__, dest='consdir')
+    parser.add_argument('--select-cons', '-slc', type=str, dest='selectcons')
 
     parser.add_argument('--expression', '-exp', type=str, default=__AGG_EXPRESSION__, dest='expression')
 
@@ -225,7 +232,21 @@ def load_gene_orthologs(fpath, spec_a, spec_b):
     return pairs, grp
 
 
-def collect_perf_metrics(data, metadata, prefix):
+def load_conservation_scores(fpath, select):
+    """
+    :param fpath:
+    :param select:
+    :return:
+    """
+    with pd.HDFStore(fpath, 'r') as hdf:
+        data = hdf['genes']
+        data.index = data['name']
+        data = data.loc[:, [select]]
+    data.columns = ['cons_level']
+    return data
+
+
+def collect_perf_metrics(data, metadata, row_name):
     """
     :param data:
     :param metadata:
@@ -233,26 +254,86 @@ def collect_perf_metrics(data, metadata, prefix):
     """
     # save as string to avoid serialization problems due to
     # mixed-integer dtype
-    metadata[prefix + 'num_active'] = str((data['true_class'] == 1).sum())
-    metadata[prefix + 'num_inactive'] = str((data['true_class'] == 0).sum())
-    metadata[prefix + 'tp'] = str(data['tp'].sum())
-    metadata[prefix + 'tn'] = str(data['tn'].sum())
-    metadata[prefix + 'true'] = str(int(metadata[prefix + 'tp']) + int(metadata[prefix + 'tn']))
-    metadata[prefix + 'fp'] = str(data['fp'].sum())
-    metadata[prefix + 'fn'] = str(data['fn'].sum())
-    metadata[prefix + 'false'] = str(int(metadata[prefix + 'fp']) + int(metadata[prefix + 'fn']))
-    metadata[prefix + 'p060'] = str(data['true_prob_060'].sum())
-    metadata[prefix + 'p070'] = str(data['true_prob_070'].sum())
-    metadata[prefix + 'p080'] = str(data['true_prob_080'].sum())
-    metadata[prefix + 'p090'] = str(data['true_prob_090'].sum())
-    metadata[prefix + 'p100'] = str(data['true_prob_100'].sum())
+    # metadata[prefix + 'num_active'] = str((data['true_class'] == 1).sum())
+    # metadata[prefix + 'num_inactive'] = str((data['true_class'] == 0).sum())
+    # metadata[prefix + 'tp'] = str(data['tp'].sum())
+    # metadata[prefix + 'tn'] = str(data['tn'].sum())
+    # metadata[prefix + 'true'] = str(int(metadata[prefix + 'tp']) + int(metadata[prefix + 'tn']))
+    # metadata[prefix + 'fp'] = str(data['fp'].sum())
+    # metadata[prefix + 'fn'] = str(data['fn'].sum())
+    # metadata[prefix + 'false'] = str(int(metadata[prefix + 'fp']) + int(metadata[prefix + 'fn']))
+    # metadata[prefix + 'p060'] = str(data['true_prob_060'].sum())
+    # metadata[prefix + 'p070'] = str(data['true_prob_070'].sum())
+    # metadata[prefix + 'p080'] = str(data['true_prob_080'].sum())
+    # metadata[prefix + 'p090'] = str(data['true_prob_090'].sum())
+    # metadata[prefix + 'p100'] = str(data['true_prob_100'].sum())
+    col_sums = data.sum(axis=0, numeric_only=True)
+    labels, values = [], []
+    for col, val in col_sums.iteritems():
+        if col == 'true_class':
+            pos_class = val
+            neg_class = data.shape[0] - pos_class
+            labels.extend(['pos_class', 'neg_class'])
+            values.extend([pos_class, neg_class])
+        elif col.startswith('true_prob'):
+            labels.append(col)
+            values.append(val)
+        elif col == 'pred_class':
+            continue
+        elif '_name' in col:
+            continue
+        else:
+            labels.append(col)
+            values.append(val)
+    positives = data['tp'].sum() + data['tn'].sum()
+    negatives = data['fp'].sum() + data['fn'].sum()
+    labels.extend(['positives', 'negatives'])
+    values.extend([positives, negatives])
+    prec, recall, f1score, _ = precision_recall_fscore_support(data['true_class'], data['pred_class'],
+                                                               beta=1.0, pos_label=1, average='macro')
+    labels.extend(['precision', 'recall', 'f1score'])
+    values.extend([prec, recall, f1score])
+    if metadata is None:
+        metadata = pd.DataFrame([values], index=[row_name], columns=labels, dtype=np.float32)
+    else:
+        new_row = pd.DataFrame([values], index=[row_name], columns=labels, dtype=np.float32)
+        metadata = pd.concat([metadata, new_row], ignore_index=False, axis=0)
     return metadata
 
 
-def process_run_metadata(collected_infos, genes_switching, gene_orthologs, outputfile):
+def record_cons_performance(dataset):
+    """
+    :param dataset:
+    :return:
+    """
+    cons_levels = sorted(dataset['cons_level'].unique())
+    metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
+               'positives', 'negatives', 'precision', 'recall', 'f1score']
+    cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
+                                index=metrics, columns=cons_levels)
+    for lvl in cons_levels:
+        lvl_sub = dataset.loc[dataset['cons_level'] >= lvl, :]
+        lvl_metrics = [lvl_sub.shape[0], lvl_sub.shape[0]]
+        lvl_posclass = lvl_sub['true_class'].sum()
+        lvl_negclass = lvl_sub.shape[0] - lvl_posclass
+        lvl_pos = (lvl_sub['pred_class'] == lvl_sub['true_class']).sum()
+        lvl_neg = lvl_sub.shape[0] - lvl_pos
+        lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_sub['true_class'],
+                                                                          lvl_sub['pred_class'],
+                                                                          beta=1.0, pos_label=1,
+                                                                          average='macro')
+        lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
+                            lvl_prec, lvl_recall, lvl_f1])
+        cons_scoring[lvl] = lvl_metrics
+    return cons_scoring
+
+
+def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_select, outputfile):
     """
     :param collected_infos:
+    :param genes_switching:
     :param gene_orthologs:
+    :param cons_select:
     :param outputfile:
     :return:
     """
@@ -263,6 +344,12 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, outpu
         if (trg, qry) != current_pairing:
             trg_spec, qry_spec = ASSEMBLY_MAP[trg], ASSEMBLY_MAP[qry]
             pair_ortho, group_ortho = load_gene_orthologs(gene_orthologs, trg_spec, qry_spec)
+            if (trg, qry) == ('hg19', 'mm9'):
+                conservation = load_conservation_scores(CONS_MAP['mm9'], cons_select)
+            elif (trg, qry) == ('mm9', 'hg19'):
+                conservation = load_conservation_scores(CONS_MAP['hg19'], cons_select)
+            else:
+                conservation = None
         for run in collected_infos[(trg, qry, epi, exp)]:
             run['target_spec'] = trg_spec
             run['query_spec'] = qry_spec
@@ -280,21 +367,33 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, outpu
                 dump = js.load(run_info)
             run['metadata'] = os.path.basename(run['metadata'])
             gene_names = dump['sample_info']['names']
-            true_class = dump['testing_info']['targets']['true']
-            pred_class = dump['testing_info']['targets']['pred']
-            true_class_prob = dump['testing_info']['probabilities']['true']
-            ind_p60 = [1 if 0.5 < p <= 0.6 else 0 for p in true_class_prob]
-            ind_p70 = [1 if 0.6 < p <= 0.7 else 0 for p in true_class_prob]
-            ind_p80 = [1 if 0.7 < p <= 0.8 else 0 for p in true_class_prob]
-            ind_p90 = [1 if 0.8 < p <= 0.9 else 0 for p in true_class_prob]
-            ind_p100 = [1 if 0.9 < p <= 1. else 0 for p in true_class_prob]
-            df = pd.DataFrame([true_class, pred_class, ind_p60, ind_p70,
-                               ind_p80, ind_p90, ind_p100],
-                              columns=gene_names, dtype=np.int8)
-            df = df.transpose()
-            df.columns = ['true_class', 'pred_class', 'true_prob_060', 'true_prob_070',
-                          'true_prob_080', 'true_prob_090', 'true_prob_100']
+            true_class = np.array(dump['testing_info']['targets']['true'], dtype=np.int8)
+            pred_class = np.array(dump['testing_info']['targets']['pred'], dtype=np.int8)
+            # predicted probabilities for true class labels
+            # if p(label) > 0.5, the correct class has been predicted
+            true_class_prob = np.array(dump['testing_info']['probabilities']['true'], dtype=np.float32)
+            prob_steps = list(range(50, 100, 5))
+            prob_steps.extend([99, 100])
+            prob_labels = list(map(str, prob_steps))
+            prob_steps = np.array(prob_steps, dtype=np.float32)
+            prob_steps /= 100.
+            df = pd.DataFrame(None, index=gene_names, dtype=np.int8)
             df.index.name = gene_col
+            df['true_class'] = true_class
+            df['pred_class'] = pred_class
+            if conservation is not None:
+                assert df.shape[0] == conservation.shape[0], \
+                    'Differing number of genes: {} vs {}'.format(df.shape[0], conservation.shape[0])
+                df = df.join(conservation, on=None, how='left')
+                cons_scoring = record_cons_performance(df)
+            else:
+                cons_scoring = None
+            for idx, (s, l) in enumerate(zip(prob_steps[1:-1], prob_labels[1:-1]), start=1):
+                indicator = np.array(np.logical_and(prob_steps[idx-1] < true_class_prob,
+                                                    true_class_prob <= s), dtype=np.int8)
+                df['true_prob_iv_{}-{}'.format(prob_labels[idx-1], l)] = indicator
+                indicator = np.array(prob_steps[idx-1] < true_class_prob, dtype=np.int8)
+                df['true_prob_lo_{}'.format(prob_labels[idx-1])] = indicator
             df['group_ortho'] = np.array(df.index.isin(group_ortho[gene_col]), dtype=np.int8)
             df['pair_ortho'] = np.array((df.index.isin(pair_ortho[gene_col])), dtype=np.int8)
             df['switching'] = np.array(df.index.isin(genes_switching[qry]), dtype=np.int8)
@@ -302,10 +401,10 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, outpu
             df['tn'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 0), dtype=np.int8)
             df['fp'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 1), dtype=np.int8)
             df['fn'] = np.array(np.logical_and(df['true_class'] == 1, df['pred_class'] == 0), dtype=np.int8)
-            run = collect_perf_metrics(df, run, 'perf_wg_')
-            run = collect_perf_metrics(df.loc[df['switching'] == 1, :].copy(), run, 'perf_switch_')
-            run = collect_perf_metrics(df.loc[df['group_ortho'] == 1, :].copy(), run, 'perf_group_')
-            run = collect_perf_metrics(df.loc[df['pair_ortho'] == 1, :].copy(), run, 'perf_pair_')
+            perf = collect_perf_metrics(df, None, 'perf_wg')
+            perf = collect_perf_metrics(df.loc[df['switching'] == 1, :].copy(), perf, 'perf_switch')
+            perf = collect_perf_metrics(df.loc[df['group_ortho'] == 1, :].copy(), perf, 'perf_group')
+            perf = collect_perf_metrics(df.loc[df['pair_ortho'] == 1, :].copy(), perf, 'perf_pair')
             mdf = pd.DataFrame.from_dict(run, orient='index', dtype='object')
             mdf.index.name = 'key'
             mdf.columns = ['value']
@@ -319,6 +418,12 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, outpu
                 assert md_path not in stored_keys, 'Metadata path duplicate: {}'.format(md_path)
                 hdf.put(md_path, mdf, format='table')
                 stored_keys.add(md_path)
+                perf_path = outpath + '/perf'
+                assert perf_path not in stored_keys, 'Performance path duplicate: {}'.format(perf_path)
+                hdf.put(perf_path, perf)
+                if cons_scoring is not None:
+                    cons_path = outpath + '/cons'
+                    hdf.put(cons_path, cons_scoring, format='fixed')
                 hdf.flush()
             filemode = filemode.replace('w', 'a')
     return 0
@@ -335,7 +440,7 @@ def main():
     collect_test = annotate_test_output(args.applyroot, dsids, mtypes, req_models)
     # no more missing tests, skip that step
     # _ = identify_missing_tests(assm_trans, req_models, collect_test)
-    _ = process_run_metadata(collect_test, switch, args.orthologs, args.outputfile)
+    _ = process_run_metadata(collect_test, switch, args.orthologs, args.selectcons, args.outputfile)
     return 0
 
 

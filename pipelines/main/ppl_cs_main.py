@@ -1641,7 +1641,6 @@ def build_pipeline(args, config, sci_obj):
                                   output=os.path.join(dir_summary, 'agg_expstat_est.h5'),
                                   extras=[cmd, jobcall])
     summ_perf_status = summ_perf_status.mkdir(dir_summary)
-    summ_perf_status = summ_perf_status.active_if(False)
 
     task_sig_cls_model = pipe.merge(task_func=touch_checkfile,
                                     name='task_sig_cls_model',
