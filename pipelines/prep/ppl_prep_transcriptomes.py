@@ -453,6 +453,8 @@ def build_pipeline(args, config, sci_obj):
     hcop_pred = hcop_pred.mkdir(dir_ortho_pred)
     hcop_orth_file = os.path.join(config.get('Pipeline', 'orthdir'), 'hdf', 'hcop_6species.h5')
     hcop_pred = hcop_pred.active_if(os.path.isfile(hcop_orth_file))
+    # use ODB annotation as main
+    hcop_pred = hcop_pred.active_if(False)
 
     bedout = os.path.join(workbase, 'conv', 'bed')
     exp_bed_files = collect_full_paths(bedout, '*.bed.gz', allow_none=True)

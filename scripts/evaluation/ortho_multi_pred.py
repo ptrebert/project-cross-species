@@ -86,9 +86,23 @@ def load_conservation_scores(consfiles, species, select):
     assert len(to_load) == 1, 'Cannot load conservation data for assembly {}: {}'.format(assm, consfiles)
     with pd.HDFStore(to_load[0], 'r') as hdf:
         data = hdf['genes']
-        data = data[['name', select]]
-    data.columns = ['name', 'level']
+        cons_cols = [c for c in data.columns if c.endswith(select)]
+        data = data[['name'] + cons_cols]
+    new_names = []
+    for c in data.columns:
+        if c.startswith('grp'):
+            new_names.append('cons_level')
+        elif c.startswith('rnk'):
+            new_names.append('cons_rank')
+        elif c.startswith('ext'):
+            new_names.append('cons_score')
+        elif c == 'name':
+            new_names.append('{}_name'.format(species))
+        else:
+            raise ValueError('Unexpected column in cons dataframe: {}'.format(c))
+    data.columns = new_names
     assert not data.empty, 'Conservation score DF is empty'
+    assert data.notnull().all(axis=1).all(), 'Loaded conservation scores contain NaN'
     return data
 
 
@@ -139,7 +153,7 @@ def tissue_match(a, b):
 
 def make_ortholog_pred(species_a, tpm_a, ranks_a,
                        species_b, tpm_b, ranks_b,
-                       orthologs, threshold, conservation,
+                       orthologs, threshold, tsscons,
                        comp, outputfile):
     """
 
@@ -224,14 +238,16 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             r2_score_all = r2s(tpm[cb], tpm[ca])
             ktau_score_all = kendall_tau_scorer(tpm[cb], tpm[ca])
 
-            if conservation is not None:
-                cons_levels = sorted(conservation['level'].unique())
+            conservation = None
+            if tsscons is not None:
+                conservation = tsscons.loc[tsscons[name_b].isin(tpm[name_b]), :].copy()
+                cons_levels = sorted(conservation['cons_level'].unique())
                 metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
                            'positives', 'negatives', 'precision', 'recall', 'f1score']
                 cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
                                             index=metrics, columns=cons_levels)
                 for lvl in cons_levels:
-                    lvl_genes = conservation.loc[conservation['level'] >= lvl, 'name']
+                    lvl_genes = conservation.loc[conservation['cons_level'] >= lvl, name_b]
                     lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
                     lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
                     lvl_labels_b = lvl_sub[cb] >= tpm_threshold
@@ -272,15 +288,32 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             num_consistent_act_10 = deltas.sum()
             num_inconsistent_act_10 = deltas.size - num_consistent_act_10
 
-            num_tp = (np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] >= tpm_threshold)).sum()
-            num_fp = (np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] < tpm_threshold)).sum()
-            num_tn = (np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] < tpm_threshold)).sum()
-            num_fn = (np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] >= tpm_threshold)).sum()
+            idx_tp = np.array(np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] >= tpm_threshold), dtype=np.int8)
+            assert np.isfinite(idx_tp).all(), 'True positive label not finite'
+            idx_fp = np.array(np.logical_and(tpm[ca] >= tpm_threshold, tpm[cb] < tpm_threshold), dtype=np.int8)
+            assert np.isfinite(idx_fp).all(), 'False positive label not finite'
+            idx_tn = np.array(np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] < tpm_threshold), dtype=np.int8)
+            assert np.isfinite(idx_tn).all(), 'True negative label not finite'
+            idx_fn = np.array(np.logical_and(tpm[ca] < tpm_threshold, tpm[cb] >= tpm_threshold), dtype=np.int8)
+            assert np.isfinite(idx_fn).all(), 'False negative label not finite'
+
+            num_tp = idx_tp.sum()
+            num_fp = idx_fp.sum()
+            num_tn = idx_tn.sum()
+            num_fn = idx_fn.sum()
 
             dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
             dataset.columns = [name_a, norm_a, name_b, norm_b]
             dataset = dataset.merge(ranks.loc[:, (name_a, norm_a + '_rank')], on=name_a, how='outer', copy=True)
             dataset = dataset.merge(ranks.loc[:, (name_b, norm_b + '_rank')], on=name_b, how='outer', copy=True)
+            assert dataset.notnull().all(axis=1).all(), 'Dataset contains NaN after merging ranks'
+            dataset['true_pos'] = idx_tp
+            dataset['false_pos'] = idx_fp
+            dataset['true_neg'] = idx_tn
+            dataset['false_neg'] = idx_fn
+            if tsscons is not None:
+                dataset = dataset.merge(conservation, on=name_b, how='outer', copy=True)
+                assert dataset.notnull().all(axis=1).all(), 'Dataset contains NaN after merging conservation scores'
 
             metadata = {'num_orthologs': num_orthologs,
                         name_a + '_active': spec_a_active, name_a + '_inactive': spec_a_inactive,
@@ -300,7 +333,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
-                    if conservation is not None:
+                    if tsscons is not None:
                         hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
                     hdf.flush()
             else:
@@ -308,7 +341,7 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                 with pd.HDFStore(outputfile, 'a', complib='blosc', complevel=9) as hdf:
                     hdf.put(os.path.join(base_group, 'data'), dataset, format='fixed')
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
-                    if conservation is not None:
+                    if tsscons is not None:
                         hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
                     hdf.flush()
     return
