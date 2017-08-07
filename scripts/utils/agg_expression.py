@@ -20,6 +20,7 @@ def parse_command_line():
     parser.add_argument('--input', '-i', type=str, nargs='+', dest='inputfiles', required=True)
     parser.add_argument('--agg-output', '-ao', type=str, dest='aggoutput')
     parser.add_argument('--split-output', '-so', type=str, dest='splitoutput')
+    parser.add_argument('--regime-output', '-ro', type=str, dest='regimeoutput')
     parser.add_argument('--model-assembly', '-ma', type=str, dest='modelassembly')
     parser.add_argument('--model-dir', '-md', type=str, dest='modeldir')
     args = parser.parse_args()
@@ -218,6 +219,44 @@ def make_split_output(rawdat, rawrk, normdat, normrk, genes, outdir):
     return
 
 
+def make_regime_output(expdata, genes, assm, outdir):
+    """
+    :param expdata:
+    :param genes:
+    :param assm:
+    :param outdir:
+    :return:
+    """
+    # on/off regime
+    stable_off = (expdata < 1).all(axis=1)
+    stable_on = (expdata >= 1).all(axis=1)
+
+    stable_on_off = np.logical_or(stable_off, stable_on)
+
+    indicator = [stable_off, stable_on, stable_on_off]
+
+    stable_low = (expdata < 5).all(axis=1)
+    stable_high = (expdata >= 5).all(axis=1)
+
+    stable_low_high = np.logical_or(stable_low, stable_high)
+
+    indicator.extend([stable_low, stable_high, stable_low_high])
+
+    unstable = np.logical_not(np.logical_or(stable_on_off, stable_low_high))
+
+    indicator.append(unstable)
+
+    labels = ['stable_off', 'stable_on', 'stable_on_off',
+              'stable_low', 'stable_high', 'stable_low_high',
+              'unstable']
+    for idx, lab in zip(indicator, labels):
+        selected_genes = expdata.loc[idx, :].index.tolist()
+        if len(selected_genes) > 0:
+            with open(os.path.join(outdir, '{}_{}.txt'.format(assm, lab)), 'w') as dump:
+                _ = dump.write('\n'.join(selected_genes) + '\n')
+    return
+
+
 def main():
     """
     :return:
@@ -244,6 +283,7 @@ def main():
         hdf.flush()
     make_split_output(raw_dataset, raw_ranks, norm_dataset,
                       norm_ranks, genes, args.splitoutput)
+    make_regime_output(norm_dataset, genes, args.modelassembly, args.regimeoutput)
     return
 
 
