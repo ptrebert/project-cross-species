@@ -172,7 +172,7 @@ def read_gene_annotation(fpath):
         header[0] = header[0].strip('#')
     genes = pd.read_csv(fpath, header=0, sep='\t', names=header,
                         skip_blank_lines=True, comment=None)
-    select_chroms = '^chr[0-9]+'  # not interested in gonosomes, and samples are of mixed karyotype
+    select_chroms = '^chr[0-9A-F]+'  # not interested in gonosomes, and samples are of mixed karyotype
     select_rows = genes['chrom'].str.match(select_chroms, as_indexer=True)
     auto_genes = pd.DataFrame(genes.loc[select_rows, :])
     return auto_genes
