@@ -359,7 +359,8 @@ def build_pipeline(args, config, sci_obj):
                                                              dataset_ids, linkfolder),
                                     name='deeptrans_init')
 
-    sratrans_init = pipe.originate(lambda x: x, collect_full_paths(dlfolder, '*.sra'),
+    sra_sra = collect_full_paths(dlfolder, '*.sra', allow_none=True)
+    sratrans_init = pipe.originate(lambda x: x, sra_sra,
                                    name='sratrans_init')
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
@@ -376,6 +377,7 @@ def build_pipeline(args, config, sci_obj):
                              output=os.path.join(tempfolder, '*{SRARUN[0]}*.fastq.gz'),
                              extras=[tempfolder, '*{SRARUN[0]}*.fastq.gz', cmd, jobcall])
     sradump = sradump.mkdir(tempfolder)
+    sradump = sradump.active_if(len(sra_sra) > 0)
 
     sratrans_fq = pipe.originate(lambda x: x,
                                  link_sra_transcriptomes(tempfolder, sra_metadata,
@@ -438,10 +440,10 @@ def build_pipeline(args, config, sci_obj):
     odb_pred = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
                           name='odb_pred',
                           input=output_from(hdfagg),
-                          output=os.path.join(dir_ortho_pred, 'orthopred_odb_6species.h5'),
+                          output=os.path.join(dir_ortho_pred, 'orthopred_odb_v9.h5'),
                           extras=[cmd, jobcall])
     odb_pred = odb_pred.mkdir(dir_ortho_pred)
-    odb_orth_file = os.path.join(config.get('Pipeline', 'orthdir'), 'hdf', 'odb9_6species.h5')
+    odb_orth_file = os.path.join(config.get('Pipeline', 'orthdir'), 'hdf', 'odb9_gene-orthologs.h5')
     odb_pred = odb_pred.active_if(os.path.isfile(odb_orth_file))
 
     cmd = config.get('Pipeline', 'hcop_pred').replace('\n', ' ')
