@@ -5,6 +5,7 @@ import os as os
 import sys as sys
 import traceback as trb
 import argparse as argp
+import csv as csv
 
 import pandas as pd
 import numpy as np
@@ -13,19 +14,13 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import r2_score as r2s
 
 
-SPECIES_MAP = {'human': 'hg19',
-               'mouse': 'mm9',
-               'dog': 'canFam3',
-               'cow': 'bosTau7',
-               'chicken': 'galGal3',
-               'pig': 'susScr2'}
-
 TISSUE_MAP = {('hepa', 'liver'): 1,
               ('GM12878', 'CH12'): 1,
               ('K562', 'MEL'): 1,
               ('liver', 'hepa'): 1,
               ('ESE14', 'H1hESC'): 1,
-              ('H1hESC', 'ESE14'): 1}
+              ('H1hESC', 'ESE14'): 1,
+              ('ncd4', 'blood'): 1}
 
 
 def parse_command_line():
@@ -37,6 +32,7 @@ def parse_command_line():
     parser.add_argument('--exp-files', '-exp', type=str, nargs='+', dest='expfiles')
     parser.add_argument('--ortho-file', '-orth', type=str, dest='orthofile')
     parser.add_argument('--cons-file', '-cons', type=str, nargs='+', dest='consfiles')
+    parser.add_argument('--assm-file', '-assm', type=str, dest='assemblies')
     parser.add_argument('--select-cons', '-slc', type=str, default='', dest='selectcons')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
     parser.add_argument('--group-root', '-gr', type=str, dest='grouproot', default='/auto/pairs')
@@ -75,13 +71,27 @@ def normalize_col_names(cnames, species):
     return norm, datacols
 
 
-def load_conservation_scores(consfiles, species, select):
+def load_assembly_annotation(fpath):
+    """
+    :param fpath:
+    :return:
+    """
+    lut = dict()
+    with open(fpath, 'r', newline='') as table:
+        rows = csv.DictReader(table, delimiter='\t')
+        for row in rows:
+            lut[row['common_name']] = row['assembly']
+            lut[row['assembly']] = row['common_name']
+    return lut
+
+
+def load_conservation_scores(consfiles, species, select, assemblies):
     """
     :param consfiles:
     :param species:
     :return:
     """
-    assm = SPECIES_MAP[species]
+    assm = assemblies[species]
     to_load = [f for f in consfiles if os.path.basename(f).startswith(assm)]
     assert len(to_load) == 1, 'Cannot load conservation data for assembly {}: {}'.format(assm, consfiles)
     with pd.HDFStore(to_load[0], 'r') as hdf:
@@ -125,13 +135,13 @@ def identify_species_pairs(fpath, grouproot):
     return species
 
 
-def load_expression_data(species, expfiles):
+def load_expression_data(species, expfiles, assemblies):
     """
     :param species:
     :param expfiles:
     :return:
     """
-    assm = SPECIES_MAP[species.strip('/')]
+    assm = assemblies[species.strip('/')]
     expf = [fp for fp in expfiles if os.path.basename(fp).startswith(assm)]
     assert len(expf) == 1, 'Could not identify expression file: {}'.format(expf)
     with pd.HDFStore(expf[0], 'r') as hdf:
@@ -382,15 +392,15 @@ def main():
     :return:
     """
     args = parse_command_line()
-
+    assemblies = load_assembly_annotation(args.assemblies)
     species_pairs = identify_species_pairs(args.orthofile, args.grouproot)
     all_tpms = []
     spec_done = set()
     for spec_a, spec_b, group in species_pairs:
-        tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles)
-        tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles)
+        tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles, assemblies)
+        tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles, assemblies)
         if (spec_a, spec_b) in [('human', 'mouse'), ('mouse', 'human')]:
-            cons_scores = load_conservation_scores(args.consfiles, spec_b, args.selectcons)
+            cons_scores = load_conservation_scores(args.consfiles, spec_b, args.selectcons, assemblies)
         else:
             cons_scores = None
         with pd.HDFStore(args.orthofile, 'r') as hdf:
