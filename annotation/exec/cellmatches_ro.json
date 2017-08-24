@@ -6,6 +6,7 @@
   "ESE14": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -19,6 +20,7 @@
   "H1hESC": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -35,6 +37,7 @@
   "heart": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -45,6 +48,7 @@
   "hepa": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -55,6 +59,7 @@
   "kidney": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -65,6 +70,7 @@
   "liver": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -75,6 +81,7 @@
   "ncd4": [
    "ESE14",
    "H1hESC",
+   "blood",
    "brain",
    "heart",
    "hepa",
@@ -102,6 +109,7 @@
   "K562-MEL": "pos",
   "MEL-K562": "pos",
   "MEL-MEL": "pos",
+  "blood-ncd4": "pos",
   "heart-H1hESC": "neg",
   "heart-heart": "pos",
   "heart-hepa": "neg",
@@ -122,11 +130,12 @@
   "liver-ncd4": "neg",
   "ncd4-ESE14": "neg",
   "ncd4-H1hESC": "neg",
+  "ncd4-blood": "pos",
   "ncd4-heart": "neg",
   "ncd4-hepa": "neg",
   "ncd4-kidney": "neg",
   "ncd4-liver": "neg",
   "ncd4-ncd4": "pos"
  },
- "timestamp": "Tuesday_2017-06-06_15:34:35"
+ "timestamp": "Tuesday_2017-08-22_14:28:21"
 }
