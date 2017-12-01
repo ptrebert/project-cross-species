@@ -324,7 +324,7 @@ def convert_salmon_quant(inputfile, outputfile, genemodels):
     return outputfile
 
 
-def build_pipeline(args, config, sci_obj):
+def build_pipeline(args, config, sci_obj, pipe):
     """
     :param args:
     :param config:
