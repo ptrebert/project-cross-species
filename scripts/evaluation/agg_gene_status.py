@@ -12,7 +12,8 @@ import csv as csv
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support,\
+    accuracy_score, roc_auc_score, roc_curve
 
 __DATASET_FILE__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/datasets.tsv'
 __MATCHTYPES__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/cellmatches_ro.json'
@@ -20,23 +21,19 @@ __APPLY_ROOT__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/p
 __ORTHOLOGS__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/orthologs/hdf/odb9_6species.h5'
 __AGG_EXPRESSION__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/agg'
 __CONSERVATION__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/conservation/genes'
+__TAB_ASSEMBLY__ = '/home/pebert/work/code/mpggit/refdata/annotation/assemblies.tsv'
 
-
-SPECIES_MAP = {'human': 'hg19',
-               'mouse': 'mm9',
-               'dog': 'canFam3',
-               'cow': 'bosTau7',
-               'chicken': 'galGal3',
-               'pig': 'susScr2'}
-
-ASSEMBLY_MAP = dict((v, k) for k, v in SPECIES_MAP.items())
 
 TISSUE_MAP = {('hepa', 'liver'): 1,
               ('GM12878', 'CH12'): 1,
+              ('CH12', 'GM12878'): 1,
               ('K562', 'MEL'): 1,
+              ('MEL', 'K562'): 1,
               ('liver', 'hepa'): 1,
               ('ESE14', 'H1hESC'): 1,
-              ('H1hESC', 'ESE14'): 1}
+              ('H1hESC', 'ESE14'): 1,
+              ('blood', 'ncd4'): 1,
+              ('ncd4', 'blood'): 1}
 
 CONS_MAP = {'hg19': os.path.join(__CONSERVATION__, 'hg19_pc-genes_phylop_tsswin.h5'),
             'mm9': os.path.join(__CONSERVATION__, 'mm9_pc-genes_phylop_tsswin.h5')}
@@ -68,6 +65,7 @@ def parse_command_line():
     parser.add_argument('--base-dir', '-bd', type=str, default=__APPLY_ROOT__, dest='applyroot')
 
     parser.add_argument('--orthologs', '-orth', type=str, default=__ORTHOLOGS__, dest='orthologs')
+    parser.add_argument('--assemblies', '-assm', type=str, default=__TAB_ASSEMBLY__, dest='assemblies')
     parser.add_argument('--cons-dir', '-cons', type=str, default=__CONSERVATION__, dest='consdir')
     parser.add_argument('--select-cons', '-slc', type=str, dest='selectcons')
 
@@ -241,8 +239,19 @@ def load_conservation_scores(fpath, select):
     with pd.HDFStore(fpath, 'r') as hdf:
         data = hdf['genes']
         data.index = data['name']
-        data = data.loc[:, [select]]
-    data.columns = ['cons_level']
+        cons_cols = [c for c in data.columns if c.endswith(select)]
+        data = data.loc[:, cons_cols]
+    new_names = []
+    for c in data.columns:
+        if c.startswith('grp'):
+            new_names.append('cons_level')
+        elif c.startswith('rnk'):
+            new_names.append('cons_rank')
+        elif c.startswith('ext'):
+            new_names.append('cons_score')
+        else:
+            raise ValueError('Unexpected column in cons dataframe: {}'.format(c))
+    data.columns = new_names
     return data
 
 
@@ -275,12 +284,16 @@ def collect_perf_metrics(data, metadata, row_name):
             neg_class = data.shape[0] - pos_class
             labels.extend(['pos_class', 'neg_class'])
             values.extend([pos_class, neg_class])
-        elif col.startswith('true_prob'):
+        elif col.startswith('true_prob') or col.startswith('pred_prob'):
             labels.append(col)
             values.append(val)
         elif col == 'pred_class':
             continue
         elif '_name' in col:
+            continue
+        elif col.startswith('cons'):
+            continue
+        elif col.startswith('true_class_prob') or col.startswith('pred_class_prob') or col.startswith('pos_class_prob'):
             continue
         else:
             labels.append(col)
@@ -291,8 +304,21 @@ def collect_perf_metrics(data, metadata, row_name):
     values.extend([positives, negatives])
     prec, recall, f1score, _ = precision_recall_fscore_support(data['true_class'], data['pred_class'],
                                                                beta=1.0, pos_label=1, average='macro')
-    labels.extend(['precision', 'recall', 'f1score'])
-    values.extend([prec, recall, f1score])
+    acc = accuracy_score(data['true_class'], data['pred_class'])
+    sens_tpr = data['tp'].sum() / (data['tp'].sum() + data['fn'].sum())
+    spec_tnr = data['tn'].sum() / (data['tn'].sum() + data['fp'].sum())
+    ppv = data['tp'].sum() / (data['tp'].sum() + data['fp'].sum())
+    npv = data['tn'].sum() / (data['tn'].sum() + data['fn'].sum())
+    fpr = data['fp'].sum() / (data['fp'].sum() + data['tn'].sum())
+    fnr = data['fn'].sum() / (data['tp'].sum() + data['fn'].sum())
+    fdr = data['fp'].sum() / (data['tp'].sum() + data['fp'].sum())
+    labels.extend(['precision', 'recall', 'f1score', 'accuracy', 'sensitivity',
+                   'true_pos_rate', 'specificity', 'true_neg_rate', 'pos_pred_value',
+                   'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+                   'false_discovery_rate', 'auc_roc'])
+    auc = roc_auc_score(data['true_class'], data['pos_class_prob'], average='macro')
+    values.extend([prec, recall, f1score, acc, sens_tpr, sens_tpr,
+                   spec_tnr, spec_tnr, ppv, npv, fpr, fnr, fdr, auc])
     if metadata is None:
         metadata = pd.DataFrame([values], index=[row_name], columns=labels, dtype=np.float32)
     else:
@@ -308,7 +334,11 @@ def record_cons_performance(dataset):
     """
     cons_levels = sorted(dataset['cons_level'].unique())
     metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
-               'positives', 'negatives', 'precision', 'recall', 'f1score']
+               'positives', 'negatives', 'precision', 'recall', 'f1score',
+               'accuracy', 'sensitivity', 'true_pos_rate',
+               'specificity', 'true_neg_rate', 'pos_pred_value',
+               'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+               'false_discovery_rate', 'auc_roc']
     cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
                                 index=metrics, columns=cons_levels)
     for lvl in cons_levels:
@@ -322,13 +352,39 @@ def record_cons_performance(dataset):
                                                                           lvl_sub['pred_class'],
                                                                           beta=1.0, pos_label=1,
                                                                           average='macro')
+        lvl_acc = accuracy_score(dataset['true_class'], dataset['pred_class'])
+        lvl_sens_tpr = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
+        lvl_spec_tnr = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fp'].sum())
+        lvl_ppv = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
+        lvl_npv = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fn'].sum())
+        lvl_fpr = dataset['fp'].sum() / (dataset['fp'].sum() + dataset['tn'].sum())
+        lvl_fnr = dataset['fn'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
+        lvl_fdr = dataset['fp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
+        lvl_auc = roc_auc_score(dataset['true_class'], dataset['pos_class_prob'], average='macro')
         lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
-                            lvl_prec, lvl_recall, lvl_f1])
+                            lvl_prec, lvl_recall, lvl_f1,
+                            lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
+                            lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr, lvl_auc])
         cons_scoring[lvl] = lvl_metrics
     return cons_scoring
 
 
-def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_select, outputfile):
+def compute_pos_class_prob(dataset):
+    """
+    :param dataset:
+    :return:
+    """
+    true_is_one = np.array(dataset['true_class'] == 1, dtype=np.bool)
+    true_is_zero = np.array(dataset['true_class'] == 0, dtype=np.bool)
+    pos_class_prob = np.zeros(true_is_one.size, dtype=np.float32)
+    pos_class_prob[true_is_one] = dataset['true_class_prob'][true_is_one]
+    pos_class_prob[true_is_zero] = 1 - dataset['true_class_prob'][true_is_zero]
+    assert pos_class_prob.max() <= 1, 'Max pos. class prob. false: {}'.format(pos_class_prob.max())
+    assert pos_class_prob.min() >= 0, 'Min pos. class prob. false: {}'.format(pos_class_prob.min())
+    return pos_class_prob
+
+
+def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthologs, cons_select, outputfile):
     """
     :param collected_infos:
     :param genes_switching:
@@ -342,7 +398,7 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_
     filemode = 'w'
     for (trg, qry, epi, exp) in sorted(collected_infos.keys()):
         if (trg, qry) != current_pairing:
-            trg_spec, qry_spec = ASSEMBLY_MAP[trg], ASSEMBLY_MAP[qry]
+            trg_spec, qry_spec = assm_map[trg], assm_map[qry]
             pair_ortho, group_ortho = load_gene_orthologs(gene_orthologs, trg_spec, qry_spec)
             if (trg, qry) == ('hg19', 'mm9'):
                 conservation = load_conservation_scores(CONS_MAP['mm9'], cons_select)
@@ -372,6 +428,7 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_
             # predicted probabilities for true class labels
             # if p(label) > 0.5, the correct class has been predicted
             true_class_prob = np.array(dump['testing_info']['probabilities']['true'], dtype=np.float32)
+            pred_class_prob = np.array(dump['testing_info']['probabilities']['pred'], dtype=np.float32)
             prob_steps = list(range(50, 100, 5))
             prob_steps.extend([99, 100])
             prob_labels = list(map(str, prob_steps))
@@ -381,6 +438,13 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_
             df.index.name = gene_col
             df['true_class'] = true_class
             df['pred_class'] = pred_class
+            df['true_class_prob'] = true_class_prob
+            df['pred_class_prob'] = pred_class_prob
+            df['pos_class_prob'] = compute_pos_class_prob(df)
+            df['tp'] = np.array(np.logical_and(df['true_class'] == 1, df['pred_class'] == 1), dtype=np.int8)
+            df['tn'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 0), dtype=np.int8)
+            df['fp'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 1), dtype=np.int8)
+            df['fn'] = np.array(np.logical_and(df['true_class'] == 1, df['pred_class'] == 0), dtype=np.int8)
             if conservation is not None:
                 assert df.shape[0] == conservation.shape[0], \
                     'Differing number of genes: {} vs {}'.format(df.shape[0], conservation.shape[0])
@@ -388,19 +452,26 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_
                 cons_scoring = record_cons_performance(df)
             else:
                 cons_scoring = None
+            # add indicator columns for membership of genes to certain probability intervals
+            # for true predictions
             for idx, (s, l) in enumerate(zip(prob_steps[1:-1], prob_labels[1:-1]), start=1):
                 indicator = np.array(np.logical_and(prob_steps[idx-1] < true_class_prob,
                                                     true_class_prob <= s), dtype=np.int8)
                 df['true_prob_iv_{}-{}'.format(prob_labels[idx-1], l)] = indicator
                 indicator = np.array(prob_steps[idx-1] < true_class_prob, dtype=np.int8)
                 df['true_prob_lo_{}'.format(prob_labels[idx-1])] = indicator
+
+            # for predicted class - also captures false predictions
+            for idx, (s, l) in enumerate(zip(prob_steps[1:-1], prob_labels[1:-1]), start=1):
+                indicator = np.array(np.logical_and(prob_steps[idx-1] < pred_class_prob,
+                                                    pred_class_prob <= s), dtype=np.int8)
+                df['pred_prob_iv_{}-{}'.format(prob_labels[idx-1], l)] = indicator
+                indicator = np.array(prob_steps[idx-1] < pred_class_prob, dtype=np.int8)
+                df['pred_prob_lo_{}'.format(prob_labels[idx-1])] = indicator
+
             df['group_ortho'] = np.array(df.index.isin(group_ortho[gene_col]), dtype=np.int8)
             df['pair_ortho'] = np.array((df.index.isin(pair_ortho[gene_col])), dtype=np.int8)
             df['switching'] = np.array(df.index.isin(genes_switching[qry]), dtype=np.int8)
-            df['tp'] = np.array(np.logical_and(df['true_class'] == 1, df['pred_class'] == 1), dtype=np.int8)
-            df['tn'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 0), dtype=np.int8)
-            df['fp'] = np.array(np.logical_and(df['true_class'] == 0, df['pred_class'] == 1), dtype=np.int8)
-            df['fn'] = np.array(np.logical_and(df['true_class'] == 1, df['pred_class'] == 0), dtype=np.int8)
             perf = collect_perf_metrics(df, None, 'perf_wg')
             perf = collect_perf_metrics(df.loc[df['switching'] == 1, :].copy(), perf, 'perf_switch')
             perf = collect_perf_metrics(df.loc[df['group_ortho'] == 1, :].copy(), perf, 'perf_group')
@@ -421,6 +492,12 @@ def process_run_metadata(collected_infos, genes_switching, gene_orthologs, cons_
                 perf_path = outpath + '/perf'
                 assert perf_path not in stored_keys, 'Performance path duplicate: {}'.format(perf_path)
                 hdf.put(perf_path, perf)
+                # record values for ROC plotting
+                fpr, tpr, thresholds = roc_curve(df['true_class'], df['pos_class_prob'], pos_label=1)
+                df_roc = pd.DataFrame([fpr, tpr, thresholds], index=['fpr', 'tpr', 'thresholds'], dtype=np.float32)
+                roc_path = outpath + '/roc'
+                assert roc_path not in stored_keys, 'ROC curve path duplicate: {}'.format(roc_path)
+                hdf.put(roc_path, df_roc, format='fixed')
                 if cons_scoring is not None:
                     cons_path = outpath + '/cons'
                     hdf.put(cons_path, cons_scoring, format='fixed')
@@ -438,9 +515,14 @@ def main():
     dsids, req_models, assm_trans = read_dataset_ids(args.datasets)
     mtypes = js.load(open(args.matchtypes, 'r'))['matchtypes']
     collect_test = annotate_test_output(args.applyroot, dsids, mtypes, req_models)
+    lut_assm = dict()
+    with open(args.assemblies, 'r') as tab:
+        rows = csv.DictReader(tab, delimiter='\t')
+        for row in rows:
+            lut_assm[row['assembly']] = row['common_name']
     # no more missing tests, skip that step
     # _ = identify_missing_tests(assm_trans, req_models, collect_test)
-    _ = process_run_metadata(collect_test, switch, args.orthologs, args.selectcons, args.outputfile)
+    _ = process_run_metadata(collect_test, switch, lut_assm, args.orthologs, args.selectcons, args.outputfile)
     return 0
 
 

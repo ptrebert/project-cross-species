@@ -123,6 +123,11 @@ def make_groups_compatible(groupings, epibundles):
             dupgroups[c2 + '-' + clibs].append([gid, extgid])
             cmatches[c1].add(c2)
             cmatches[c2].add(c1)
+    # workaround for monDom5 / whole blood sample
+    # take as compatible to T-naive CD4
+    cmatches['ncd4'].add('blood')
+    match_types['ncd4-blood'] = 'pos'
+    match_types['blood-ncd4'] = 'pos'
     assert groups, 'No group dictionary constructed'
     return groups, cmatches, dupgroups, match_types
             
@@ -284,7 +289,8 @@ def store_cell_matches(groupfile, matchings, matchtypes):
     :return:
     """
     primary_mouse = ['ESE14', 'liver', 'heart', 'kidney', 'ncd4', 'brain']
-    primary_human = ['H1hESC', 'hepa', 'ncd4']
+    # extend human list with blood - single whole blood sample for monDom5
+    primary_human = ['H1hESC', 'hepa', 'ncd4', 'blood']
     primary_tissues = primary_human + primary_mouse
     serialize = dict()
     for key, vals in matchings.items():
@@ -604,7 +610,7 @@ def annotate_test_datasets(mapfiles, roifiles, ascfiles, mapepidir, expfiles, gr
                                 uniq.add(outpath)
                                 debug_record[outpath] = (exp_cells, extgid, roi, ginfo)
                                 calc_feat = ' '.join(REGION_TYPE_FEATURES[roi['regtype']])
-                                if roi['regtype'] != 'reg5p':
+                                if roi['regtype'] != 'reg5p' or query not in ascfiles:
                                     params = {'target': target, 'query': query, 'genome': query,
                                               'regtype': roi['regtype'], 'mapfile': mapf['path'],
                                               'datafiles': datafiles, 'info': extgid,
@@ -1035,7 +1041,7 @@ def categorize_test_run(datamd, modelmd, cmatches):
     return run_spec_match, run_test_type
 
 
-def build_pipeline(args, config, sci_obj):
+def build_pipeline(args, config, sci_obj, pipe):
     """
     :param args:
     :param config:
@@ -1108,7 +1114,7 @@ def build_pipeline(args, config, sci_obj):
     #
     dir_task_sigmap = os.path.join(workbase, 'task_signal_mapping')
 
-    sci_obj.set_config_env(dict(config.items('MemJobConfig')), dict(config.items('CondaPPLCS')))
+    sci_obj.set_config_env(dict(config.items('BigMemJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
     else:
@@ -1267,6 +1273,26 @@ def build_pipeline(args, config, sci_obj):
                                                                 '{SAMPLE[0]}.rfcls.seq.all.pck'),
                                             extras=[cmd, jobcall])
     trainmodel_expstat_seq = trainmodel_expstat_seq.mkdir(dir_train_expstat, 'seq')
+    trainmodel_expstat_seq = trainmodel_expstat_seq.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_seq_run'))
+
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'trainmodel_expstat_gcf').replace('\n', ' ')
+    trainmodel_expstat_gcf = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                            name='trainmodel_expstat_gcf',
+                                            input=output_from(mrgtraindataexp_groups),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                            output=os.path.join(dir_train_expstat,
+                                                                'gcf',
+                                                                '{subdir[0][0]}',
+                                                                '{SAMPLE[0]}.gbcls.gcf.all.pck'),
+                                            extras=[cmd, jobcall])
+    trainmodel_expstat_gcf = trainmodel_expstat_gcf.mkdir(dir_train_expstat, 'gcf')
+    trainmodel_expstat_gcf = trainmodel_expstat_gcf.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_gcf_run'))
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -1313,6 +1339,20 @@ def build_pipeline(args, config, sci_obj):
     apply_expstat_seq = apply_expstat_seq.follows(trainmodel_expstat_seq)
     params_apply_expstat_seq = list()
 
+    # same again for minimal sequence model involving only GC features
+    cmd = config.get('Pipeline', 'apply_expstat_seq').replace('\n', ' ')
+    params_apply_expstat_gcf = params_predict_testdata(os.path.join(dir_train_expstat, 'gcf'),
+                                                       os.path.split(dir_mrg_test_datasets)[0],
+                                                       os.path.join(dir_apply_expstat, 'gcf', '{groupid}'),
+                                                       cmd, jobcall)
+    apply_expstat_gcf = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                   params_apply_expstat_gcf,
+                                   name='apply_expstat_gcf')
+    apply_expstat_gcf = apply_expstat_gcf.mkdir(os.path.join(dir_apply_expstat, 'seq'))
+    apply_expstat_gcf = apply_expstat_gcf.follows(mrgtestdataexp_groups)
+    apply_expstat_gcf = apply_expstat_gcf.follows(trainmodel_expstat_gcf)
+    params_apply_expstat_gcf = list()
+
     # extract sequence model predictions for test data and add to test datasets
     cmd = config.get('Pipeline', 'extest_seq_out').replace('\n', ' ')
     extest_seq_out = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
@@ -1340,9 +1380,11 @@ def build_pipeline(args, config, sci_obj):
     task_seq_model = pipe.merge(task_func=touch_checkfile,
                                 name='task_seq_model',
                                 input=output_from(trainmodel_expstat_seq,
+                                                  trainmodel_expstat_gcf,
                                                   extrain_seq_out,
                                                   addtrain_seq_out,
                                                   apply_expstat_seq,
+                                                  apply_expstat_gcf,
                                                   extest_seq_out,
                                                   addtest_seq_out),
                                 output=os.path.join(workbase, 'task_seq_model.chk'))
@@ -1368,6 +1410,7 @@ def build_pipeline(args, config, sci_obj):
                                             extras=[cmd, jobcall])
     trainmodel_expstat_enh = trainmodel_expstat_enh.mkdir(dir_train_expstat, 'enh')
     trainmodel_expstat_enh = trainmodel_expstat_enh.follows(task_seq_model)
+    trainmodel_expstat_enh = trainmodel_expstat_enh.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_enh_run'))
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -1467,6 +1510,7 @@ def build_pipeline(args, config, sci_obj):
                                              extras=[cmd, jobcall])
     trainmodel_expstat_asig = trainmodel_expstat_asig.mkdir(os.path.join(dir_train_expstat, 'asig'))
     trainmodel_expstat_asig = trainmodel_expstat_asig.follows(task_enh_model)
+    trainmodel_expstat_asig = trainmodel_expstat_asig.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_asig_run'))
 
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
@@ -1558,7 +1602,27 @@ def build_pipeline(args, config, sci_obj):
                                              extras=[cmd, jobcall])
     trainmodel_expstat_bsig = trainmodel_expstat_bsig.mkdir(os.path.join(dir_train_expstat, 'bsig'))
     trainmodel_expstat_bsig = trainmodel_expstat_bsig.follows(task_enh_model)
-    
+    trainmodel_expstat_bsig = trainmodel_expstat_bsig.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_bsig_run'))
+
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'trainmodel_expstat_can').replace('\n', ' ')
+    trainmodel_expstat_can = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                            name='trainmodel_expstat_can',
+                                            input=output_from(mrgtraindataexp_groups),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                            output=os.path.join(dir_train_expstat,
+                                                                'can',
+                                                                '{subdir[0][0]}',
+                                                                '{SAMPLE[0]}.gbcls.can.all.pck'),
+                                            extras=[cmd, jobcall])
+    trainmodel_expstat_can = trainmodel_expstat_can.mkdir(os.path.join(dir_train_expstat, 'can'))
+    trainmodel_expstat_can = trainmodel_expstat_can.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_can_run'))
+
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
@@ -1604,6 +1668,19 @@ def build_pipeline(args, config, sci_obj):
     apply_expstat_bsig = apply_expstat_bsig.follows(addtrain_bsig_out)
     params_apply_expstat_bsig = list()
 
+    # apply canonical chromatin model to test data
+    cmd = config.get('Pipeline', 'apply_expstat_bsig').replace('\n', ' ')
+    params_apply_expstat_can = params_predict_testdata(os.path.join(dir_train_expstat, 'can'),
+                                                       os.path.split(dir_mrg_test_datasets)[0],
+                                                       os.path.join(dir_apply_expstat, 'can', '{groupid}'),
+                                                       cmd, jobcall)
+    apply_expstat_can = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                   params_apply_expstat_can,
+                                   name='apply_expstat_can')
+    apply_expstat_can = apply_expstat_can.mkdir(os.path.join(dir_apply_expstat, 'can'))
+    apply_expstat_can = apply_expstat_can.follows(trainmodel_expstat_can)
+    params_apply_expstat_can = list()
+
     # extract bsig model predictions for test data and add to test datasets
     cmd = config.get('Pipeline', 'extest_bsig_cls_out').replace('\n', ' ')
     extest_bsig_cls_out = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
@@ -1637,7 +1714,8 @@ def build_pipeline(args, config, sci_obj):
     summ_perf_status = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
                                   name='summ_perf_status',
                                   input=output_from(apply_expstat_seq, apply_expstat_enh,
-                                                    apply_expstat_bsig, apply_expstat_asig),
+                                                    apply_expstat_bsig, apply_expstat_asig,
+                                                    apply_expstat_can, apply_expstat_gcf),
                                   output=os.path.join(dir_summary, 'agg_expstat_est.h5'),
                                   extras=[cmd, jobcall])
     summ_perf_status = summ_perf_status.mkdir(dir_summary)
@@ -1645,12 +1723,14 @@ def build_pipeline(args, config, sci_obj):
     task_sig_cls_model = pipe.merge(task_func=touch_checkfile,
                                     name='task_sig_cls_model',
                                     input=output_from(trainmodel_expstat_asig,
+                                                      trainmodel_expstat_can,
                                                       extrain_asig_out,
                                                       addtrain_asig_out,
                                                       apply_expstat_asig,
                                                       extest_asig_cls_out,
                                                       addtest_asig_cls_out,
                                                       apply_expstat_bsig,
+                                                      apply_expstat_can,
                                                       addtrain_bsig_out,
                                                       addtest_bsig_cls_out,
                                                       summ_perf_status),

@@ -253,15 +253,19 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                 conservation = tsscons.loc[tsscons[name_b].isin(tpm[name_b]), :].copy()
                 cons_levels = sorted(conservation['cons_level'].unique())
                 metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
-                           'positives', 'negatives', 'precision', 'recall', 'f1score']
+                           'positives', 'negatives', 'precision', 'recall', 'f1score',
+                           'accuracy', 'sensitivity', 'true_pos_rate',
+                           'specificity', 'true_neg_rate', 'pos_pred_value',
+                           'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+                           'false_discovery_rate']
                 cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
                                             index=metrics, columns=cons_levels)
                 for lvl in cons_levels:
                     lvl_genes = conservation.loc[conservation['cons_level'] >= lvl, name_b]
                     lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
                     lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
-                    lvl_labels_b = lvl_sub[cb] >= tpm_threshold
-                    lvl_labels_a = lvl_sub[ca] >= tpm_threshold
+                    lvl_labels_b = np.array(lvl_sub[cb] >= tpm_threshold, dtype=np.bool)
+                    lvl_labels_a = np.array(lvl_sub[ca] >= tpm_threshold, dtype=np.bool)
                     lvl_posclass = lvl_labels_b.sum()
                     lvl_negclass = lvl_sub.shape[0] - lvl_posclass
                     lvl_pos = (lvl_labels_a == lvl_labels_b).sum()
@@ -269,8 +273,27 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                     lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_labels_b, lvl_labels_a,
                                                                                       beta=1.0, pos_label=1,
                                                                                       average='macro')
+                    # 1 & 1 = 1
+                    lvl_tp = np.logical_and(lvl_labels_a, lvl_labels_b).sum()
+                    # 1 & ~0 = 1
+                    lvl_fp = np.logical_and(lvl_labels_a, ~lvl_labels_b).sum()
+                    # ~0 & ~0 = 1
+                    lvl_tn = np.logical_and(~lvl_labels_a, ~lvl_labels_b).sum()
+                    # ~0 & 1 = 1
+                    lvl_fn = np.logical_and(~lvl_labels_a, lvl_labels_b).sum()
+                    
+                    lvl_acc = (lvl_tp + lvl_tn) / (lvl_tp + lvl_tn + lvl_fp + lvl_fn)
+                    lvl_sens_tpr = lvl_tp / (lvl_tp + lvl_fn)
+                    lvl_spec_tnr = lvl_tn / (lvl_tn + lvl_fp)
+                    lvl_ppv = lvl_tp / (lvl_tp + lvl_fp)
+                    lvl_npv = lvl_tn / (lvl_tn + lvl_fn)
+                    lvl_fpr = lvl_fp / (lvl_fp + lvl_tn)
+                    lvl_fnr = lvl_fn / (lvl_tp + lvl_fn)
+                    lvl_fdr = lvl_fp / (lvl_tp + lvl_fp)
                     lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
-                                        lvl_prec, lvl_recall, lvl_f1])
+                                        lvl_prec, lvl_recall, lvl_f1,
+                                        lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
+                                        lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr])
                     cons_scoring[lvl] = lvl_metrics
 
             ranked = ranks.loc[:, [rca, rcb]].copy().rank(axis=0, method='dense', pct=True)
@@ -312,6 +335,15 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             num_tn = idx_tn.sum()
             num_fn = idx_fn.sum()
 
+            all_acc = (num_tp + num_tn) / (num_tp + num_tn + num_fp + num_fn)
+            all_sens_tpr = num_tp / (num_tp + num_fn)
+            all_spec_tnr = num_tn / (num_tn + num_fp)
+            all_ppv = num_tp / (num_tp + num_fp)
+            all_npv = num_tn / (num_tn + num_fn)
+            all_fpr = num_fp / (num_fp + num_tn)
+            all_fnr = num_fn / (num_tp + num_fn)
+            all_fdr = num_fp / (num_tp + num_fp)
+
             dataset = tpm.loc[:, (name_a, ca, name_b, cb)].copy()
             dataset.columns = [name_a, norm_a, name_b, norm_b]
             dataset = dataset.merge(ranks.loc[:, (name_a, norm_a + '_rank')], on=name_a, how='outer', copy=True)
@@ -331,6 +363,11 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                         'perf_prec_all': prec, 'perf_recall_all': recall, 'perf_f1score_all': f1,
                         'perf_r2_all': r2_score_all, 'perf_ktau_all': ktau_score_all,
                         'perf_r2_active': r2_score_act, 'perf_ktau_active': ktau_score_act,
+                        'all_accuracy': all_acc, 'all_sensitivity': all_sens_tpr, 'all_true_pos_rate': all_sens_tpr,
+                        'all_specificity': all_spec_tnr, 'all_true_neg_rate': all_spec_tnr,
+                        'all_pos_pred_value': all_ppv, 'all_neg_pred_value': all_npv,
+                        'all_false_pos_rate': all_fpr, 'all_false_neg_rate': all_fnr,
+                        'all_false_discovery_rate': all_fdr,
                         'perf_num_tp': num_tp, 'perf_num_fp': num_fp, 'perf_num_tn': num_tn, 'perf_num_fn': num_fn,
                         'perf_num_consistent_all_5': num_consistent_all_5, 'perf_num_inconsistent_all_5': num_inconsistent_all_5,
                         'perf_num_consistent_all_10': num_consistent_all_10, 'perf_num_inconsistent_all_10': num_inconsistent_all_10,
