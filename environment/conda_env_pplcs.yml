@@ -30,7 +30,7 @@ dependencies:
   - deeptools
   - openssl>=1.0.2k
   - boost
-  - r-base>=3.3.*
+  - r-base=3.3.*
   - r-openssl
   - r-curl
   - r-devtools
@@ -38,9 +38,10 @@ dependencies:
   - r-optparse
   - r-reshape2
   - bioconductor-biostrings
-  - bioconductor-genomicranges
+  - bioconductor-genomicranges=1.26.*
   - bioconductor-iranges
   - bioconductor-biocinstaller
+  - bioconductor-qvalue
   # LOLA
   # source("http://bioconductor.org/biocLite.R")
   # biocLite("LOLA")
