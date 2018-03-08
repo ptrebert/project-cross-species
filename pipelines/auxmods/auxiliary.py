@@ -78,6 +78,8 @@ def prep_dset_ids(idfile, project, datatype):
     with open(idfile, 'r', newline='') as infile:
         reader = csv.DictReader(infile, delimiter='\t')
         for row in reader:
+            if row['comment'] == 'ignore':
+                continue
             if row['project'] != project or row['type'] != datatype:
                 continue
             if datatype == 'transcriptome':

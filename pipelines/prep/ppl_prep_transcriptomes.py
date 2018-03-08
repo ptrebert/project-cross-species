@@ -331,7 +331,15 @@ def build_pipeline(args, config, sci_obj, pipe):
     :param sci_obj:
     :return:
     """
-    pipe = Pipeline(name=config.get('Pipeline', 'name'))
+    if pipe is None:
+        pipe = Pipeline(name=config.get('Pipeline', 'name'))
+    else:
+        # remove all previous tasks from pipeline
+        pipe.clear()
+        # turns out clear() seems NOT to have the effect
+        # of really clearing the pipeline object, do it manually...
+        pipe.task_names = set()
+        pipe.tasks = set()
 
     # Main folders
     workbase = os.path.join(config.get('EnvPaths', 'workdir'), 'rawdata')
