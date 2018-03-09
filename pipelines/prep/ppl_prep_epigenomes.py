@@ -18,9 +18,9 @@ def annotate_encode_files(fpaths, mddict, eiddict):
     :return:
     """
     annfiles = []
-    na_numbers = col.Counter()
     for fp in sorted(fpaths):
         facc = os.path.basename(fp).split('.')[0]
+        rep = facc[-4:]
         # by construction, no missing keys
         infos = mddict[facc]
         k = infos['Assembly'], infos['Biosample term name'], infos['Biosample life stage'], infos['Lab']
@@ -28,20 +28,13 @@ def annotate_encode_files(fpaths, mddict, eiddict):
             eid = eiddict[k]
         except KeyError:
             continue
-        rep = infos['Biological replicate(s)']
-        # manual fix
-        if rep == '1, 2':  # not sure what this is, maybe 1 of 2? >> file ENCFF001KEH
-            rep = 'n/a'
-        na_numbers[eid] += 10
-        if rep == 'n/a':
-            rep = str(na_numbers[eid])
-        else:
-            rep = str(na_numbers[eid] + int(rep))
         if isinstance(eid, list):
             # multi ID
             for i in eid:
                 annfiles.append((fp, facc, rep, i, infos))
         else:
+            if facc == 'ENCFF001KFN':
+                annfiles.append((fp, facc, rep, 'EE04', infos))
             annfiles.append((fp, facc, rep, eid, infos))
     assert annfiles, 'No ENCODE files annotated'
     return annfiles
@@ -316,6 +309,15 @@ def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
     with open(mdfile, 'r', newline='') as mdf:
         rows = csv.DictReader(mdf, delimiter='\t')
         for r in rows:
+            # Clean-up:
+            # the mapping results for the B-cell
+            # samples are not satisfactory, so
+            # remove them here from the computation
+            if r['short_biosample'] == 'bcell':
+                continue
+            # H3K27me3 not used as feature
+            if r['Experiment_target'] == 'H3K27me3':
+                continue
             liblayout = 'se' if r['LibraryLayout'] == 'SINGLE' else 'pe'
             outname = 'bp_mm9_{}_{}-b{}_{}_{}.bam'.format(r['Experiment'],
                                                           liblayout,
@@ -377,15 +379,23 @@ def build_bp_bamcovse_params(qcfiles, cmd, jobcall):
     return args
 
 
-def build_pipeline(args, config, sci_obj):
+def build_pipeline(args, config, sci_obj, pipe):
     """
     :param args:
     :param config:
     :param sci_obj:
+    :param pipe:
     :return:
     """
-
-    pipe = Pipeline(name=config.get('Pipeline', 'name'))
+    if pipe is None:
+        pipe = Pipeline(name=config.get('Pipeline', 'name'))
+    else:
+        # remove all previous tasks from pipeline
+        pipe.clear()
+        # turns out clear() seems NOT to have the effect
+        # of really clearing the pipeline object, do it manually...
+        pipe.task_names = set()
+        pipe.tasks = set()
 
     # Main folders
     workbase = os.path.join(config.get('EnvPaths', 'workdir'), 'rawdata')
@@ -430,6 +440,7 @@ def build_pipeline(args, config, sci_obj):
                       params_bp_sra_dl,
                       name='bpdl')
     bpdl = bpdl.active_if(os.path.isfile(bp_sra_acc))
+    bpdl = bpdl.active_if(False)
 
     bp_fq_init = pipe.originate(lambda x: x,
                                 collect_full_paths(dlfolder, '*ERR*.fastq.gz',
@@ -459,8 +470,8 @@ def build_pipeline(args, config, sci_obj):
     else:
         runjob = sci_obj.ruffus_localjob()
 
-    cmd_se = config.get('Pipeline', 'bp_map_se').replace('\n', ' ')
-    cmd_pe = config.get('Pipeline', 'bp_map_pe').replace('\n', ' ')
+    cmd_se = config.get('Pipeline', 'bp_map_se')
+    cmd_pe = config.get('Pipeline', 'bp_map_pe')
     sr_map_dir = os.path.join(workbase, 'srmap')
     bp_map_params = build_bp_srm_params(bp_metadata, cmd_se, cmd_pe, sr_map_dir, runjob)
     bpmap = pipe.files(sci_obj.get_jobf('in_out'),
@@ -554,7 +565,7 @@ def build_pipeline(args, config, sci_obj):
 
     sigraw_out = os.path.join(workbase, 'conv', 'sigraw')
     cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
-    re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[A-Z0-9]+\.bg\.gz'
     bgtohdfenc = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                               name='bgtohdfenc',
                               input=output_from(bwtobg),
@@ -593,6 +604,9 @@ def build_pipeline(args, config, sci_obj):
                             syscalls,
                             name='normsig')
     normsig = normsig.active_if(any([fn not in existing_output for fn in exp_output]))
+    normsig = normsig.follows(bgtohdfenc)
+    normsig = normsig.follows(bgtohdfdeep)
+    normsig = normsig.follows(bgtohdfbp)
 
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',
