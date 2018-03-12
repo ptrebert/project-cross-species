@@ -8,7 +8,8 @@ LOLA_CORE_PATH = "/TL/deep/fhgfs/projects/pebert/thesis/refdata/lola/LOLACore"
 LOLA_EXT_PATH = "/TL/deep/fhgfs/projects/pebert/thesis/refdata/lola/LOLAExt"
 LOLA_CUSTOM_PATH = "/TL/deep/fhgfs/projects/pebert/thesis/refdata/lola/LOLACustom"
 
-LOLA_BASE_OUT = "/TL/deep-external01/nobackup/pebert/cloudshare/mpiinf/phd/chapter_projects/crossspecies/supplement/lola"
+LOLA_BASE_OUT = "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/processing/norm/task_lola"
+LOLA_SUPP_OUT = "/TL/deep-external01/nobackup/pebert/cloudshare/mpiinf/phd/chapter_projects/crossspecies/supplement/lola"
 
 cmd_option_list = list(make_option(c("-a", "--assembly"), type="character", default=NULL),
                        make_option(c("-i", "--input"), type="character", default=NULL),
@@ -62,7 +63,7 @@ out_file_default = paste(out_folder, 'allEnrichments.tsv', sep='/')
 out_file_name = paste(cmd_opts$assembly, cmd_opts$universe, cmd_opts$database, cmd_opts$suffix, 'LOLA', sep='_')
 out_file_name = paste(out_file_name, 'tsv', sep='.')
 
-out_file_path = paste(cmd_opts$output, out_file_name, sep='/')
+out_file_path = paste(LOLA_SUPP_OUT, out_file_name, sep='/')
 
 foo = file.copy(out_file_default, out_file_path, overwrite=TRUE, recursive=FALSE)
 
