@@ -15,6 +15,11 @@ import pandas as pd
 from sklearn.metrics import precision_recall_fscore_support,\
     accuracy_score, roc_auc_score, roc_curve
 
+"""
+Script summarizing all predictions of all models including categorization.
+The output of this script is (mostly) the input to all notebooks for plotting.
+"""
+
 __DATASET_FILE__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/datasets.tsv'
 __MATCHTYPES__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/cellmatches_ro.json'
 __APPLY_ROOT__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/processing/norm/task_applymodel_exp/sub_status'
