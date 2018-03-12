@@ -1,275 +1,169 @@
 {
  "duplicates": {
-  "CH12-H3K27ac-H3K36me3-H3K4me1-H3K4me3": [
+  "ESE14-H3K27ac-H3K36me3-H3K4me3": [
    [
-    "G02",
-    "G0240"
-   ]
-  ],
-  "CH12-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G04",
-    "G0440"
-   ]
-  ],
-  "CH12-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G05",
-    "G0530"
-   ]
-  ],
-  "CH12-H3K36me3-H3K4me3": [
-   [
-    "G03",
-    "G0320"
-   ]
-  ],
-  "ESE14-H3K27ac-H3K36me3-H3K4me1-H3K4me3": [
+    "G06",
+    "G0630"
+   ],
    [
     "G14",
-    "G1440"
+    "G1430"
    ],
    [
     "G15",
-    "G1540"
-   ]
-  ],
-  "ESE14-H3K27ac-H3K36me3-H3K4me3": [
-   [
-    "G17",
-    "G1730"
-   ]
-  ],
-  "ESE14-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G06",
-    "G0640"
+    "G1530"
    ],
    [
     "G16",
-    "G1640"
-   ]
-  ],
-  "ESE14-H3K27me3-H3K36me3-H3K4me3": [
+    "G1630"
+   ],
+   [
+    "G17",
+    "G1730"
+   ],
    [
     "G18",
     "G1830"
    ]
   ],
-  "GM12878-H3K27ac-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G02",
-    "G0240"
-   ]
-  ],
-  "GM12878-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G04",
-    "G0440"
-   ]
-  ],
-  "GM12878-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G05",
-    "G0530"
-   ]
-  ],
-  "GM12878-H3K36me3-H3K4me3": [
-   [
-    "G03",
-    "G0320"
-   ]
-  ],
-  "H1hESC-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G20",
-    "G2050"
-   ],
-   [
-    "G21",
-    "G2150"
-   ],
-   [
-    "G22",
-    "G2250"
-   ]
-  ],
-  "H1hESC-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G19",
-    "G1940"
-   ]
-  ],
-  "H1hESC-H3K27ac-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G14",
-    "G1440"
-   ]
-  ],
-  "H1hESC-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
+  "H1hESC-H3K27ac-H3K36me3-H3K4me3": [
    [
     "G06",
-    "G0640"
-   ]
-  ],
-  "K562-DNase-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G08",
-    "G0831"
-   ]
-  ],
-  "K562-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G07",
-    "G0750"
-   ]
-  ],
-  "MEL-DNase-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G08",
-    "G0831"
-   ]
-  ],
-  "MEL-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G07",
-    "G0750"
-   ]
-  ],
-  "heart-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G10",
-    "G1051"
-   ]
-  ],
-  "heart-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G20",
-    "G2050"
-   ]
-  ],
-  "heart-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G13",
-    "G1340"
-   ]
-  ],
-  "hepa-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G01",
-    "G0151"
+    "G0630"
    ],
    [
-    "G09",
-    "G0951"
-   ],
-   [
-    "G10",
-    "G1051"
-   ]
-  ],
-  "hepa-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G11",
-    "G1140"
-   ]
-  ],
-  "hepa-H3K27ac-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G15",
-    "G1540"
-   ]
-  ],
-  "hepa-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G16",
-    "G1640"
-   ]
-  ],
-  "kidney-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G09",
-    "G0951"
-   ]
-  ],
-  "kidney-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G22",
-    "G2250"
-   ]
-  ],
-  "kidney-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G23",
-    "G2340"
-   ]
-  ],
-  "liver-DNase-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G01",
-    "G0151"
-   ]
-  ],
-  "liver-H3K27ac-H3K27me3-H3K36me3-H3K4me1-H3K4me3": [
-   [
-    "G21",
-    "G2150"
-   ]
-  ],
-  "liver-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G24",
-    "G2440"
-   ]
-  ],
-  "ncd4-H3K27ac-H3K27me3-H3K36me3-H3K4me3": [
-   [
-    "G11",
-    "G1140"
-   ],
-   [
-    "G12",
-    "G1240"
-   ],
-   [
-    "G12",
-    "G1240"
-   ],
-   [
-    "G13",
-    "G1340"
+    "G14",
+    "G1430"
    ],
    [
     "G19",
-    "G1940"
+    "G1930"
+   ],
+   [
+    "G20",
+    "G2030"
+   ],
+   [
+    "G21",
+    "G2130"
+   ],
+   [
+    "G22",
+    "G2230"
+   ]
+  ],
+  "heart-H3K27ac-H3K36me3-H3K4me3": [
+   [
+    "G10",
+    "G1030"
+   ],
+   [
+    "G13",
+    "G1330"
+   ],
+   [
+    "G20",
+    "G2030"
+   ]
+  ],
+  "hepa-H3K27ac-H3K36me3-H3K4me3": [
+   [
+    "G01",
+    "G0130"
+   ],
+   [
+    "G09",
+    "G0930"
+   ],
+   [
+    "G10",
+    "G1030"
+   ],
+   [
+    "G11",
+    "G1130"
+   ],
+   [
+    "G15",
+    "G1530"
+   ],
+   [
+    "G16",
+    "G1630"
+   ]
+  ],
+  "kidney-H3K27ac-H3K36me3-H3K4me3": [
+   [
+    "G09",
+    "G0930"
+   ],
+   [
+    "G22",
+    "G2230"
    ],
    [
     "G23",
-    "G2340"
+    "G2330"
+   ]
+  ],
+  "liver-H3K27ac-H3K36me3-H3K4me3": [
+   [
+    "G01",
+    "G0130"
+   ],
+   [
+    "G21",
+    "G2130"
    ],
    [
     "G24",
-    "G2440"
+    "G2430"
    ]
   ],
   "ncd4-H3K27ac-H3K36me3-H3K4me3": [
    [
+    "G11",
+    "G1130"
+   ],
+   [
+    "G12",
+    "G1230"
+   ],
+   [
+    "G12",
+    "G1230"
+   ],
+   [
+    "G13",
+    "G1330"
+   ],
+   [
     "G17",
     "G1730"
-   ]
-  ],
-  "ncd4-H3K27me3-H3K36me3-H3K4me3": [
+   ],
    [
     "G18",
     "G1830"
+   ],
+   [
+    "G19",
+    "G1930"
+   ],
+   [
+    "G23",
+    "G2330"
+   ],
+   [
+    "G24",
+    "G2430"
    ]
   ]
  },
  "groupinfo": {
   "G01": {
-   "extgid": "G0151",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_DNase.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "extgid": "G0130",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED13",
@@ -294,30 +188,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5"
     }
    ],
    "partner2": [
@@ -333,33 +203,9 @@
      "EID": "EE12",
      "assembly": "mm9",
      "cell": "liver",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_DNase.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5"
     },
     {
      "EID": "EE12",
@@ -371,263 +217,11 @@
     }
    ]
   },
-  "G02": {
-   "extgid": "G0240",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5",
-   "params2": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K27ac",
-     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K27ac.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K27ac.h5"
-    },
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5"
-    },
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me1.h5"
-    },
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K27ac",
-     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27ac.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27ac.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5"
-    }
-   ]
-  },
-  "G03": {
-   "extgid": "G0320",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5",
-   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K36me3.h5"
-    },
-    {
-     "EID": "EE01",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE01_mm9_CH12_H3K4me3.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE06",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5"
-    },
-    {
-     "EID": "EE06",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5"
-    }
-   ]
-  },
-  "G04": {
-   "extgid": "G0440",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me1.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5",
-   "params2": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5"
-    },
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me1.h5"
-    },
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5"
-    },
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me1.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K36me3.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K27me3.h5"
-    },
-    {
-     "EID": "EE05",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE05_hg19_GM12878_H3K4me3.h5"
-    }
-   ]
-  },
-  "G05": {
-   "extgid": "G0530",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K36me3.h5"
-    },
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K27me3.h5"
-    },
-    {
-     "EID": "EE02",
-     "assembly": "mm9",
-     "cell": "CH12",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE02_mm9_CH12_H3K4me3.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE06",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K27me3.h5"
-    },
-    {
-     "EID": "EE06",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K36me3.h5"
-    },
-    {
-     "EID": "EE06",
-     "assembly": "hg19",
-     "cell": "GM12878",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE06_hg19_GM12878_H3K4me3.h5"
-    }
-   ]
-  },
   "G06": {
-   "extgid": "G0640",
-   "params1": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G0630",
+   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
-    {
-     "EID": "EE04",
-     "assembly": "mm9",
-     "cell": "ESE14",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5"
-    },
     {
      "EID": "EE04",
      "assembly": "mm9",
@@ -640,9 +234,9 @@
      "EID": "EE04",
      "assembly": "mm9",
      "cell": "ESE14",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5"
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5"
     },
     {
      "EID": "EE04",
@@ -666,17 +260,9 @@
      "EID": "EE07",
      "assembly": "hg19",
      "cell": "H1hESC",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5"
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5"
     },
     {
      "EID": "EE07",
@@ -688,172 +274,10 @@
     }
    ]
   },
-  "G07": {
-   "extgid": "G0750",
-   "params1": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27me3.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me1.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE08",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me1.h5"
-    },
-    {
-     "EID": "EE08",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K4me3.h5"
-    },
-    {
-     "EID": "EE08",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K36me3.h5"
-    },
-    {
-     "EID": "EE08",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K27ac",
-     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27ac.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27ac.h5"
-    },
-    {
-     "EID": "EE08",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE08_hg19_K562_H3K27me3.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me1.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K27ac",
-     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27ac.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27ac.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5"
-    }
-   ]
-  },
-  "G08": {
-   "extgid": "G0831",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K36me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K27me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K4me3.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_DNase.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_DNase.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5",
-   "partner1": [
-    {
-     "EID": "EE09",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K36me3.h5"
-    },
-    {
-     "EID": "EE09",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K27me3.h5"
-    },
-    {
-     "EID": "EE09",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_H3K4me3.h5"
-    },
-    {
-     "EID": "EE09",
-     "assembly": "hg19",
-     "cell": "K562",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE09_hg19_K562_DNase.h5"
-    }
-   ],
-   "partner2": [
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K27me3.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K36me3",
-     "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K36me3.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_DNase.h5"
-    },
-    {
-     "EID": "EE10",
-     "assembly": "mm9",
-     "cell": "MEL",
-     "lib": "H3K4me3",
-     "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE10_mm9_MEL_H3K4me3.h5"
-    }
-   ]
-  },
   "G09": {
-   "extgid": "G0951",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_DNase.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "extgid": "G0930",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
    "partner1": [
     {
      "EID": "ED13",
@@ -878,30 +302,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5"
     }
    ],
    "partner2": [
@@ -917,33 +317,9 @@
      "EID": "EE11",
      "assembly": "mm9",
      "cell": "kidney",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_DNase.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5"
     },
     {
      "EID": "EE11",
@@ -956,9 +332,9 @@
    ]
   },
   "G10": {
-   "extgid": "G1051",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5 DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_DNase.h5",
+   "extgid": "G1030",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
    "partner1": [
     {
      "EID": "ED13",
@@ -983,49 +359,9 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_DNase.h5"
     }
    ],
    "partner2": [
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5"
-    },
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5"
-    },
     {
      "EID": "EE15",
      "assembly": "mm9",
@@ -1049,21 +385,13 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5"
-    },
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "DNase",
-     "param": "DNase::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_DNase.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_DNase.h5"
     }
    ]
   },
   "G11": {
-   "extgid": "G1140",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "extgid": "G1130",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED13",
@@ -1088,14 +416,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5"
     }
    ],
    "partner2": [
@@ -1106,14 +426,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5"
-    },
-    {
-     "EID": "EB16",
-     "assembly": "mm9",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5"
     },
     {
      "EID": "EB16",
@@ -1134,9 +446,9 @@
    ]
   },
   "G12": {
-   "extgid": "G1240",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "extgid": "G1230",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -1161,14 +473,6 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5"
-    },
-    {
-     "EID": "ED14",
-     "assembly": "hg19",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5"
     }
    ],
    "partner2": [
@@ -1179,14 +483,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5"
-    },
-    {
-     "EID": "EB16",
-     "assembly": "mm9",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5"
     },
     {
      "EID": "EB16",
@@ -1207,9 +503,9 @@
    ]
   },
   "G13": {
-   "extgid": "G1340",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
+   "extgid": "G1330",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -1234,25 +530,9 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5"
-    },
-    {
-     "EID": "ED14",
-     "assembly": "hg19",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5"
     }
    ],
    "partner2": [
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5"
-    },
     {
      "EID": "EE15",
      "assembly": "mm9",
@@ -1280,9 +560,9 @@
    ]
   },
   "G14": {
-   "extgid": "G1440",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G1430",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
     {
      "EID": "EE03",
@@ -1299,14 +579,6 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5"
-    },
-    {
-     "EID": "EE03",
-     "assembly": "mm9",
-     "cell": "ESE14",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5"
     },
     {
      "EID": "EE03",
@@ -1338,14 +610,6 @@
      "EID": "EE07",
      "assembly": "hg19",
      "cell": "H1hESC",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
@@ -1353,9 +617,9 @@
    ]
   },
   "G15": {
-   "extgid": "G1540",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
+   "extgid": "G1530",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED13",
@@ -1380,14 +644,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5"
     }
    ],
    "partner2": [
@@ -1411,14 +667,6 @@
      "EID": "EE03",
      "assembly": "mm9",
      "cell": "ESE14",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me1.h5"
-    },
-    {
-     "EID": "EE03",
-     "assembly": "mm9",
-     "cell": "ESE14",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5"
@@ -1426,10 +674,18 @@
    ]
   },
   "G16": {
-   "extgid": "G1640",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
+   "extgid": "G1630",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -1445,33 +701,9 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27me3.h5"
-    },
-    {
-     "EID": "ED13",
-     "assembly": "hg19",
-     "cell": "hepa",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me1.h5"
     }
    ],
    "partner2": [
-    {
-     "EID": "EE04",
-     "assembly": "mm9",
-     "cell": "ESE14",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5"
-    },
     {
      "EID": "EE04",
      "assembly": "mm9",
@@ -1484,9 +716,9 @@
      "EID": "EE04",
      "assembly": "mm9",
      "cell": "ESE14",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me1.h5"
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5"
     },
     {
      "EID": "EE04",
@@ -1557,8 +789,8 @@
   },
   "G18": {
    "extgid": "G1830",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-   "params2": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -1580,20 +812,12 @@
      "EID": "ED14",
      "assembly": "hg19",
      "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5"
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5"
     }
    ],
    "partner2": [
-    {
-     "EID": "EE04",
-     "assembly": "mm9",
-     "cell": "ESE14",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27me3.h5"
-    },
     {
      "EID": "EE04",
      "assembly": "mm9",
@@ -1606,6 +830,14 @@
      "EID": "EE04",
      "assembly": "mm9",
      "cell": "ESE14",
+     "lib": "H3K27ac",
+     "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5"
+    },
+    {
+     "EID": "EE04",
+     "assembly": "mm9",
+     "cell": "ESE14",
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5"
@@ -1613,9 +845,9 @@
    ]
   },
   "G19": {
-   "extgid": "G1940",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G1930",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
     {
      "EID": "EB16",
@@ -1624,14 +856,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5"
-    },
-    {
-     "EID": "EB16",
-     "assembly": "mm9",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27me3.h5"
     },
     {
      "EID": "EB16",
@@ -1671,14 +895,6 @@
      "EID": "EE07",
      "assembly": "hg19",
      "cell": "H1hESC",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
@@ -1686,26 +902,10 @@
    ]
   },
   "G20": {
-   "extgid": "G2050",
-   "params1": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G2030",
+   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27me3.h5"
-    },
-    {
-     "EID": "EE15",
-     "assembly": "mm9",
-     "cell": "heart",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me1.h5"
-    },
     {
      "EID": "EE15",
      "assembly": "mm9",
@@ -1752,22 +952,6 @@
      "EID": "EE07",
      "assembly": "hg19",
      "cell": "H1hESC",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
@@ -1775,9 +959,9 @@
    ]
   },
   "G21": {
-   "extgid": "G2150",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G2130",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
     {
      "EID": "EE12",
@@ -1791,25 +975,9 @@
      "EID": "EE12",
      "assembly": "mm9",
      "cell": "liver",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me1.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5"
     },
     {
      "EID": "EE12",
@@ -1836,22 +1004,6 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5"
     },
     {
      "EID": "EE07",
@@ -1864,9 +1016,9 @@
    ]
   },
   "G22": {
-   "extgid": "G2250",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "extgid": "G2230",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
    "partner1": [
     {
      "EID": "EE11",
@@ -1880,25 +1032,9 @@
      "EID": "EE11",
      "assembly": "mm9",
      "cell": "kidney",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me1.h5"
     },
     {
      "EID": "EE11",
@@ -1930,22 +1066,6 @@
      "EID": "EE07",
      "assembly": "hg19",
      "cell": "H1hESC",
-     "lib": "H3K4me1",
-     "param": "H3K4me1::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me1.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27me3.h5"
-    },
-    {
-     "EID": "EE07",
-     "assembly": "hg19",
-     "cell": "H1hESC",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
@@ -1953,9 +1073,9 @@
    ]
   },
   "G23": {
-   "extgid": "G2340",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
+   "extgid": "G2330",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
    "partner1": [
     {
      "EID": "EE11",
@@ -1964,14 +1084,6 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5"
-    },
-    {
-     "EID": "EE11",
-     "assembly": "mm9",
-     "cell": "kidney",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27me3.h5"
     },
     {
      "EID": "EE11",
@@ -2014,21 +1126,13 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5"
-    },
-    {
-     "EID": "ED14",
-     "assembly": "hg19",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5"
     }
    ]
   },
   "G24": {
-   "extgid": "G2440",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5 H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
+   "extgid": "G2430",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
    "partner1": [
     {
      "EID": "EE12",
@@ -2045,14 +1149,6 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5"
-    },
-    {
-     "EID": "EE12",
-     "assembly": "mm9",
-     "cell": "liver",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27me3.h5"
     },
     {
      "EID": "EE12",
@@ -2087,17 +1183,9 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5"
-    },
-    {
-     "EID": "ED14",
-     "assembly": "hg19",
-     "cell": "ncd4",
-     "lib": "H3K27me3",
-     "param": "H3K27me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5",
-     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27me3.h5"
     }
    ]
   }
  },
- "timestamp": "Friday_2017-06-02_14:36:10"
+ "timestamp": "Friday_2018-03-09_16:31:31"
 }

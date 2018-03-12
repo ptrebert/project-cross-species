@@ -1,8 +1,5 @@
 {
  "matchings": {
-  "CH12": [
-   "GM12878"
-  ],
   "ESE14": [
    "ESE14",
    "H1hESC",
@@ -14,9 +11,6 @@
    "liver",
    "ncd4"
   ],
-  "GM12878": [
-   "CH12"
-  ],
   "H1hESC": [
    "ESE14",
    "H1hESC",
@@ -27,12 +21,6 @@
    "kidney",
    "liver",
    "ncd4"
-  ],
-  "K562": [
-   "MEL"
-  ],
-  "MEL": [
-   "K562"
   ],
   "heart": [
    "ESE14",
@@ -91,24 +79,16 @@
   ]
  },
  "matchtypes": {
-  "CH12-CH12": "pos",
-  "CH12-GM12878": "pos",
   "ESE14-ESE14": "pos",
   "ESE14-H1hESC": "pos",
   "ESE14-hepa": "neg",
   "ESE14-ncd4": "neg",
-  "GM12878-CH12": "pos",
-  "GM12878-GM12878": "pos",
   "H1hESC-ESE14": "pos",
   "H1hESC-H1hESC": "pos",
   "H1hESC-heart": "neg",
   "H1hESC-kidney": "neg",
   "H1hESC-liver": "neg",
   "H1hESC-ncd4": "neg",
-  "K562-K562": "pos",
-  "K562-MEL": "pos",
-  "MEL-K562": "pos",
-  "MEL-MEL": "pos",
   "blood-ncd4": "pos",
   "heart-H1hESC": "neg",
   "heart-heart": "pos",
@@ -137,5 +117,5 @@
   "ncd4-liver": "neg",
   "ncd4-ncd4": "pos"
  },
- "timestamp": "Tuesday_2017-08-22_14:28:21"
+ "timestamp": "Friday_2018-03-09_16:31:31"
 }
