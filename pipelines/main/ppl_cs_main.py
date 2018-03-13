@@ -1056,6 +1056,23 @@ def build_pipeline(args, config, sci_obj, pipe):
     lola_enrich_unaln = lola_enrich_unaln.follows(summ_perf_status)
     lola_enrich_unaln = lola_enrich_unaln.active_if(os.path.isdir(dir_task_lola))
 
+    sci_obj.set_config_env(dict(config.items('CVParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    geneage_feat_dir = config.get('Pipeline', 'refgeneagefeat')
+    geneage_model_dir = config.get('Pipeline', 'refgeneagemodel')
+    geneage_feat_files = [os.path.join(geneage_feat_dir, fn) for fn in os.listdir(geneage_feat_dir) if fn.endswith('.h5')]
+    cmd = config.get('Pipeline', 'train_geneage_model')
+    train_geneage_model = pipe.merge(sci_obj.get_jobf('ins_out'),
+                                     name='train_geneage_model',
+                                     input=geneage_feat_files,
+                                     output=os.path.join(geneage_model_dir, 'rfcls_geneage_train_10x10cv.h5'),
+                                     extras=[cmd, jobcall])
+    train_geneage_model = train_geneage_model.mkdir(geneage_model_dir)
+
     task_sig_cls_model = pipe.merge(task_func=touch_checkfile,
                                     name='task_sig_cls_model',
                                     input=output_from(trainmodel_expstat_can,
@@ -1064,6 +1081,7 @@ def build_pipeline(args, config, sci_obj, pipe):
                                                       apply_expstat_gcf,
                                                       summ_perf_status,
                                                       lola_enrich_uniq,
-                                                      lola_enrich_unaln),
+                                                      lola_enrich_unaln,
+                                                      train_geneage_model),
                                     output=os.path.join(workbase, 'task_sig_cls_model.chk'))
     return pipe
