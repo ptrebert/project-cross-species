@@ -1062,16 +1062,18 @@ def build_pipeline(args, config, sci_obj, pipe):
     else:
         jobcall = sci_obj.ruffus_localjob()
 
+    dir_task_geneage_model = os.path.join(workbase, 'task_geneage_model')
     geneage_feat_dir = config.get('Pipeline', 'refgeneagefeat')
-    geneage_model_dir = config.get('Pipeline', 'refgeneagemodel')
     geneage_feat_files = [os.path.join(geneage_feat_dir, fn) for fn in os.listdir(geneage_feat_dir) if fn.endswith('.h5')]
     cmd = config.get('Pipeline', 'train_geneage_model')
     train_geneage_model = pipe.merge(sci_obj.get_jobf('ins_out'),
                                      name='train_geneage_model',
                                      input=geneage_feat_files,
-                                     output=os.path.join(geneage_model_dir, 'rfcls_geneage_train_10x10cv.h5'),
+                                     output=os.path.join(dir_task_geneage_model,
+                                                         'training',
+                                                         'rfcls_geneage_train_10x10cv.h5'),
                                      extras=[cmd, jobcall])
-    train_geneage_model = train_geneage_model.mkdir(geneage_model_dir)
+    train_geneage_model = train_geneage_model.mkdir(os.path.join(dir_task_geneage_model, 'training'))
 
     task_sig_cls_model = pipe.merge(task_func=touch_checkfile,
                                     name='task_sig_cls_model',
