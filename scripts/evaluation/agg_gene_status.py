@@ -99,24 +99,38 @@ def annotate_test_output(base_path, ds_ids, match_types, req_models):
                 fp = os.path.join(root, f)
                 with open(fp, 'r') as infile:
                     dump = js.load(infile)
-                testfile = dump['run_info']['data_file']
-                _, test_epi, test_trans, _, _ = testfile.split('_')
-                test_epi_sample = ds_ids[test_epi]['sample']
-                test_trans_sample = ds_ids[test_trans]['sample']
-                test_key = test_epi_sample + '-' + test_trans_sample
-                try:
-                    test_type = match_types[test_key]
-                except KeyError:
-                    # sys.stderr.write('\nAssuming negative test: {}\n'.format(test_key))
-                    test_type = 'neg'
-                match_count[(test_trans, test_trans_sample)][test_type] += 1
+                test_type = None
                 modelfile = dump['run_info']['model_file']
+                testfile = dump['run_info']['data_file']
+                if root.endswith('G0000'):
+                    # these are the dedicated
+                    # control pairings
+                    test_type = 'ctl'
+                if root.endswith('G9930'):
+                    test_type = 'avg'
+                _, test_epi, test_trans, _, _ = testfile.split('_')
+                if test_epi == 'Ennn':
+                    test_epi_sample = 'any'
+                else:
+                    test_epi_sample = ds_ids[test_epi]['sample']
+                    test_trans_sample = ds_ids[test_trans]['sample']
+                test_key = test_epi_sample + '-' + test_trans_sample
+                if test_type is None:
+                    try:
+                        test_type = match_types[test_key]
+                    except KeyError:
+                        # sys.stderr.write('\nAssuming negative test: {}\n'.format(test_key))
+                        test_type = 'neg'
+                match_count[(test_trans, test_trans_sample)][test_type] += 1
+
                 trainfile, _, qry, modelinfo = modelfile.split('.', 3)
                 gid, epigenome, train_trans, trg, cell = trainfile.split('_')
                 assert trg in ['hg19', 'mm9'], 'Unexpected target species: {}'.format(trg)
-                assert ds_ids[epigenome]['sample'] == ds_ids[train_trans]['sample'] == cell, \
-                    'Sample mismatch for training data: {}'.format(trainfile)
-                assert epigenome == test_epi, 'Epigenome mismatch: {}'.format(f)
+                if epigenome != 'Ennn':
+                    assert ds_ids[epigenome]['sample'] == ds_ids[train_trans]['sample'] == cell, \
+                        'Sample mismatch for training data: {}'.format(trainfile)
+                if test_type != 'ctl':
+                    assert epigenome == test_epi, 'Epigenome mismatch: {}'.format(f)
                 found_models[trg].add((epigenome, train_trans))
                 modeltype = modelinfo.split('.')[1]
                 infos = {'group': gid, 'train_epi': epigenome, 'train_trans': train_trans,
@@ -414,7 +428,7 @@ def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthol
         for run in collected_infos[(trg, qry, epi, exp)]:
             run['target_spec'] = trg_spec
             run['query_spec'] = qry_spec
-            if run['model_type'] == 'seq':
+            if run['model_type'] == 'gcf':
                 outpath = '/'.join(['', '{test_type}', '{model_type}', '{target_spec}', '{query_spec}',
                                     '{train_trans}_{target_assm}_{train_cell}',
                                     '{test_trans}_{query_assm}_{test_trans_sample}'])
