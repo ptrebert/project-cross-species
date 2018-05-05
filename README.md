@@ -30,7 +30,7 @@ All figures in the publication can be recreated by running the relevant Jupyter 
 
 ## Steps to replicate all results
 
-0) It is strongly recommended to run the analysis on a compute cluster with a DRMAA-compatible job scheduler.
+0) It is strongly recommended to run the analysis on a compute cluster with a DRMAA-compatible job scheduler. The expected runtime for the entire project is 3-5 days (assuming that a handful of servers is available to run the pipeline in parallel).
 1) Create the software environment as specified in the Conda environment file (`/environment/conda_env_pplcs.yml`)
 2) All pipelines of this project are implemented as [Ruffus pipelines](http://www.ruffus.org.uk/). It is recommended to install Ruffus to execute the pipelines. All (unformatted) command lines are also available in the `.ini` configuration files for each pipeline (see `/pipelines/main` and `/pipelines/prep`). Furthermore, you may want to use [PiedPiper](http://piedpiper.readthedocs.io) for convenience.
 3) Download all raw data from DEEP, ENCODE and BLUEPRINT (full list contained in Additional file X of the publication). There are some helper scripts/notebooks available to bulk-download data, see `/scripts/enc_download` and `/notebooks/utils/load_sra_fastq.ipynb`; bulk downloads require some manual cleanup afterwards.
