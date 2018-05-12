@@ -170,14 +170,17 @@ def prepare_region_masks(args, assemblies, chroms):
         return cache_file, stored_paths
 
     refs = ['hg19', 'mm9']
-    queries = set(assemblies) - set(refs)
+    queries = set(assemblies)
     params = []
     for r in refs:
         for c in chroms:
             params.append((r, 'target', None, c, args.indexfolder, args.genefolder))
         for q in queries:
             for c in chroms:
-                params.append((q, 'query', r, c, args.indexfolder, args.genefolder))
+                if r != q:
+                    # hg19 and mm9 are reference and query,
+                    # self-transfer does not exist
+                    params.append((q, 'query', r, c, args.indexfolder, args.genefolder))
     stored_paths = []
     try:
         with pd.HDFStore(cache_file, 'w', complevel=9, complib='blosc') as hdf:

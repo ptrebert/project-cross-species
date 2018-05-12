@@ -451,10 +451,10 @@ def build_lola_parameter_set(inputfolder, outputfolder, cmd, jobcall):
         return []
     args = []
     for bf in bed_files:
-        if any([x in bf for x in ['human', 'hsa']]):
+        if any([x in bf for x in ['human', 'hsa', 'hg19']]):
             assm = 'hg19'
             dbs = ['core', 'custom']
-        elif any([x in bf for x in ['mouse', 'mmu']]):
+        elif any([x in bf for x in ['mouse', 'mmu', 'mm9']]):
             assm = 'mm9'
             dbs = ['custom']
         else:
@@ -462,15 +462,26 @@ def build_lola_parameter_set(inputfolder, outputfolder, cmd, jobcall):
         infile = os.path.join(inputfolder, bf)
         if inputfolder.endswith('unaln_genes'):
             out_infix = 'unaln-genes'
+            universe = 'promoter'
         else:
             tissue = bf.split('_')[1]
             tissue = tissue_map.get(tissue, tissue)
-            out_infix = '{}-uniq-tp-genes'.format(tissue)
+            if inputfolder.endswith('uniq_tp_genes'):
+                out_infix = '{}-uniq-tp-genes'.format(tissue)
+                universe = 'promoter'
+            elif inputfolder.endswith('top_marked_genes'):
+                out_infix = '{}-top-marked-genes'.format(tissue)
+                if 'promoter' in bf:
+                    universe = 'promoter'
+                else:
+                    universe = 'body'
+            else:
+                raise ValueError('No infix specified for folder {}'.format(inputfolder))
         for db in dbs:
-            subfolder = '{}_promoter_{}_{}'.format(assm, db, out_infix)
+            subfolder = '{}_{}_{}_{}'.format(assm, universe, db, out_infix)
             outfile = os.path.join(outputfolder, subfolder, 'allEnrichments.tsv')
             tmp = cmd.format(**{'infix': out_infix, 'database': db,
-                                'assembly': assm})
+                                'assembly': assm, 'universe': universe})
             args.append([infile, outfile, tmp, jobcall])
     return args
 
@@ -559,7 +570,7 @@ def annotate_test_datasets(mapfiles, roifiles, ascfiles, mapepidir, expfiles, gr
     return arglist
 
 
-def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False, mdpath=''):
+def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False, mdpath='', mddset=None):
     """
     :param models:
     :param datasets:
@@ -582,6 +593,15 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
     arglist = []
     done = set()
     test_data_missing = False
+    num_tests = 0
+    num_controls = 0
+
+    # pair models and correct, i.e. tissue-matched,
+    # test datasets - same procedure for control
+    # datasets (not tissue-matched) is below
+    tissue_matches = [('liver', 'hepa'), ('hepa', 'liver'),
+                      ('blood', 'ncd4'), ('ncd4', 'blood'),
+                      ('ESE14', 'H1hESC'), ('H1hESC', 'ESE14')]
     for model in all_models:
         fp, fn = os.path.split(model)
         subdir = os.path.split(fp)[-1]
@@ -594,6 +614,13 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
         assert to == 'to', 'Unexpected folder structure: {}'.format(fp)
         modelparts = fn.split('.')[0].split('_')
         groupid, eid, tid, massm, mcell = modelparts[:5]
+        if mddset is not None:
+            if tid == 'Tnnn':
+                traindata_cell = 'any'
+            else:
+                traindata_cell = mddset[tid]['biosample']
+        else:
+            traindata_cell = None
         modeldesc = (fn.split('.', 1)[-1]).rsplit('.', 1)[0]
         out_prefix = groupid + '_trg-{}_qry-{}_'.format(mtrg, mqry)
         out_model = '_model-{}-{}-{}'.format(eid, tid, mcell) + '.' + modeldesc
@@ -612,6 +639,33 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
             if dqry != mqry or dtrg != mtrg:
                 continue
             dataparts = fn2.split('.')[0].split('_')
+            if mddset is not None:
+                # this skips over combinations where the target
+                # transcriptome does not match the biological type
+                # of the epigenome (though this would be compatible
+                # between model and test dataset)
+                testdata_transcriptome = dataparts[2]
+                if testdata_transcriptome == 'Tnnn':
+                    testdata_cell = 'any'
+                else:
+                    testdata_cell = mddset[testdata_transcriptome]['biosample']
+                if mcell == 'any':
+                    # for the model trained on averaged epigenomes,
+                    # use only matching transcriptomes
+                    if traindata_cell != testdata_cell:
+                        if (traindata_cell, testdata_cell) in tissue_matches:
+                            pass
+                        else:
+                            continue
+                elif testdata_cell != mcell:
+                    if (mcell, testdata_cell) in tissue_matches:
+                        # tissues are compatible
+                        pass
+                    else:
+                        continue
+                else:
+                    # must match: testdata_cell == mcell and mcell != 'any
+                    pass
             out_data = 'data-{}-{}-{}-{}-from-{}'.format(dataparts[1], dataparts[2], dataparts[4], dqry, dtrg)
             outname = out_prefix + out_data + out_model + '.json'
             if addmd:
@@ -619,8 +673,70 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
                 mdfull = os.path.join(mdpath, groupid, mdname)
             outbase = outroot.format(**{'groupid': groupid})
             outpath = os.path.join(outbase, outname)
-            assert outpath not in done, 'Duplicate created: {}'.format(outname)
+            assert outpath not in done, 'Testing: duplicate created: {}'.format(outname)
             done.add(outpath)
+            num_tests += 1
+            if addmd:
+                tmp = cmd.format(**{'mdfile': mdfull})
+                arglist.append([[dat, model], outpath, tmp, jobcall])
+            else:
+                arglist.append([[dat, model], outpath, cmd, jobcall])
+
+        # same again, this time for the control datasets
+        # i.e., require that epigenomes mismatch (!)
+        # between model file and test dataset
+
+        datasets = fnm.filter(all_testdata, '*/*_{}_*.from.{}.*'.format(mqry, mtrg))
+
+        for dat in datasets:
+            fp2, fn2 = os.path.split(dat)
+            # filter here for generic group ID
+            # for the generic models/test datasets,
+            # there is no reasonable control dataset
+            if fn2.startswith('G9930'):
+                continue
+            # this assertion is not needed, naturally group id
+            # will mismatch
+            #assert fn2.startswith(groupid), 'Group mismatch: {} vs {}'.format(groupid, fn2)
+            dqry, fr, dtrg = (os.path.split(fp2)[-1]).split('_')
+            assert fr == 'from', 'Unexpected folder structure: {}'.format(fp2)
+            # pairing all models and data files seems not to provide additional/useful
+            # information, so restrict to matching pairs
+            if dqry != mqry or dtrg != mtrg:
+                continue
+            dataparts = fn2.split('.')[0].split('_')
+            data_eid = dataparts[1]
+            data_biotype = dataparts[4]
+            if data_eid != eid:
+                continue
+            if mddset is not None:
+                # this skips over combinations where the target
+                # transcriptome does match the biological type
+                # of the epigenome as above
+                testdata_transcriptome = dataparts[2]
+                testdata_cell = mddset[testdata_transcriptome]['biosample']
+                if testdata_cell == mcell:
+                    # this means tissue matches - don't want that for control
+                    continue
+                elif (testdata_cell, mcell) in tissue_matches:
+                    # again, tissue matches (e.g., liver/hepa), don't want that for control
+                    continue
+                else:
+                    # tissue does not match, use as control
+                    pass
+            out_data = 'data-{}-{}-{}-{}-from-{}'.format(dataparts[1], dataparts[2], dataparts[4], dqry, dtrg)
+            outname = out_prefix + out_data + out_model + '.json'
+            if addmd:
+                mdname = outname.replace('rfreg', 'rfcls')
+                mdfull = os.path.join(mdpath, groupid, mdname)
+            outbase = outroot.format(**{'groupid': 'G0000'})
+            outpath = os.path.join(outbase, outname)
+            if outpath in done:
+                # not filtering by group id
+                # can cause this here
+                continue
+            done.add(outpath)
+            num_controls += 1
             if addmd:
                 tmp = cmd.format(**{'mdfile': mdfull})
                 arglist.append([[dat, model], outpath, tmp, jobcall])
@@ -628,6 +744,8 @@ def params_predict_testdata(models, datasets, outroot, cmd, jobcall, addmd=False
                 arglist.append([[dat, model], outpath, cmd, jobcall])
     if all_models and not test_data_missing:
         assert arglist, 'No apply parameters created'
+    #print(num_tests)
+    #print(num_controls)
     return arglist
 
 
@@ -925,6 +1043,11 @@ def build_pipeline(args, config, sci_obj, pipe):
     # ==================================
     # Major task: train and apply models for gene expression prediction
     #
+
+    # read dataset annotation to match/unmatch pairings based on bio sample
+    dataset_file = config.get('Annotations', 'dsetfile')
+    md_dset = prep_metadata(dataset_file, 'id')
+
     dir_task_trainmodel_exp = os.path.join(workbase, 'task_trainmodel_exp')
     dir_task_applymodel_exp = os.path.join(workbase, 'task_applymodel_exp')
 
@@ -951,6 +1074,27 @@ def build_pipeline(args, config, sci_obj, pipe):
     trainmodel_expstat_gcf = trainmodel_expstat_gcf.mkdir(dir_train_expstat, 'gcf')
     trainmodel_expstat_gcf = trainmodel_expstat_gcf.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_gcf_run'))
 
+    # ========================================================================================
+    # important extension
+    #
+    # train on averaged datasets
+    # collect averaged datasets as separate inputs
+    avg_traindata = collect_full_paths(os.path.join(dir_task_traindata_exp, 'train_datasets'),
+                                       '*/G9930*.feat.h5', True, True)
+    # ========================================================================================
+
+    trainmodel_expstat_gcf_avg = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                                name='trainmodel_expstat_gcf_avg',
+                                                input=avg_traindata,
+                                                filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                                output=os.path.join(dir_train_expstat,
+                                                                    'gcf',
+                                                                    '{subdir[0][0]}',
+                                                                    '{SAMPLE[0]}.gbcls.gcf.all.pck'),
+                                                extras=[cmd, jobcall])
+    trainmodel_expstat_gcf_avg = trainmodel_expstat_gcf_avg.mkdir(dir_train_expstat, 'gcf')
+    trainmodel_expstat_gcf_avg = trainmodel_expstat_gcf_avg.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_gcf_run'))
+
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
@@ -962,13 +1106,14 @@ def build_pipeline(args, config, sci_obj, pipe):
     params_apply_expstat_gcf = params_predict_testdata(os.path.join(dir_train_expstat, 'gcf'),
                                                        os.path.split(dir_mrg_test_datasets)[0],
                                                        os.path.join(dir_apply_expstat, 'gcf', '{groupid}'),
-                                                       cmd, jobcall)
+                                                       cmd, jobcall, mddset=md_dset)
     apply_expstat_gcf = pipe.files(sci_obj.get_jobf('inpair_out'),
                                    params_apply_expstat_gcf,
                                    name='apply_expstat_gcf')
     apply_expstat_gcf = apply_expstat_gcf.mkdir(os.path.join(dir_apply_expstat, 'gcf'))
     apply_expstat_gcf = apply_expstat_gcf.follows(task_testdata_exp)
     apply_expstat_gcf = apply_expstat_gcf.follows(trainmodel_expstat_gcf)
+    apply_expstat_gcf = apply_expstat_gcf.follows(trainmodel_expstat_gcf_avg)
 
     # =========================================================================
     # train and apply chromatin model (using only canonical chromatin features)
@@ -992,6 +1137,19 @@ def build_pipeline(args, config, sci_obj, pipe):
     trainmodel_expstat_can = trainmodel_expstat_can.mkdir(os.path.join(dir_train_expstat, 'can'))
     trainmodel_expstat_can = trainmodel_expstat_can.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_can_run'))
 
+    # train on averaged datasets
+    trainmodel_expstat_can_avg = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                                name='trainmodel_expstat_can_avg',
+                                                input=avg_traindata,
+                                                filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                                output=os.path.join(dir_train_expstat,
+                                                                    'can',
+                                                                    '{subdir[0][0]}',
+                                                                    '{SAMPLE[0]}.gbcls.can.all.pck'),
+                                                extras=[cmd, jobcall])
+    trainmodel_expstat_can_avg = trainmodel_expstat_can_avg.mkdir(os.path.join(dir_train_expstat, 'can'))
+    trainmodel_expstat_can_avg = trainmodel_expstat_can_avg.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_can_run'))
+
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
@@ -1004,13 +1162,14 @@ def build_pipeline(args, config, sci_obj, pipe):
     params_apply_expstat_can = params_predict_testdata(os.path.join(dir_train_expstat, 'can'),
                                                        os.path.split(dir_mrg_test_datasets)[0],
                                                        os.path.join(dir_apply_expstat, 'can', '{groupid}'),
-                                                       cmd, jobcall)
+                                                       cmd, jobcall, mddset=md_dset)
     apply_expstat_can = pipe.files(sci_obj.get_jobf('inpair_out'),
                                    params_apply_expstat_can,
                                    name='apply_expstat_can')
     apply_expstat_can = apply_expstat_can.mkdir(os.path.join(dir_apply_expstat, 'can'))
     apply_expstat_can = apply_expstat_can.follows(task_testdata_exp)
     apply_expstat_can = apply_expstat_can.follows(trainmodel_expstat_can)
+    apply_expstat_can = apply_expstat_can.follows(trainmodel_expstat_can_avg)
 
     # # =============================================================================
     # # =============================================================================
@@ -1025,6 +1184,28 @@ def build_pipeline(args, config, sci_obj, pipe):
     summ_perf_status = summ_perf_status.mkdir(dir_summary)
     summ_perf_status = summ_perf_status.follows(task_testdata_exp)
 
+    # run job to collect signal in source files and transferred
+    # between all reference/query combinations - this takes
+    # a long time and consumes a lot of memory...
+
+    sci_obj.set_config_env(dict(config.items('BigMemJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'collect_signal')
+    dir_pipe_cache = os.path.join(workbase, 'caching', 'pipe_scripts')
+    collect_signal = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                    name='collect_signal',
+                                    input=output_from(summ_perf_status),
+                                    filter=formatter(),
+                                    output=os.path.join(dir_pipe_cache, 'collect_signal_cached.chk'),
+                                    extras=[cmd, jobcall])
+    collect_signal = collect_signal.mkdir(dir_pipe_cache)
+
+    # run LOLA enrichment tasks - see note below
+
     sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
@@ -1034,8 +1215,32 @@ def build_pipeline(args, config, sci_obj, pipe):
     cmd = config.get('Pipeline', 'lola_enrich')
     dir_task_lola = os.path.join(workbase, 'task_lola')
 
+    # ==============================================
+    # IMPORTANT
+    # ==============================================
+    #
+    # before this step, need to run Notebook
+    # /notebooks/utils/extract_top-marked_genes.ipynb
+    #
+    # ==============================================
+
+    params_lola_enrich_marked = build_lola_parameter_set(os.path.join(dir_task_lola, 'top_marked_genes'),
+                                                         dir_task_lola, cmd, jobcall)
+    lola_enrich_marked = pipe.files(sci_obj.get_jobf('in_out'),
+                                    params_lola_enrich_marked,
+                                    name='lola_enrich_marked').jobs_limit(1)
+    lola_enrich_marked = lola_enrich_marked.follows(summ_perf_status)
+    lola_enrich_marked = lola_enrich_marked.active_if(os.path.isdir(dir_task_lola))
+
+    # ==============================================
+    # IMPORTANT
+    # ==============================================
+    #
     # before this step, need to run Notebook
     # /notebooks/utils/extract_uniq-tp-genes.ipynb
+    #
+    # ==============================================
+
     params_lola_enrich_uniq = build_lola_parameter_set(os.path.join(dir_task_lola, 'uniq_tp_genes'),
                                                        dir_task_lola, cmd, jobcall)
     lola_enrich_uniq = pipe.files(sci_obj.get_jobf('in_out'),
@@ -1044,6 +1249,10 @@ def build_pipeline(args, config, sci_obj, pipe):
     lola_enrich_uniq = lola_enrich_uniq.follows(summ_perf_status)
     lola_enrich_uniq = lola_enrich_uniq.active_if(os.path.isdir(dir_task_lola))
 
+    # ==============================================
+    # IMPORTANT
+    # ==============================================
+    #
     # before this step, need to run Notebook
     # /notebooks/utils/extract_unaln_genes.ipynb
     # and perform the manual intersection steps
@@ -1084,6 +1293,7 @@ def build_pipeline(args, config, sci_obj, pipe):
                                                       summ_perf_status,
                                                       lola_enrich_uniq,
                                                       lola_enrich_unaln,
+                                                      lola_enrich_marked,
                                                       train_geneage_model),
                                     output=os.path.join(workbase, 'task_sig_cls_model.chk'))
     return pipe
