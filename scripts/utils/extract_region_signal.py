@@ -205,7 +205,10 @@ def extract_source_signal(parameters):
     :return:
     """
     src_folder, mark, mask, mask_cache = parameters
-    _, trg, _, _, chrom = mask.split('/')
+    try:
+        _, trg, _, _, chrom = mask.split('/')
+    except ValueError:
+        raise ValueError('Src signal cannot handle mask: {}'.format(mask))
 
     with pd.HDFStore(mask_cache, 'r') as hdf:
         chrom_mask = hdf[mask]
@@ -241,7 +244,11 @@ def extract_transfer_signal(params):
     :return:
     """
     trf_folder, mark, mask, mask_cache = params
-    _, trg, _, qry, chrom = mask.split('/')
+    try:
+        _, trg, _, qry, chrom = mask.split('/')
+    except ValueError:
+        raise ValueError('Transfer signal cannot handle mask: {}'.format(mask))
+
     subfolder = os.path.join(trf_folder, '{}_from_{}'.format(qry, trg))
     assert os.path.isdir(subfolder), 'Expected folder {} does not exist'.format(subfolder)
 
@@ -283,7 +290,7 @@ def collect_source_signal(args, mask_cache_file, cached_masks):
             stored_paths = sorted([k for k in hdf.keys() if 'other' in k])
         return cache_file, stored_paths
 
-    target_masks = [m for m in cached_masks if 'target' in m]
+    target_masks = [m for m in cached_masks if '/target/' in m and not m.endswith('/sizes')]
     params = []
     for t in target_masks:
         for m in __histone_marks__:
@@ -318,7 +325,7 @@ def collect_transfer_signal(args, mask_cache_file, cached_masks):
             stored_paths = sorted([k for k in hdf.keys() if 'other' in k])
         return cache_file, stored_paths
 
-    query_masks = [m for m in cached_masks if 'query' in m]
+    query_masks = [m for m in cached_masks if '/query/' in m and not m.endswith('sizes')]
     params = []
     for q in query_masks:
         for m in __histone_marks__:
@@ -347,12 +354,18 @@ def load_signal_averages(parameters):
     parts = cache_path.split('/')
     if parts[2] == 'other':
         # target centric - load train datasets
-        mark, chrom = parts[3], parts[4]
+        try:
+            mark, chrom = parts[3], parts[4]
+        except IndexError:
+            raise IndexError('Case other: unexpected cache path {}'.format(cache_path))
         filter_folders = '{}_to_'.format(parts[1])
         subfolders = [d for d in os.listdir(root_folder) if d.startswith(filter_folders)]
     else:
         # target/query combination - load test datasets
-        mark, chrom = parts[4], parts[5]
+        try:
+            mark, chrom = parts[4], parts[5]
+        except IndexError:
+            raise IndexError('Case t/q: unexpected cache path {}'.format(cache_path))
         filter_folders = '{}_from_{}'.format(parts[2], parts[1])
         subfolders = [d for d in os.listdir(root_folder) if d.startswith(filter_folders)]
 
