@@ -3,9 +3,11 @@
 
 ## Unique identifier
 
-This repository: DOI tba
+This repository: [DOI: 10.17617/1.69](https://doi.org/10.17617/1.69)
 
-Publication: DOI tba
+Preprint: tba
+
+Publication: tba
 
 ## Recreating figures
 
