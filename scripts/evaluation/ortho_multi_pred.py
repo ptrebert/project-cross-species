@@ -34,6 +34,7 @@ def parse_command_line():
     parser.add_argument('--cons-file', '-cons', type=str, nargs='+', dest='consfiles')
     parser.add_argument('--assm-file', '-assm', type=str, dest='assemblies')
     parser.add_argument('--select-cons', '-slc', type=str, default='', dest='selectcons')
+    parser.add_argument('--aln-ranks', '-aln', type=str, default='', dest='alnranks')
     parser.add_argument('--output', '-o', type=str, dest='outputfile')
     parser.add_argument('--group-root', '-gr', type=str, dest='grouproot', default='/auto/pairs')
     parser.add_argument('--tpm-threshold', '-tpm', type=int, dest='threshold', default=1)
@@ -116,6 +117,30 @@ def load_conservation_scores(consfiles, species, select, assemblies):
     return data
 
 
+def load_alignment_scores(alnranks, trg, qry, q_species):
+    """
+    :param alnranks:
+    :param trg:
+    :param qry:
+    :param q_species:
+    :return:
+    """
+
+    with pd.HDFStore(alnranks, 'r') as hdf:
+        try:
+            data = hdf[os.path.join(trg, qry, 'aln_ranks')]
+        except KeyError:
+            # for mouse, there are not all alignments available
+            if trg == 'hg19':
+                raise
+            else:
+                return None
+        data = data.loc[:, ['name', 'aln_level', 'aln_rank', 'aln_score']]
+        data.columns = ['{}_name'.format(q_species), 'aln_level', 'aln_rank', 'aln_score']
+    assert data.notnull().all(axis=1).all(), 'Loaded alignment ranking scores contain NaN'
+    return data
+
+
 def identify_species_pairs(fpath, grouproot):
     """
     :param fpath:
@@ -161,9 +186,110 @@ def tissue_match(a, b):
     return m
 
 
+def record_tss_cons_performance(conservation, tpm, sub_tpm_b,
+                                name_b, ca, cb, tpm_threshold):
+
+    cons_levels = sorted(conservation['cons_level'].unique())
+    metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
+               'positives', 'negatives', 'precision', 'recall', 'f1score',
+               'accuracy', 'sensitivity', 'true_pos_rate',
+               'specificity', 'true_neg_rate', 'pos_pred_value',
+               'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+               'false_discovery_rate']
+    cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
+                                index=metrics, columns=cons_levels)
+    for lvl in cons_levels:
+        lvl_genes = conservation.loc[conservation['cons_level'] >= lvl, name_b]
+        lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
+        lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
+        lvl_labels_b = np.array(lvl_sub[cb] >= tpm_threshold, dtype=np.bool)
+        lvl_labels_a = np.array(lvl_sub[ca] >= tpm_threshold, dtype=np.bool)
+        lvl_posclass = lvl_labels_b.sum()
+        lvl_negclass = lvl_sub.shape[0] - lvl_posclass
+        lvl_pos = (lvl_labels_a == lvl_labels_b).sum()
+        lvl_neg = lvl_sub.shape[0] - lvl_pos
+        lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_labels_b, lvl_labels_a,
+                                                                          beta=1.0, pos_label=1,
+                                                                          average='macro')
+        # 1 & 1 = 1
+        lvl_tp = np.logical_and(lvl_labels_a, lvl_labels_b).sum()
+        # 1 & ~0 = 1
+        lvl_fp = np.logical_and(lvl_labels_a, ~lvl_labels_b).sum()
+        # ~0 & ~0 = 1
+        lvl_tn = np.logical_and(~lvl_labels_a, ~lvl_labels_b).sum()
+        # ~0 & 1 = 1
+        lvl_fn = np.logical_and(~lvl_labels_a, lvl_labels_b).sum()
+
+        lvl_acc = (lvl_tp + lvl_tn) / (lvl_tp + lvl_tn + lvl_fp + lvl_fn)
+        lvl_sens_tpr = lvl_tp / (lvl_tp + lvl_fn)
+        lvl_spec_tnr = lvl_tn / (lvl_tn + lvl_fp)
+        lvl_ppv = lvl_tp / (lvl_tp + lvl_fp)
+        lvl_npv = lvl_tn / (lvl_tn + lvl_fn)
+        lvl_fpr = lvl_fp / (lvl_fp + lvl_tn)
+        lvl_fnr = lvl_fn / (lvl_tp + lvl_fn)
+        lvl_fdr = lvl_fp / (lvl_tp + lvl_fp)
+        lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
+                            lvl_prec, lvl_recall, lvl_f1,
+                            lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
+                            lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr])
+        cons_scoring[lvl] = lvl_metrics
+    return cons_scoring
+
+
+def record_aln_cons_performance(conservation, tpm, sub_tpm_b,
+                                name_b, ca, cb, tpm_threshold):
+
+    cons_levels = sorted(conservation['aln_level'].unique())
+    metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
+               'positives', 'negatives', 'precision', 'recall', 'f1score',
+               'accuracy', 'sensitivity', 'true_pos_rate',
+               'specificity', 'true_neg_rate', 'pos_pred_value',
+               'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+               'false_discovery_rate']
+    cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
+                                index=metrics, columns=cons_levels)
+    for lvl in cons_levels:
+        lvl_genes = conservation.loc[conservation['aln_level'] >= lvl, name_b]
+        lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
+        lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
+        lvl_labels_b = np.array(lvl_sub[cb] >= tpm_threshold, dtype=np.bool)
+        lvl_labels_a = np.array(lvl_sub[ca] >= tpm_threshold, dtype=np.bool)
+        lvl_posclass = lvl_labels_b.sum()
+        lvl_negclass = lvl_sub.shape[0] - lvl_posclass
+        lvl_pos = (lvl_labels_a == lvl_labels_b).sum()
+        lvl_neg = lvl_sub.shape[0] - lvl_pos
+        lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_labels_b, lvl_labels_a,
+                                                                          beta=1.0, pos_label=1,
+                                                                          average='macro')
+        # 1 & 1 = 1
+        lvl_tp = np.logical_and(lvl_labels_a, lvl_labels_b).sum()
+        # 1 & ~0 = 1
+        lvl_fp = np.logical_and(lvl_labels_a, ~lvl_labels_b).sum()
+        # ~0 & ~0 = 1
+        lvl_tn = np.logical_and(~lvl_labels_a, ~lvl_labels_b).sum()
+        # ~0 & 1 = 1
+        lvl_fn = np.logical_and(~lvl_labels_a, lvl_labels_b).sum()
+
+        lvl_acc = (lvl_tp + lvl_tn) / (lvl_tp + lvl_tn + lvl_fp + lvl_fn)
+        lvl_sens_tpr = lvl_tp / (lvl_tp + lvl_fn)
+        lvl_spec_tnr = lvl_tn / (lvl_tn + lvl_fp)
+        lvl_ppv = lvl_tp / (lvl_tp + lvl_fp)
+        lvl_npv = lvl_tn / (lvl_tn + lvl_fn)
+        lvl_fpr = lvl_fp / (lvl_fp + lvl_tn)
+        lvl_fnr = lvl_fn / (lvl_tp + lvl_fn)
+        lvl_fdr = lvl_fp / (lvl_tp + lvl_fp)
+        lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
+                            lvl_prec, lvl_recall, lvl_f1,
+                            lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
+                            lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr])
+        cons_scoring[lvl] = lvl_metrics
+    return cons_scoring
+
+
 def make_ortholog_pred(species_a, tpm_a, ranks_a,
                        species_b, tpm_b, ranks_b,
-                       orthologs, threshold, tsscons,
+                       orthologs, threshold,
+                       tsscons, alncons,
                        comp, outputfile):
     """
 
@@ -249,52 +375,16 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
             ktau_score_all = kendall_tau_scorer(tpm[cb], tpm[ca])
 
             conservation = None
+            cons_scoring = None
             if tsscons is not None:
                 conservation = tsscons.loc[tsscons[name_b].isin(tpm[name_b]), :].copy()
-                cons_levels = sorted(conservation['cons_level'].unique())
-                metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
-                           'positives', 'negatives', 'precision', 'recall', 'f1score',
-                           'accuracy', 'sensitivity', 'true_pos_rate',
-                           'specificity', 'true_neg_rate', 'pos_pred_value',
-                           'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
-                           'false_discovery_rate']
-                cons_scoring = pd.DataFrame(np.zeros((len(metrics), len(cons_levels)), dtype=np.float32),
-                                            index=metrics, columns=cons_levels)
-                for lvl in cons_levels:
-                    lvl_genes = conservation.loc[conservation['cons_level'] >= lvl, name_b]
-                    lvl_metrics = [lvl_genes.shape[0], sub_tpm_b[name_b].isin(lvl_genes).sum()]
-                    lvl_sub = tpm.loc[tpm[name_b].isin(lvl_genes), :]
-                    lvl_labels_b = np.array(lvl_sub[cb] >= tpm_threshold, dtype=np.bool)
-                    lvl_labels_a = np.array(lvl_sub[ca] >= tpm_threshold, dtype=np.bool)
-                    lvl_posclass = lvl_labels_b.sum()
-                    lvl_negclass = lvl_sub.shape[0] - lvl_posclass
-                    lvl_pos = (lvl_labels_a == lvl_labels_b).sum()
-                    lvl_neg = lvl_sub.shape[0] - lvl_pos
-                    lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_labels_b, lvl_labels_a,
-                                                                                      beta=1.0, pos_label=1,
-                                                                                      average='macro')
-                    # 1 & 1 = 1
-                    lvl_tp = np.logical_and(lvl_labels_a, lvl_labels_b).sum()
-                    # 1 & ~0 = 1
-                    lvl_fp = np.logical_and(lvl_labels_a, ~lvl_labels_b).sum()
-                    # ~0 & ~0 = 1
-                    lvl_tn = np.logical_and(~lvl_labels_a, ~lvl_labels_b).sum()
-                    # ~0 & 1 = 1
-                    lvl_fn = np.logical_and(~lvl_labels_a, lvl_labels_b).sum()
-                    
-                    lvl_acc = (lvl_tp + lvl_tn) / (lvl_tp + lvl_tn + lvl_fp + lvl_fn)
-                    lvl_sens_tpr = lvl_tp / (lvl_tp + lvl_fn)
-                    lvl_spec_tnr = lvl_tn / (lvl_tn + lvl_fp)
-                    lvl_ppv = lvl_tp / (lvl_tp + lvl_fp)
-                    lvl_npv = lvl_tn / (lvl_tn + lvl_fn)
-                    lvl_fpr = lvl_fp / (lvl_fp + lvl_tn)
-                    lvl_fnr = lvl_fn / (lvl_tp + lvl_fn)
-                    lvl_fdr = lvl_fp / (lvl_tp + lvl_fp)
-                    lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
-                                        lvl_prec, lvl_recall, lvl_f1,
-                                        lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
-                                        lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr])
-                    cons_scoring[lvl] = lvl_metrics
+                cons_scoring = record_tss_cons_performance(conservation, tpm, sub_tpm_b, name_b,
+                                                           ca, cb, tpm_threshold)
+            aln_scoring = None
+            if alncons is not None:
+                conservation = alncons.loc[alncons[name_b].isin(tpm[name_b]), :].copy()
+                aln_scoring = record_aln_cons_performance(conservation, tpm, sub_tpm_b, name_b,
+                                                          ca, cb, tpm_threshold)
 
             ranked = ranks.loc[:, [rca, rcb]].copy().rank(axis=0, method='dense', pct=True)
             deltas = np.abs(ranked[rca] - ranked[rcb]) < 0.05
@@ -382,6 +472,8 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
                     if tsscons is not None:
                         hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
+                    if alncons is not None:
+                        hdf.put(os.path.join(base_group, 'aln'), aln_scoring, format='fixed')
                     hdf.flush()
             else:
                 base_group = '/neg/{}/{}/{}/{}/{}'.format(comp, species_a, species_b, norm_a, norm_b)
@@ -390,6 +482,8 @@ def make_ortholog_pred(species_a, tpm_a, ranks_a,
                     hdf.put(os.path.join(base_group, 'metadata'), metadata, format='fixed')
                     if tsscons is not None:
                         hdf.put(os.path.join(base_group, 'cons'), cons_scoring, format='fixed')
+                    if alncons is not None:
+                        hdf.put(os.path.join(base_group, 'aln'), aln_scoring, format='fixed')
                     hdf.flush()
     return
 
@@ -436,22 +530,29 @@ def main():
     for spec_a, spec_b, group in species_pairs:
         tpm_a, ranks_a = load_expression_data(spec_a, args.expfiles, assemblies)
         tpm_b, ranks_b = load_expression_data(spec_b, args.expfiles, assemblies)
+        assm_a = assemblies[spec_a.strip('/')]
+        assm_b = assemblies[spec_b.strip('/')]
         if (spec_a, spec_b) in [('human', 'mouse'), ('mouse', 'human')]:
             cons_scores = load_conservation_scores(args.consfiles, spec_b, args.selectcons, assemblies)
         else:
             cons_scores = None
+        if assm_a in ['hg19', 'mm9']:
+            aln_scores = load_alignment_scores(args.alnranks, assm_a, assm_b, spec_b)
+        else:
+            aln_scores = None
         with pd.HDFStore(args.orthofile, 'r') as hdf:
             orthologs = hdf[group]
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
                            orthologs, args.threshold,
-                           cons_scores, 'pair', args.outputfile)
+                           cons_scores, aln_scores,
+                           'pair', args.outputfile)
         with pd.HDFStore(args.orthofile, 'r') as hdf:
             orthologs = hdf['/auto/groups']
         make_ortholog_pred(spec_a, tpm_a, ranks_a,
                            spec_b, tpm_b, ranks_b,
                            orthologs, args.threshold,
-                           None, 'group', args.outputfile)
+                           None, None, 'group', args.outputfile)
         if spec_a not in spec_done:
             tpm_a['{}_name'.format(spec_a)] = tpm_a.index
             tpm_a = tpm_a.reset_index(drop=True, inplace=False)

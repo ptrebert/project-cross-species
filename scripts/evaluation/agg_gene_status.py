@@ -24,6 +24,7 @@ __DATASET_FILE__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/d
 __MATCHTYPES__ = '/home/pebert/work/code/mpggit/crossspecies/annotation/exec/cellmatches_ro.json'
 __APPLY_ROOT__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/processing/norm/task_applymodel_exp/sub_status'
 __ORTHOLOGS__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/orthologs/hdf/odb9_6species.h5'
+__ALN_RANKS__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/processing/norm/caching/aln_ranking/20180618_gene-aln_ranks.h5'
 __AGG_EXPRESSION__ = '/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/agg'
 __CONSERVATION__ = '/TL/deep/fhgfs/projects/pebert/thesis/refdata/conservation/genes'
 __TAB_ASSEMBLY__ = '/home/pebert/work/code/mpggit/refdata/annotation/assemblies.tsv'
@@ -73,6 +74,7 @@ def parse_command_line():
     parser.add_argument('--assemblies', '-assm', type=str, default=__TAB_ASSEMBLY__, dest='assemblies')
     parser.add_argument('--cons-dir', '-cons', type=str, default=__CONSERVATION__, dest='consdir')
     parser.add_argument('--select-cons', '-slc', type=str, dest='selectcons')
+    parser.add_argument('--aln-ranks', '-aln', type=str, default=__ALN_RANKS__, dest='alnranks')
 
     parser.add_argument('--expression', '-exp', type=str, default=__AGG_EXPRESSION__, dest='expression')
 
@@ -274,6 +276,20 @@ def load_conservation_scores(fpath, select):
     return data
 
 
+def load_alignment_ranking(fpath, target, query):
+    """
+    :param fpath:
+    :param target:
+    :param query:
+    :return:
+    """
+    with pd.HDFStore(fpath, 'r') as hdf:
+        data = hdf[os.path.join(target, query, 'aln_ranks')]
+        data.index = data['name']
+        data = data.loc[:, ['aln_level', 'aln_rank', 'aln_score']]
+    return data
+
+
 def collect_perf_metrics(data, metadata, row_name):
     """
     :param data:
@@ -388,6 +404,48 @@ def record_cons_performance(dataset):
     return cons_scoring
 
 
+def record_aln_performance(dataset):
+    """
+    :param dataset:
+    :return:
+    """
+    aln_levels = sorted(dataset['aln_level'].unique())
+    metrics = ['selected', 'relevant', 'pos_class', 'neg_class',
+               'positives', 'negatives', 'precision', 'recall', 'f1score',
+               'accuracy', 'sensitivity', 'true_pos_rate',
+               'specificity', 'true_neg_rate', 'pos_pred_value',
+               'neg_pred_value', 'false_pos_rate', 'false_neg_rate',
+               'false_discovery_rate', 'auc_roc']
+    aln_scoring = pd.DataFrame(np.zeros((len(metrics), len(aln_levels)), dtype=np.float32),
+                               index=metrics, columns=aln_levels)
+    for lvl in aln_levels:
+        lvl_sub = dataset.loc[dataset['aln_level'] >= lvl, :]
+        lvl_metrics = [lvl_sub.shape[0], lvl_sub.shape[0]]
+        lvl_posclass = lvl_sub['true_class'].sum()
+        lvl_negclass = lvl_sub.shape[0] - lvl_posclass
+        lvl_pos = (lvl_sub['pred_class'] == lvl_sub['true_class']).sum()
+        lvl_neg = lvl_sub.shape[0] - lvl_pos
+        lvl_prec, lvl_recall, lvl_f1, _ = precision_recall_fscore_support(lvl_sub['true_class'],
+                                                                          lvl_sub['pred_class'],
+                                                                          beta=1.0, pos_label=1,
+                                                                          average='macro')
+        lvl_acc = accuracy_score(dataset['true_class'], dataset['pred_class'])
+        lvl_sens_tpr = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
+        lvl_spec_tnr = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fp'].sum())
+        lvl_ppv = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
+        lvl_npv = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fn'].sum())
+        lvl_fpr = dataset['fp'].sum() / (dataset['fp'].sum() + dataset['tn'].sum())
+        lvl_fnr = dataset['fn'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
+        lvl_fdr = dataset['fp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
+        lvl_auc = roc_auc_score(dataset['true_class'], dataset['pos_class_prob'], average='macro')
+        lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
+                            lvl_prec, lvl_recall, lvl_f1,
+                            lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
+                            lvl_ppv, lvl_npv, lvl_fpr, lvl_fnr, lvl_fdr, lvl_auc])
+        aln_scoring[lvl] = lvl_metrics
+    return aln_scoring
+
+
 def compute_pos_class_prob(dataset):
     """
     :param dataset:
@@ -403,7 +461,7 @@ def compute_pos_class_prob(dataset):
     return pos_class_prob
 
 
-def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthologs, cons_select, outputfile):
+def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthologs, cons_select, aln_ranks, outputfile):
     """
     :param collected_infos:
     :param genes_switching:
@@ -425,6 +483,7 @@ def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthol
                 conservation = load_conservation_scores(CONS_MAP['hg19'], cons_select)
             else:
                 conservation = None
+            gene_aln_ranks = load_alignment_ranking(aln_ranks, trg, qry)
         for run in collected_infos[(trg, qry, epi, exp)]:
             run['target_spec'] = trg_spec
             run['query_spec'] = qry_spec
@@ -471,6 +530,13 @@ def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthol
                 cons_scoring = record_cons_performance(df)
             else:
                 cons_scoring = None
+
+            # record performance on gene subsets ranked by alignment rates
+            assert df.shape[0] == gene_aln_ranks.shape[0], \
+                'Different number of genes: {} vs {} (aln)'.format(df.shape[0], gene_aln_ranks.shape[0])
+            df = df.join(gene_aln_ranks, on=None, how='left')
+            aln_scoring = record_aln_performance(df)
+
             # add indicator columns for membership of genes to certain probability intervals
             # for true predictions
             for idx, (s, l) in enumerate(zip(prob_steps[1:-1], prob_labels[1:-1]), start=1):
@@ -517,9 +583,17 @@ def process_run_metadata(collected_infos, genes_switching, assm_map, gene_orthol
                 roc_path = outpath + '/roc'
                 assert roc_path not in stored_keys, 'ROC curve path duplicate: {}'.format(roc_path)
                 hdf.put(roc_path, df_roc, format='fixed')
+                stored_keys.add(roc_path)
+
+                aln_path = outpath + '/aln'
+                assert aln_path not in stored_keys, 'Aln. path duplicate: {}'.format(aln_path)
+                hdf.put(aln_path, aln_scoring, format='fixed')
+                stored_keys.add(aln_path)
+
                 if cons_scoring is not None:
                     cons_path = outpath + '/cons'
                     hdf.put(cons_path, cons_scoring, format='fixed')
+                    stored_keys.add(cons_path)
                 hdf.flush()
             filemode = filemode.replace('w', 'a')
     return 0
@@ -541,7 +615,9 @@ def main():
             lut_assm[row['assembly']] = row['common_name']
     # no more missing tests, skip that step
     # _ = identify_missing_tests(assm_trans, req_models, collect_test)
-    _ = process_run_metadata(collect_test, switch, lut_assm, args.orthologs, args.selectcons, args.outputfile)
+    _ = process_run_metadata(collect_test, switch, lut_assm,
+                             args.orthologs, args.selectcons, args.alnranks,
+                             args.outputfile)
     return 0
 
 
