@@ -3,6 +3,7 @@
 import os as os
 import re as re
 import csv as csv
+import operator as op
 import collections as col
 
 from ruffus import *
@@ -162,6 +163,44 @@ def link_blueprint_epigenomes(folder, idfile, outfolder):
             os.link(bwf, outpath)
         linked_files.append(outpath)
     assert linked_files, 'No BLUEPRINT files linked to destination: {}'.format(outfolder)
+    return linked_files
+
+
+def link_validation_epigenomes(infolder, outfolder):
+    """
+    :param infolder:
+    :param outfolder:
+    :return:
+    """
+    # vl_mm9_ERX530952_se-b0_liver_H3K4me3.bw
+    bwfiles = collect_full_paths(infolder, '*liver_H3*.bw', allow_none=True)
+    if not bwfiles:
+        return []
+    linked_files = []
+    eid_counter = 17
+    eid = None
+    last_assm = None
+    get_items = op.itemgetter(*(1, 3))
+    for bwf in sorted(bwfiles, key=lambda x: get_items(os.path.basename(x).split('_'))):
+        fp, fn = os.path.split(bwf)
+        _, assm, _, rep, tissue, mark = fn.split('.')[0].split('_')
+        assert tissue == 'liver', 'Unexpected tissue: {}'.format(tissue)
+        rep_num = int(rep.split('-')[1].strip('b'))
+        if last_assm is not None and last_assm != assm:
+            eid_counter += 1
+            eid = 'EV' + str(eid_counter)
+            last_assm = assm
+        elif last_assm is None:
+            eid = 'EV' + str(eid_counter)
+            last_assm = assm
+        else:
+            pass
+        newname = '_'.join([eid, assm, tissue, mark, str(rep_num)]) + '.bw'
+        outpath = os.path.join(outfolder, newname)
+        if not os.path.islink(outpath):
+            os.link(bwf, outpath)
+        linked_files.append(outpath)
+    assert linked_files, 'No validation data linked: {}'.format(outfolder)
     return linked_files
 
 
@@ -350,7 +389,24 @@ def build_bp_srm_params(mdfile, se_cmd, pe_cmd, outdir, jobcall):
     return args
 
 
-def build_bp_bamcovse_params(qcfiles, cmd, jobcall):
+def get_effective_genome_size(folder, assembly):
+    """
+    :param folder:
+    :param assembly:
+    :return:
+    """
+    all_files = os.listdir(folder)
+    all_files = [f for f in all_files if f.startswith(assembly)]
+    assert len(all_files) < 2, 'Too many annotation files'
+    if len(all_files) == 0:
+        raise ValueError('No effective genome size annotation for assembly: {}'.format(assembly))
+    fpath = os.path.join(folder, all_files[0])
+    with open(fpath, 'r') as txt:
+        size, kmer, _ = txt.readline().split()
+    return size, kmer
+
+
+def build_bp_bamcovse_params(qcfiles, gensize_dir, cmd, jobcall):
     """
     :param qcfiles:
     :param cmd:
@@ -361,11 +417,16 @@ def build_bp_bamcovse_params(qcfiles, cmd, jobcall):
     if not qcfiles:
         return args
     for qcf in qcfiles:
+        assm = os.path.basename(qcf).split('_')[1]
         dir_path = os.path.dirname(qcf)
         with open(qcf, 'r') as infile:
             infos = infile.read().strip().split()
         bamfile = infos[0].strip()
         fraglen = infos[2].split(',')[0]
+        if int(fraglen) < 100:
+            # this happens for some Input datasets
+            # set to some reasonable default
+            fraglen = '150'
         try:
             _ = int(fraglen)
         except ValueError:
@@ -374,7 +435,13 @@ def build_bp_bamcovse_params(qcfiles, cmd, jobcall):
         outpath = os.path.join(dir_path, outfile)
         inpath = os.path.join(dir_path, bamfile)
         assert os.path.isfile(inpath), 'No BAM file detected: {}'.format(bamfile)
-        tmp = cmd.format(**{'fraglen': fraglen})
+        if bamfile.startswith('bp_mm9'):
+            # this is to be consistent with
+            # previous state of pipeline
+            effgensize = '2150570000'
+        else:
+            effgensize, _ = get_effective_genome_size(gensize_dir, assm)
+        tmp = cmd.format(**{'fraglen': fraglen, 'effgensize': effgensize})
         args.append([inpath, outpath, tmp, jobcall])
     return args
 
@@ -462,6 +529,7 @@ def build_pipeline(args, config, sci_obj, pipe):
                        name='bpann',
                        input=output_from(bpdl),
                        output=bp_metadata)
+    bpann = bpann.active_if(not os.path.isfile(bp_metadata))
     bpann = bpann.follows(bpfastqc)
 
     sci_obj.set_config_env(dict(config.items('NodeJobConfig')), dict(config.items('CondaPPLCS')))
@@ -481,6 +549,18 @@ def build_pipeline(args, config, sci_obj, pipe):
     bpmap = bpmap.active_if(os.path.isfile(bp_metadata))
     bpmap = bpmap.follows(bpann)
 
+    # map Villar et al data
+    valid_data_folder = os.path.join(workbase, 'validation')
+    validation_data = collect_full_paths(valid_data_folder, '*.fastq.gz', False, True)
+    cmd = config.get('Pipeline', 'vl_map_se')
+    vlmap = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                           name='vlmap',
+                           input=validation_data,
+                           filter=formatter('vl_(?P<ASSM>[a-zA-Z0-9]+)_(?P<SAMPLE>[\-\w]+)\.fastq\.gz'),
+                           output=os.path.join(valid_data_folder, 'vl_{ASSM[0]}_{SAMPLE[0]}.bam'),
+                           extras=[cmd, runjob])
+    vlmap = vlmap.active_if(len(validation_data) > 0)
+
     sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         runjob = sci_obj.ruffus_gridjob()
@@ -490,9 +570,9 @@ def build_pipeline(args, config, sci_obj, pipe):
     cmd = config.get('Pipeline', 'samsort')
     samsort = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                              name='samsort',
-                             input=output_from(bpmap),
+                             input=output_from(bpmap, vlmap),
                              filter=formatter('(?P<SAMPLE>[\w\-]+)\.bam'),
-                             output=os.path.join(sr_map_dir, '{SAMPLE[0]}.srt.bam'),
+                             output=os.path.join('{path[0]}', '{SAMPLE[0]}.srt.bam'),
                              extras=[cmd, runjob])
 
     cmd = config.get('Pipeline', 'samidx')
@@ -516,13 +596,15 @@ def build_pipeline(args, config, sci_obj, pipe):
     estfraglen = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                                 name='estfraglen',
                                 input=output_from(samsort),
-                                filter=formatter('(?P<SAMPLE>bp_mm9_ERX[0-9]+_se\-\w+)\.srt\.bam'),
+                                filter=formatter('(?P<SAMPLE>\w+_se\-b[0-9]_\w+)\.srt\.bam'),
                                 output=os.path.join('{path[0]}', '{SAMPLE[0]}.qc.tsv'),
                                 extras=[cmd, runjob])
 
-    cmd = config.get('Pipeline', 'bamcovse').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'bamcovse')
     qcfiles = collect_full_paths(sr_map_dir, '*.qc.tsv', allow_none=True)
-    bamcovse_params = build_bp_bamcovse_params(qcfiles, cmd, runjob)
+    qcfiles.extend(collect_full_paths(valid_data_folder, '*.qc.tsv', allow_none=True))
+    gensize_dir = config.get('Refdata', 'gensize')
+    bamcovse_params = build_bp_bamcovse_params(qcfiles, gensize_dir, cmd, runjob)
     bamcovse = pipe.files(sci_obj.get_jobf('in_out'),
                           bamcovse_params,
                           name='bamcovse')
@@ -538,6 +620,12 @@ def build_pipeline(args, config, sci_obj, pipe):
     bpepi_init = bpepi_init.follows(bamcovpe)
     bpepi_init = bpepi_init.follows(bamcovse)
 
+    linked_vl_files = link_validation_epigenomes(valid_data_folder, linkfolder)
+    vlepi_init = pipe.originate(lambda x: x,
+                                linked_vl_files,
+                                name='vlepi_init')
+    vlepi_init = vlepi_init.follows(bamcovse)
+
     # ===========
     # Major task: convert all epigenomes from init tasks to HDF
     #
@@ -551,7 +639,7 @@ def build_pipeline(args, config, sci_obj, pipe):
     cmd = config.get('Pipeline', 'bwtobg')
     bwtobg = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
                             name='bwtobg',
-                            input=output_from(encepi_init, deepepi_init, bpepi_init),
+                            input=output_from(encepi_init, deepepi_init, bpepi_init, vlepi_init),
                             filter=suffix('.bw'),
                             output='.bg.gz',
                             output_dir=bgout,
@@ -564,7 +652,7 @@ def build_pipeline(args, config, sci_obj, pipe):
         runjob = sci_obj.ruffus_localjob()
 
     sigraw_out = os.path.join(workbase, 'conv', 'sigraw')
-    cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'bgtohdfenc')
     re_filter = '(?P<EID>EE[0-9]+)_(?P<ASSM>(hg19|mm9))_(?P<CELL>\w+)_(?P<MARK>\w+)_[A-Z0-9]+\.bg\.gz'
     bgtohdfenc = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                               name='bgtohdfenc',
@@ -574,7 +662,7 @@ def build_pipeline(args, config, sci_obj, pipe):
                               extras=[cmd, runjob])
     bgtohdfenc = bgtohdfenc.mkdir(sigraw_out)
 
-    cmd = config.get('Pipeline', 'bgtohdfenc').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'bgtohdfenc')
     re_filter = '(?P<EID>EB[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfbp = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                              name='bgtohdfbp',
@@ -584,7 +672,17 @@ def build_pipeline(args, config, sci_obj, pipe):
                              extras=[cmd, runjob])
     bgtohdfbp = bgtohdfbp.mkdir(sigraw_out)
 
-    cmd = config.get('Pipeline', 'bgtohdfdeep').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'bgtohdfenc')
+    re_filter = '(?P<EID>EV[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
+    bgtohdfvl = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                             name='bgtohdfvl',
+                             input=output_from(bwtobg),
+                             filter=formatter(re_filter),
+                             output=os.path.join(sigraw_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
+                             extras=[cmd, runjob])
+    bgtohdfvl = bgtohdfvl.mkdir(sigraw_out)
+
+    cmd = config.get('Pipeline', 'bgtohdfdeep')
     re_filter = '(?P<EID>ED[0-9]+)_(?P<ASSM>hs37d5)_(?P<CELL>\w+)_(?P<MARK>\w+)_[0-9]+\.bg\.gz'
     bgtohdfdeep = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
                                name='bgtohdfdeep',
@@ -595,8 +693,8 @@ def build_pipeline(args, config, sci_obj, pipe):
     bgtohdfdeep = bgtohdfdeep.mkdir(sigraw_out)
 
     sighdf_out = os.path.join(workbase, 'conv', 'hdf')
-    cmd = config.get('Pipeline', 'normsig').replace('\n', ' ')
-    re_filter = '(?P<EID>E(E|B|D)[0-9]+)_(?P<ASSM>(mm9|hg19))_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'
+    cmd = config.get('Pipeline', 'normsig')
+    re_filter = '(?P<EID>E(E|B|D)[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'
     syscalls, exp_output = make_norm_calls(collect_full_paths(sigraw_out, '*/E*.h5'),
                                            sighdf_out, re_filter, cmd, runjob)
     existing_output = os.listdir(sighdf_out)
@@ -608,10 +706,20 @@ def build_pipeline(args, config, sci_obj, pipe):
     normsig = normsig.follows(bgtohdfdeep)
     normsig = normsig.follows(bgtohdfbp)
 
+    # for the moment, avoid that validation data are normalized
+    # together with regular data to not interfere with current results
+    cmd = config.get('Pipeline', 'vl_norm')
+    vl_norm = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                             name='vl_norm',
+                             input=output_from(bgtohdfvl),
+                             filter=formatter('(?P<EID>EV[0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'),
+                             output=os.path.join(sighdf_out, '{EID[0]}_{ASSM[0]}_{CELL[0]}_{MARK[0]}.h5'),
+                             extras=[cmd, runjob])
+
     run_task_convepi = pipe.merge(task_func=touch_checkfile,
                                   name='task_convepi',
                                   input=output_from(bgtohdfenc, bgtohdfdeep, bgtohdfbp,
-                                                    normsig, bamcovpe, bamcovse),
+                                                    normsig, bamcovpe, bamcovse, vl_norm),
                                   output=os.path.join(workbase, 'run_task_convepi.chk'))
     #
     # End of major task: convert epigenomes to HDF
