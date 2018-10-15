@@ -387,15 +387,15 @@ def record_cons_performance(dataset):
                                                                           lvl_sub['pred_class'],
                                                                           beta=1.0, pos_label=1,
                                                                           average='macro')
-        lvl_acc = accuracy_score(dataset['true_class'], dataset['pred_class'])
-        lvl_sens_tpr = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
-        lvl_spec_tnr = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fp'].sum())
-        lvl_ppv = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
-        lvl_npv = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fn'].sum())
-        lvl_fpr = dataset['fp'].sum() / (dataset['fp'].sum() + dataset['tn'].sum())
-        lvl_fnr = dataset['fn'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
-        lvl_fdr = dataset['fp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
-        lvl_auc = roc_auc_score(dataset['true_class'], dataset['pos_class_prob'], average='macro')
+        lvl_acc = accuracy_score(lvl_sub['true_class'], lvl_sub['pred_class'])
+        lvl_sens_tpr = lvl_sub['tp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fn'].sum())
+        lvl_spec_tnr = lvl_sub['tn'].sum() / (lvl_sub['tn'].sum() + lvl_sub['fp'].sum())
+        lvl_ppv = lvl_sub['tp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fp'].sum())
+        lvl_npv = lvl_sub['tn'].sum() / (lvl_sub['tn'].sum() + lvl_sub['fn'].sum())
+        lvl_fpr = lvl_sub['fp'].sum() / (lvl_sub['fp'].sum() + lvl_sub['tn'].sum())
+        lvl_fnr = lvl_sub['fn'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fn'].sum())
+        lvl_fdr = lvl_sub['fp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fp'].sum())
+        lvl_auc = roc_auc_score(lvl_sub['true_class'], lvl_sub['pos_class_prob'], average='macro')
         lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
                             lvl_prec, lvl_recall, lvl_f1,
                             lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,
@@ -429,15 +429,15 @@ def record_aln_performance(dataset):
                                                                           lvl_sub['pred_class'],
                                                                           beta=1.0, pos_label=1,
                                                                           average='macro')
-        lvl_acc = accuracy_score(dataset['true_class'], dataset['pred_class'])
-        lvl_sens_tpr = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
-        lvl_spec_tnr = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fp'].sum())
-        lvl_ppv = dataset['tp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
-        lvl_npv = dataset['tn'].sum() / (dataset['tn'].sum() + dataset['fn'].sum())
-        lvl_fpr = dataset['fp'].sum() / (dataset['fp'].sum() + dataset['tn'].sum())
-        lvl_fnr = dataset['fn'].sum() / (dataset['tp'].sum() + dataset['fn'].sum())
-        lvl_fdr = dataset['fp'].sum() / (dataset['tp'].sum() + dataset['fp'].sum())
-        lvl_auc = roc_auc_score(dataset['true_class'], dataset['pos_class_prob'], average='macro')
+        lvl_acc = accuracy_score(lvl_sub['true_class'], lvl_sub['pred_class'])
+        lvl_sens_tpr = lvl_sub['tp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fn'].sum())
+        lvl_spec_tnr = lvl_sub['tn'].sum() / (lvl_sub['tn'].sum() + lvl_sub['fp'].sum())
+        lvl_ppv = lvl_sub['tp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fp'].sum())
+        lvl_npv = lvl_sub['tn'].sum() / (lvl_sub['tn'].sum() + lvl_sub['fn'].sum())
+        lvl_fpr = lvl_sub['fp'].sum() / (lvl_sub['fp'].sum() + lvl_sub['tn'].sum())
+        lvl_fnr = lvl_sub['fn'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fn'].sum())
+        lvl_fdr = lvl_sub['fp'].sum() / (lvl_sub['tp'].sum() + lvl_sub['fp'].sum())
+        lvl_auc = roc_auc_score(lvl_sub['true_class'], lvl_sub['pos_class_prob'], average='macro')
         lvl_metrics.extend([lvl_posclass, lvl_negclass, lvl_pos, lvl_neg,
                             lvl_prec, lvl_recall, lvl_f1,
                             lvl_acc, lvl_sens_tpr, lvl_sens_tpr, lvl_spec_tnr, lvl_spec_tnr,

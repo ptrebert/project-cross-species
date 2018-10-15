@@ -763,7 +763,7 @@ def make_srcsig_pairs(inputfiles, assemblies, roifiles, outbase, cmd, jobcall):
     arglist = []
     for trg in assemblies:
         qry = assemblies[1] if trg == assemblies[0] else assemblies[0]
-        epigenomes = fnm.filter(inputfiles, '*/E*{}*.h5'.format(trg))
+        epigenomes = fnm.filter(inputfiles, '*/E[EBD]*{}*.h5'.format(trg))
         for e1 in epigenomes:
             en1 = os.path.basename(e1).split('.')[0]
             _, _, cell, _ = en1.split('_')
@@ -781,6 +781,56 @@ def make_srcsig_pairs(inputfiles, assemblies, roifiles, outbase, cmd, jobcall):
                     outfile = '_'.join(['roicorr', en1, 'vs', en2, reg]) + '.json'
                     outpath = os.path.join(outbase, outfile)
                     arglist.append([[e1, e2], outpath, tmp, jobcall])
+    if inputfiles:
+        assert arglist, 'No arguments created for signal correlation'
+    return arglist
+
+
+def make_validsig_pairs(inputfiles, assemblies, roifiles, outbase, cmd, jobcall):
+    """
+    :param inputfiles:
+    :param assemblies:
+    :param roifiles:
+    :param outbase:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    done = set()
+    arglist = []
+    for trg in assemblies:
+        qry = assemblies[1] if trg == assemblies[0] else assemblies[0]
+        epigenomes = fnm.filter(inputfiles, '*/E*{}*.h5'.format(trg))
+        for e1 in epigenomes:
+            en1 = os.path.basename(e1).split('.')[0]
+            if 'H3K36me3' in en1:
+                continue
+            _, _, cell, _ = en1.split('_')
+            if cell not in ['liver', 'hepa']:
+                continue
+            for e2 in epigenomes:
+                en2 = os.path.basename(e2).split('.')[0]
+                if 'H3K36me3' in en2:
+                    continue
+                _, _, cell, _ = en2.split('_')
+                if cell not in ['liver', 'hepa']:
+                    continue
+                if (e1, e2) in done:
+                    continue
+                if e1 == e2:
+                    continue
+                done.add((e1, e2))
+                done.add((e2, e1))
+                assm_roi = [(d['path'], d['regtype']) for d in roifiles if d['assembly'] == trg]
+                assert len(assm_roi) == 3, 'ROI file missing'
+                for roip, reg in assm_roi:
+                    if reg != 'reg5p':
+                        continue
+                    tmp = cmd.format(**{'roifile': roip, 'target': trg, 'query': qry})
+                    outfile = '_'.join(['roicorr', en1, 'vs', en2, reg]) + '.json'
+                    outpath = os.path.join(outbase, outfile)
+                    arglist.append([[e1, e2], outpath, tmp, jobcall])
+
     if inputfiles:
         assert arglist, 'No arguments created for signal correlation'
     return arglist
@@ -824,6 +874,54 @@ def make_corr_pairs(rawfiles, mapfiles, roifiles, assemblies, fp_cellmatches, ou
                     outpath = os.path.join(outbase, outfile)
                     arglist.append([[rf, pf], outpath, tmp, jobcall])
     if rawfiles and mapfiles and roifiles:
+        assert arglist, 'No arguments created for signal map correlation'
+    return arglist
+
+
+def make_corr_valid_pairs(validfiles, mapfiles, roifiles, outbase, cmd, jobcall):
+    """
+    :param rawfiles:
+    :param mapfiles:
+    :param roifiles:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    done = set()
+    arglist = []
+    for rf in validfiles:
+        fp, fn = os.path.split(rf)
+        _, qry, cell, _ = fn.split('.')[0].split('_')
+        if qry == 'mm9':
+            trg = ['hg19']
+        elif qry == 'hg19':
+            trg = ['mm9']
+        else:
+            trg = ['hg19', 'mm9']
+        if cell not in ['liver', 'hepa']:
+            continue
+        for t in trg:
+            pair_files = fnm.filter(mapfiles, '*_{}_*.from.{}.mapsig.h5'.format(qry, t))
+            for pf in pair_files:
+                fp2, fn2 = os.path.split(pf)
+                if 'H3K36me3' in fn2:
+                    continue
+                _, _, cell2, _ = fn2.split('_')
+                if cell2 in ['liver', 'hepa']:
+                    if (rf, pf) in done:
+                        continue
+                    done.add((rf, pf))
+                    assm_roi = [(d['path'], d['regtype']) for d in roifiles if d['assembly'] == qry]
+                    assert len(assm_roi) == 3, 'ROI file missing'
+                    for roip, reg in assm_roi:
+                        if reg != 'reg5p':
+                            continue
+                        tmp = cmd.format(**{'roifile': roip, 'target': t, 'query': qry})
+                        outfile = '_'.join(['roicorr', fn.split('.')[0], 'vs', fn2.rsplit('.', 1)[0], reg]) + '.json'
+
+                        outpath = os.path.join(outbase, outfile)
+                        arglist.append([[rf, pf], outpath, tmp, jobcall])
+    if validfiles and mapfiles and roifiles:
         assert arglist, 'No arguments created for signal map correlation'
     return arglist
 
@@ -930,7 +1028,7 @@ def build_pipeline(args, config, sci_obj, pipe):
     dir_sub_mapcorr = os.path.join(dir_task_sigmap, 'mapcorr', 'corr_roi')
     cellmatches_file = os.path.join(os.path.split(config.get('Annotations', 'groupfile'))[0], 'cellmatches_ro.json')
     corrmaproi = pipe.files(sci_obj.get_jobf('inpair_out'),
-                            make_corr_pairs(collect_full_paths(dir_indata, '*/E*.h5', topdown=False, allow_none=False),
+                            make_corr_pairs(collect_full_paths(dir_indata, '*/E[EBD]*.h5', topdown=False, allow_none=False),
                                             collect_full_paths(dir_sub_signal, '*/E*.h5', topdown=True, allow_none=True),
                                             collect_roi_files(dir_refroi_bed, ext='*.bed.gz'),
                                             use_targets, cellmatches_file, dir_sub_mapcorr,
@@ -948,6 +1046,53 @@ def build_pipeline(args, config, sci_obj, pipe):
     #
     # END: major task signal mapping
     # ==============================
+
+    # ==========================
+    # Major task: signal correlation
+    # using validation epigenomes
+
+    # compute correlations of signal in regions of interest
+
+    dir_task_validcorr = os.path.join(workbase, 'task_signal_validation')
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'corrsigroi')
+    dir_sub_validcorr_roi = os.path.join(dir_task_validcorr, 'sub_roi')
+    dir_refroi_bed = os.path.join(os.path.split(config.get('Pipeline', 'refroiexp'))[0], 'roi_bed')
+    corrvalidroi = pipe.files(sci_obj.get_jobf('inpair_out'),
+                              make_validsig_pairs(inputfiles, use_targets,
+                                                  collect_roi_files(dir_refroi_bed, ext='*.bed.gz'),
+                                                  dir_sub_validcorr_roi, cmd, jobcall),
+                              name='corrvalidroi')
+    corrvalidroi = corrvalidroi.mkdir(dir_sub_validcorr_roi)
+    corrvalidroi = corrvalidroi.follows(init)
+
+    cmd = config.get('Pipeline', 'corrmaproi')
+    dir_sub_mapvalidcorr_roi = os.path.join(dir_task_validcorr, 'sub_map_roi')
+    corrmapvalidroi = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                 make_corr_valid_pairs(collect_full_paths(dir_indata, '*/EV*.h5',
+                                                                          topdown=False, allow_none=False),
+                                                       collect_full_paths(dir_sub_signal, '*/E*.h5',
+                                                                          topdown=True, allow_none=True),
+                                                       collect_roi_files(dir_refroi_bed, ext='*.bed.gz'),
+                                                       dir_sub_mapvalidcorr_roi,
+                                                       cmd, jobcall),
+                                 name='corrmapvalidroi')
+    corrmapvalidroi = corrmapvalidroi.mkdir(dir_sub_mapvalidcorr_roi)
+    corrmapvalidroi = corrmapvalidroi.follows(corrvalidroi)
+
+    run_task_validcorr = pipe.merge(task_func=touch_checkfile,
+                                    name='task_validcorr',
+                                    input=output_from(corrsigroi),
+                                    output=os.path.join(dir_task_sigcorr, 'run_task_validcorr.chk'))
+
+    #
+    # END: major task signal correlation
+    # ============================
 
     # # ==================================
     # # Major task: generate training data for predicting gene expression
