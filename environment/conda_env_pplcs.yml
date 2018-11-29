@@ -44,6 +44,7 @@ dependencies:
   - bioconductor-iranges
   - bioconductor-biocinstaller
   - bioconductor-qvalue
+  - star=2.6.1b
   # LOLA
   # source("http://bioconductor.org/biocLite.R")
   # biocLite("LOLA")

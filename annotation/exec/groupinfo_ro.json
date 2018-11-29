@@ -1,6 +1,6 @@
 {
  "duplicates": {
-  "ESE14-H3K27ac-H3K36me3-H3K4me3": [
+  "ESE14-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G06",
     "G0630"
@@ -26,7 +26,7 @@
     "G1830"
    ]
   ],
-  "H1hESC-H3K27ac-H3K36me3-H3K4me3": [
+  "H1hESC-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G06",
     "G0630"
@@ -52,7 +52,7 @@
     "G2230"
    ]
   ],
-  "heart-H3K27ac-H3K36me3-H3K4me3": [
+  "heart-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G10",
     "G1030"
@@ -66,7 +66,7 @@
     "G2030"
    ]
   ],
-  "hepa-H3K27ac-H3K36me3-H3K4me3": [
+  "hepa-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G01",
     "G0130"
@@ -92,7 +92,7 @@
     "G1630"
    ]
   ],
-  "kidney-H3K27ac-H3K36me3-H3K4me3": [
+  "kidney-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G09",
     "G0930"
@@ -106,7 +106,7 @@
     "G2330"
    ]
   ],
-  "liver-H3K27ac-H3K36me3-H3K4me3": [
+  "liver-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G01",
     "G0130"
@@ -120,7 +120,7 @@
     "G2430"
    ]
   ],
-  "ncd4-H3K27ac-H3K36me3-H3K4me3": [
+  "ncd4-H3K27ac-H3K36me3-H3K4me3-mRNA": [
    [
     "G11",
     "G1130"
@@ -162,9 +162,17 @@
  "groupinfo": {
   "G01": {
    "extgid": "G0130",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -203,6 +211,14 @@
      "EID": "EE12",
      "assembly": "mm9",
      "cell": "liver",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5"
+    },
+    {
+     "EID": "EE12",
+     "assembly": "mm9",
+     "cell": "liver",
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5"
@@ -219,8 +235,8 @@
   },
   "G06": {
    "extgid": "G0630",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
     {
      "EID": "EE04",
@@ -245,6 +261,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5"
+    },
+    {
+     "EID": "EE04",
+     "assembly": "mm9",
+     "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5"
     }
    ],
    "partner2": [
@@ -271,14 +295,30 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G09": {
    "extgid": "G0930",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -317,6 +357,14 @@
      "EID": "EE11",
      "assembly": "mm9",
      "cell": "kidney",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5"
+    },
+    {
+     "EID": "EE11",
+     "assembly": "mm9",
+     "cell": "kidney",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5"
@@ -333,9 +381,17 @@
   },
   "G10": {
    "extgid": "G1030",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -385,14 +441,30 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5"
+    },
+    {
+     "EID": "EE15",
+     "assembly": "mm9",
+     "cell": "heart",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5"
     }
    ]
   },
   "G11": {
    "extgid": "G1130",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -419,6 +491,14 @@
     }
    ],
    "partner2": [
+    {
+     "EID": "EB16",
+     "assembly": "mm9",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5"
+    },
     {
      "EID": "EB16",
      "assembly": "mm9",
@@ -447,8 +527,8 @@
   },
   "G12": {
    "extgid": "G1230",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -457,6 +537,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
     },
     {
      "EID": "ED14",
@@ -476,6 +564,14 @@
     }
    ],
    "partner2": [
+    {
+     "EID": "EB16",
+     "assembly": "mm9",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5"
+    },
     {
      "EID": "EB16",
      "assembly": "mm9",
@@ -504,8 +600,8 @@
   },
   "G13": {
    "extgid": "G1330",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
-   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -514,6 +610,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
     },
     {
      "EID": "ED14",
@@ -556,13 +660,21 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5"
+    },
+    {
+     "EID": "EE15",
+     "assembly": "mm9",
+     "cell": "heart",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5"
     }
    ]
   },
   "G14": {
    "extgid": "G1430",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
     {
      "EID": "EE03",
@@ -579,6 +691,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5"
+    },
+    {
+     "EID": "EE03",
+     "assembly": "mm9",
+     "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5"
     },
     {
      "EID": "EE03",
@@ -613,14 +733,30 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G15": {
    "extgid": "G1530",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -662,6 +798,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5"
+    },
+    {
+     "EID": "EE03",
+     "assembly": "mm9",
+     "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5"
     },
     {
      "EID": "EE03",
@@ -675,9 +819,17 @@
   },
   "G16": {
    "extgid": "G1630",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
-   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_H3K4me3.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
    "partner1": [
+    {
+     "EID": "ED13",
+     "assembly": "hg19",
+     "cell": "hepa",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED13_hg19_hepa_mRNA.h5"
+    },
     {
      "EID": "ED13",
      "assembly": "hg19",
@@ -727,13 +879,21 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5"
+    },
+    {
+     "EID": "EE04",
+     "assembly": "mm9",
+     "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5"
     }
    ]
   },
   "G17": {
    "extgid": "G1730",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -742,6 +902,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
     },
     {
      "EID": "ED14",
@@ -781,6 +949,14 @@
      "EID": "EE03",
      "assembly": "mm9",
      "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_mRNA.h5"
+    },
+    {
+     "EID": "EE03",
+     "assembly": "mm9",
+     "cell": "ESE14",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE03_mm9_ESE14_H3K36me3.h5"
@@ -789,8 +965,8 @@
   },
   "G18": {
    "extgid": "G1830",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
-   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
+   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params2": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
    "partner1": [
     {
      "EID": "ED14",
@@ -799,6 +975,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
     },
     {
      "EID": "ED14",
@@ -841,14 +1025,30 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_H3K4me3.h5"
+    },
+    {
+     "EID": "EE04",
+     "assembly": "mm9",
+     "cell": "ESE14",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE04_mm9_ESE14_mRNA.h5"
     }
    ]
   },
   "G19": {
    "extgid": "G1930",
-   "params1": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
+    {
+     "EID": "EB16",
+     "assembly": "mm9",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EB16_mm9_ncd4_mRNA.h5"
+    },
     {
      "EID": "EB16",
      "assembly": "mm9",
@@ -898,13 +1098,21 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G20": {
    "extgid": "G2030",
-   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
     {
      "EID": "EE15",
@@ -929,6 +1137,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_H3K27ac.h5"
+    },
+    {
+     "EID": "EE15",
+     "assembly": "mm9",
+     "cell": "heart",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE15_mm9_heart_mRNA.h5"
     }
    ],
    "partner2": [
@@ -955,13 +1171,21 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G21": {
    "extgid": "G2130",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
     {
      "EID": "EE12",
@@ -970,6 +1194,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5"
+    },
+    {
+     "EID": "EE12",
+     "assembly": "mm9",
+     "cell": "liver",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5"
     },
     {
      "EID": "EE12",
@@ -1012,13 +1244,21 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G22": {
    "extgid": "G2230",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K4me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
    "partner1": [
     {
      "EID": "EE11",
@@ -1027,6 +1267,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5"
+    },
+    {
+     "EID": "EE11",
+     "assembly": "mm9",
+     "cell": "kidney",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5"
     },
     {
      "EID": "EE11",
@@ -1069,13 +1317,21 @@
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_H3K36me3.h5"
+    },
+    {
+     "EID": "EE07",
+     "assembly": "hg19",
+     "cell": "H1hESC",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE07_hg19_H1hESC_mRNA.h5"
     }
    ]
   },
   "G23": {
    "extgid": "G2330",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K36me3.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K4me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
    "partner1": [
     {
      "EID": "EE11",
@@ -1084,6 +1340,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_H3K27ac.h5"
+    },
+    {
+     "EID": "EE11",
+     "assembly": "mm9",
+     "cell": "kidney",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE11_mm9_kidney_mRNA.h5"
     },
     {
      "EID": "EE11",
@@ -1110,6 +1374,14 @@
      "lib": "H3K4me3",
      "param": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
     },
     {
      "EID": "ED14",
@@ -1131,8 +1403,8 @@
   },
   "G24": {
    "extgid": "G2430",
-   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
-   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
+   "params1": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5 H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K4me3.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K36me3.h5",
+   "params2": "H3K4me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K4me3.h5 mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5 H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5 H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K27ac.h5",
    "partner1": [
     {
      "EID": "EE12",
@@ -1141,6 +1413,14 @@
      "lib": "H3K27ac",
      "param": "H3K27ac::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_H3K27ac.h5"
+    },
+    {
+     "EID": "EE12",
+     "assembly": "mm9",
+     "cell": "liver",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/EE12_mm9_liver_mRNA.h5"
     },
     {
      "EID": "EE12",
@@ -1172,6 +1452,14 @@
      "EID": "ED14",
      "assembly": "hg19",
      "cell": "ncd4",
+     "lib": "mRNA",
+     "param": "mRNA::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5",
+     "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_mRNA.h5"
+    },
+    {
+     "EID": "ED14",
+     "assembly": "hg19",
+     "cell": "ncd4",
      "lib": "H3K36me3",
      "param": "H3K36me3::/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5",
      "path": "/TL/deep/fhgfs/projects/pebert/thesis/projects/cross_species/rawdata/conv/hdf/ED14_hg19_ncd4_H3K36me3.h5"
@@ -1187,5 +1475,5 @@
    ]
   }
  },
- "timestamp": "Friday_2018-03-09_16:31:31"
+ "timestamp": "Tuesday_2018-11-06_15:17:11"
 }

@@ -81,11 +81,12 @@ def select_compatible_libs(partner1, partner2):
     p2_libs = set([p['lib'] for p in partner2])
     isect = p1_libs.intersection(p2_libs)
     dnase = 1 if 'DNase' in isect else 0
-    hist = len(isect) - dnase
+    mrna = 1 if 'mRNA' in isect else 0
+    hist = len(isect) - dnase - mrna
     p1 = list(p for p in partner1 if p['lib'] in isect)
     p2 = list(p for p in partner2 if p['lib'] in isect)
     assert p1 and p2, 'Empty partner: {} and {}'.format(p1, p2)
-    return p1, p2, hist, dnase, sorted(isect)
+    return p1, p2, hist, dnase, mrna, sorted(isect)
 
 
 def make_groups_compatible(groupings, epibundles):
@@ -109,7 +110,7 @@ def make_groups_compatible(groupings, epibundles):
             match_types[foo + '-' + foo] = 'pos'
             match_types[bar + '-' + bar] = 'pos'
             try:
-                p1, p2, h, d, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
+                p1, p2, hist, dnase, rna, clibs = select_compatible_libs(epibundles[r['partner1']], epibundles[r['partner2']])
             except AssertionError:
                 print(r)
                 raise
@@ -117,7 +118,7 @@ def make_groups_compatible(groupings, epibundles):
             p1_params = ' '.join([x['param'] for x in p1])
             p2_params = ' '.join([x['param'] for x in p2])
             gid = r['gid']
-            extgid = gid + str(h) + str(d)
+            extgid = gid + str(hist) + str(dnase)
             assert extgid not in uniq_extids, 'Duplicate extended group ID: {}'.format(extgid)
             uniq_extids.add(extgid)
             entry = {'partner1': p1, 'partner2': p2, 'params1': p1_params, 'params2': p2_params, 'extgid': extgid}
@@ -141,7 +142,8 @@ def bundle_epigenomes(folder, mapped=False):
     :param folder:
     :return:
     """
-    fpaths = collect_full_paths(folder, '*/E*.h5', allow_none=True)
+    # exclude "V" for Villar et al. validation data
+    fpaths = collect_full_paths(folder, '*/E[EBD]*_*[!s].h5', allow_none=True)
     collector = col.defaultdict(list)
     for fp in fpaths:
         try:
@@ -340,6 +342,9 @@ def make_sigmap_input(inputfiles, mapfiles, baseout, targets, queries, cmd, jobc
             for sgf in sigfiles:
                 sgfn = os.path.basename(sgf)
                 eid, assembly, cell, lib = sgfn.split('.')[0].split('_')
+                # exclude Villar et al validation data
+                if eid.startswith('EV'):
+                    continue
                 assert trg == assembly, 'Filtering for target assembly failed: {} - {}'.format(fn, sgfn)
                 mapfile = '_'.join([eid, qry, cell, lib])
                 mapfile += '.'.join(['', 'from', trg, 'mapsig', 'h5'])
@@ -766,9 +771,13 @@ def make_srcsig_pairs(inputfiles, assemblies, roifiles, outbase, cmd, jobcall):
         epigenomes = fnm.filter(inputfiles, '*/E[EBD]*{}*.h5'.format(trg))
         for e1 in epigenomes:
             en1 = os.path.basename(e1).split('.')[0]
+            if 'mRNA' in en1:
+                continue
             _, _, cell, _ = en1.split('_')
             for e2 in epigenomes:
                 en2 = os.path.basename(e2).split('.')[0]
+                if 'mRNA' in en2:
+                    continue
                 _, _, cell, _ = en2.split('_')
                 if (e1, e2) in done:
                     continue
@@ -853,6 +862,8 @@ def make_corr_pairs(rawfiles, mapfiles, roifiles, assemblies, fp_cellmatches, ou
     arglist = []
     for rf in rawfiles:
         fp, fn = os.path.split(rf)
+        if 'mRNA' in fn:
+            continue
         _, qry, cell, _ = fn.split('.')[0].split('_')
         trg = assemblies[0] if qry == assemblies[1] else assemblies[1]
         if cell in ['K562', 'GM12878', 'CH12', 'MEL']:
@@ -861,6 +872,8 @@ def make_corr_pairs(rawfiles, mapfiles, roifiles, assemblies, fp_cellmatches, ou
         pair_files = fnm.filter(mapfiles, '*_{}_*.from.{}.mapsig.h5'.format(qry, trg))
         for pf in pair_files:
             fp2, fn2 = os.path.split(pf)
+            if 'mRNA' in fn2:
+                continue
             _, _, cell2, _ = fn2.split('_')
             if cell2 in compatible:
                 if (rf, pf) in done:
@@ -1113,7 +1126,7 @@ def build_pipeline(args, config, sci_obj, pipe):
     roifiles = collect_roi_files(config.get('Pipeline', 'refroiexp'))
     ascfiles = collect_asc_files(config.get('Pipeline', 'refascreg'), key=0)
     groupfile = config.get('Annotations', 'groupfile')
-    cmd = config.get('Pipeline', 'traindataexp').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'traindataexp')
     traindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
                                      annotate_training_groups(mapfiles, roifiles, ascfiles, dir_indata,
                                                               groupfile, dir_subtask_traindata_exp_groups,
@@ -1122,7 +1135,7 @@ def build_pipeline(args, config, sci_obj, pipe):
     traindataexp_groups = traindataexp_groups.mkdir(os.path.split(dir_subtask_traindata_exp_groups)[0])
 
     dir_mrg_train_datasets = os.path.join(dir_task_traindata_exp, 'train_datasets', '{target}_to_{query}')
-    cmd = config.get('Pipeline', 'mrgtraindataexp').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'mrgtraindataexp')
     mrgtraindataexp_groups = pipe.files(sci_obj.get_jobf('in_out'),
                                         merge_augment_featfiles(os.path.split(dir_subtask_traindata_exp_groups)[0],
                                                                 dir_indata, dir_mrg_train_datasets, cmd, jobcall),
@@ -1261,6 +1274,49 @@ def build_pipeline(args, config, sci_obj, pipe):
     apply_expstat_gcf = apply_expstat_gcf.follows(trainmodel_expstat_gcf_avg)
 
     # =========================================================================
+    # train and apply RNA coverage (as requested by Reviewer 1)
+
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'trainmodel_expstat_rna')
+    trainmodel_expstat_rna = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                                            name='trainmodel_expstat_rna',
+                                            input=output_from(mrgtraindataexp_groups),
+                                            filter=formatter('(?P<SAMPLE>[\w\.]+)\.feat\.h5'),
+                                            output=os.path.join(dir_train_expstat,
+                                                                'rna',
+                                                                '{subdir[0][0]}',
+                                                                '{SAMPLE[0]}.gbcls.rna.all.pck'),
+                                            extras=[cmd, jobcall])
+    trainmodel_expstat_rna = trainmodel_expstat_rna.mkdir(os.path.join(dir_train_expstat, 'rna'))
+    trainmodel_expstat_rna = trainmodel_expstat_rna.active_if(config.getboolean('Pipeline', 'trainmodel_expstat_rna_run'))
+
+    sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    # apply canonical chromatin model to test data
+    cmd = config.get('Pipeline', 'apply_expstat_rna')
+    params_apply_expstat_rna = None
+    params_apply_expstat_rna = params_predict_testdata(os.path.join(dir_train_expstat, 'rna'),
+                                                       os.path.split(dir_mrg_test_datasets)[0],
+                                                       os.path.join(dir_apply_expstat, 'rna', '{groupid}'),
+                                                       cmd, jobcall, mddset=md_dset)
+    apply_expstat_rna = pipe.files(sci_obj.get_jobf('inpair_out'),
+                                   params_apply_expstat_rna,
+                                   name='apply_expstat_rna')
+    apply_expstat_rna = apply_expstat_rna.mkdir(os.path.join(dir_apply_expstat, 'rna'))
+    apply_expstat_rna = apply_expstat_rna.follows(task_traindata_exp)
+    apply_expstat_rna = apply_expstat_rna.follows(task_testdata_exp)
+    apply_expstat_rna = apply_expstat_rna.follows(trainmodel_expstat_rna)
+
+    # =========================================================================
     # train and apply chromatin model (using only canonical chromatin features)
 
     sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
@@ -1323,7 +1379,7 @@ def build_pipeline(args, config, sci_obj, pipe):
     dir_summary = os.path.join(workbase, 'task_summarize')
     summ_perf_status = pipe.merge(task_func=sci_obj.get_jobf('ins_out'),
                                   name='summ_perf_status',
-                                  input=output_from(apply_expstat_can, apply_expstat_gcf),
+                                  input=output_from(apply_expstat_can, apply_expstat_gcf, apply_expstat_rna),
                                   output=os.path.join(dir_summary, 'agg_expstat_est.h5'),
                                   extras=[cmd, jobcall])
     summ_perf_status = summ_perf_status.mkdir(dir_summary)

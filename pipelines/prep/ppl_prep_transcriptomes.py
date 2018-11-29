@@ -25,6 +25,7 @@ def annotate_encode_files(fpaths, metadata, dsetids):
     groups = dict()
     gcount = 1
     uniq = set()
+    assert len(fpaths) == len(set(fpaths)), 'File duplicates'
     for fp in sorted(fpaths):
         facc = os.path.basename(fp).split('.')[0]
         try:
@@ -82,8 +83,12 @@ def link_encode_transcriptomes(folder, mdfile, idfile, outfolder):
     tids = prep_dset_ids(idfile, 'ENCODE', 'transcriptome')
     annfiles = annotate_encode_files(fqfiles, metadata, tids)
     linked_files = []
+    linked_acc = set()
     for afp in annfiles:
         infos = afp[4]
+        acc = afp[1]
+        assert acc not in linked_acc, 'Attempt to link same file twice'
+        linked_acc.add(acc)
         exptarget = 'mRNA'
         libtype = infos['Run type']
         readlength = infos['Read length']
@@ -292,6 +297,111 @@ def make_qall_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
     return arglist
 
 
+def make_aln_calls(fwreads, rvreads, outpath, idxpath, cmd, jobcall):
+    """
+    :param fwreads:
+    :param rvreads:
+    :param outpath:
+    :param idxpath:
+    :param cmd:
+    :param jobcall:
+    :return:
+    """
+    infos = re.compile('(?P<SAMPLE>\w+_mRNA)_(?P<NUMID>\w+)_(?P<LIB>[\w\-]+)\.fastq\.gz')
+    assert len(fwreads) == len(rvreads), 'Some read files are missing a partner'
+    idx_sub = {'hg19': os.path.join(idxpath, 'star_hg19_gencode-v19'),
+               'mm9': os.path.join(idxpath, 'star_mm9_gencode-vM1'),
+               'bosTau7': os.path.join(idxpath, 'star_bosTau7_ensembl-v75')}
+    current = None
+    idxdir = None
+    files1, files2 = [], []
+    arglist = []
+    for read1, read2 in zip(sorted(fwreads), sorted(rvreads)):
+        m1, m2 = infos.match(os.path.basename(read1)), infos.match(os.path.basename(read2))
+        assert m1.group('SAMPLE') == m2.group('SAMPLE'), 'Sample mismatch: {} vs {}'.format(read1, read2)
+        assm = m1.group('SAMPLE').split('_')[1]
+        if not any([a in assm for a in ['hg19', 'mm9', 'bosTau7']]):
+            continue
+        if m1.group('SAMPLE') != current and current is not None:
+            assert idxdir is not None, 'No STAR genome index directory set'
+
+            outdir = os.path.join(outpath, current + '/')
+            os.makedirs(outdir, exist_ok=True)
+            tmpdir = os.path.join('/tmp', current)
+            params = {'srmidx': idxdir, 'outdir': outdir, 'tmpdir': tmpdir,
+                      'reads1': ','.join(files1), 'reads2': ','.join(files2)}
+            tmp = cmd.format(**params)
+            joined_reads = files1 + files2
+            arglist.append([joined_reads, os.path.join(outdir, 'Aligned.sortedByCoord.out.bam'), tmp, jobcall])
+            files1, files2 = [read1], [read2]
+            current = m1.group('SAMPLE')
+            idxdir = idx_sub[assm]
+            assert os.path.exists(idxdir), 'STAR index directory does not exist: {}'.format(idxdir)
+        elif current is None:
+            files1, files2 = [read1], [read2]
+            current = m1.group('SAMPLE')
+            idxdir = idx_sub[assm]
+            assert os.path.exists(idxdir), 'STAR index directory does not exist: {}'.format(idxdir)
+        else:
+            files1.append(read1)
+            files2.append(read2)
+    assert idxdir is not None, 'No STAR genome index directory set'
+    outdir = os.path.join(outpath, current + '/')
+    os.makedirs(outdir, exist_ok=True)
+    tmpdir = os.path.join('/tmp', current)
+    params = {'srmidx': idxdir, 'outdir': outdir, 'tmpdir': tmpdir,
+              'reads1': ','.join(files1), 'reads2': ','.join(files2)}
+    tmp = cmd.format(**params)
+    joined_reads = files1 + files2
+    arglist.append([joined_reads, os.path.join(outdir, 'Aligned.sortedByCoord.out.bam'), tmp, jobcall])
+    if fwreads:
+        assert arglist, 'No argument list created for RNA-seq coverage track generation'
+    return arglist
+
+
+def conv_merge_rna_tracks(inputpath, outputpath, cmd, jobcall):
+    """
+    Merge all RNA coverage tracks by tissue
+    to simplify later processing
+    Note: manually duplicate mm9/ESE14 for the
+    two reference epigenomes EE03 and EE04
+
+    :return:
+    """
+    trans_epi_map = {('mm9', 'ncd4'): 'EB16', ('mm9', 'ESE14'): 'EE03',
+                     ('mm9', 'kidney'): 'EE11', ('mm9', 'liver'): 'EE12',
+                     ('mm9', 'heart'): 'EE15', ('hg19', 'hepa'): 'ED13',
+                     ('hg19', 'ncd4'): 'ED14', ('hg19', 'H1hESC'): 'EE07'}
+    rna_cov_tracks = collect_full_paths(inputpath, '*.cov.bg.gz')
+    rna_cov_tracks = sorted(rna_cov_tracks, key=lambda x: os.path.basename(x).split('_', 1)[1])
+    last = None
+    call_inputs = []
+    args = []
+    for r in rna_cov_tracks:
+        if 'bosTau7' in r:
+            continue
+        base_id = os.path.basename(r).split('_', 1)[1]
+        if base_id == last or last is None:
+            call_inputs.append(r)
+            last = base_id
+        else:
+            assm, sample, _ = last.split('_', 2)
+            eid = trans_epi_map[(assm, sample)]
+            outfile = '_'.join([eid, assm, sample, 'mRNA']) + '.h5'
+            outpath = os.path.join(outputpath, outfile)
+            tmp = cmd.format(**{'assm': assm})
+            args.append([call_inputs, outpath, tmp, jobcall])
+            call_inputs = [r]
+            last = base_id
+    assm, sample, _ = last.split('_', 2)
+    eid = trans_epi_map[(assm, sample)]
+    outfile = '_'.join([eid, assm, sample, 'mRNA']) + '.h5'
+    outpath = os.path.join(outputpath, outfile)
+    tmp = cmd.format(**{'assm': assm})
+    args.append([call_inputs, outpath, tmp, jobcall])
+    return args
+
+
 def convert_salmon_quant(inputfile, outputfile, genemodels):
     """
     :param inputfile:
@@ -354,7 +464,9 @@ def build_pipeline(args, config, sci_obj, pipe):
     dlfolder = os.path.join(workbase, 'downloads')
     linkfolder = os.path.join(workbase, 'normlinks')
     tempfolder = os.path.join(workbase, 'temp')
+    alnfolder = os.path.join(workbase, 'rna_aln')
     qidxfolder = os.path.join(config.get('Pipeline', 'refdatabase'), 'transcriptome', 'qindex')
+    starfolder = os.path.join(config.get('Pipeline', 'refdatabase'), 'srmidx')
     genemodels = os.path.join(config.get('Pipeline', 'refdatabase'), 'genemodel', 'subsets', 'protein_coding')
 
     enctrans_init = pipe.originate(lambda x: x,
@@ -419,7 +531,7 @@ def build_pipeline(args, config, sci_obj, pipe):
 
     tmpquant = os.path.join(tempfolder, 'quant')
 
-    cmd = config.get('Pipeline', 'qallpe').replace('\n', ' ')
+    cmd = config.get('Pipeline', 'qallpe')
     qallpe = pipe.files(sci_obj.get_jobf('ins_out'),
                         make_qall_calls(collect_full_paths(linkfolder, '*r1_pe*.gz', False),
                                         collect_full_paths(linkfolder, '*r2_pe*.gz', False),
@@ -428,11 +540,80 @@ def build_pipeline(args, config, sci_obj, pipe):
     qallpe = qallpe.mkdir(tmpquant)
     qallpe = qallpe.follows(fastqc_raw)
 
+    # make STAR alignment for human, mouse and cow
+    cmd = config.get('Pipeline', 'gwaln')
+    staraln = pipe.files(sci_obj.get_jobf('ins_out'),
+                         make_aln_calls(collect_full_paths(linkfolder, '*r1_pe*.gz', False),
+                                        collect_full_paths(linkfolder, '*r2_pe*.gz', False),
+                                        alnfolder, starfolder, cmd, jobcall),
+                         name='staraln')
+    staraln = staraln.mkdir(alnfolder)
+    staraln = staraln.follows(fastqc_raw)
+
+    sci_obj.set_config_env(dict(config.items('MemJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'alnidx')
+    alnidx = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                            name='alnidx',
+                            input=output_from(staraln),
+                            filter=suffix('.bam'),
+                            output='.bam.bai',
+                            extras=[cmd, jobcall])
+
+    sci_obj.set_config_env(dict(config.items('ParallelJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'gwcov')
+    rnacov = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                            name='rnacov',
+                            input=output_from(staraln),
+                            filter=formatter('.+/(?P<SAMPLE>\w+)/Aligned\.sortedByCoord\.out\.bam'),
+                            output='{path[0]}/{SAMPLE[0]}.cov.bw',
+                            extras=[cmd, jobcall])
+    rnacov = rnacov.follows(alnidx)
+
     sci_obj.set_config_env(dict(config.items('JobConfig')), dict(config.items('CondaPPLCS')))
     if args.gridmode:
         jobcall = sci_obj.ruffus_gridjob()
     else:
         jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'covtobed')
+    covtobed = pipe.transform(task_func=sci_obj.get_jobf('in_out'),
+                              name='covtobed',
+                              input=output_from(rnacov),
+                              filter=suffix('.bw'),
+                              output='.bg.gz',
+                              extras=[cmd, jobcall])
+
+    sci_obj.set_config_env(dict(config.items('MemJobConfig')), dict(config.items('CondaPPLCS')))
+    if args.gridmode:
+        jobcall = sci_obj.ruffus_gridjob()
+    else:
+        jobcall = sci_obj.ruffus_localjob()
+
+    cmd = config.get('Pipeline', 'bgtohdf')
+    hdf_raw_out = os.path.join(workbase, 'conv', 'expraw')
+    bgtohdf_params = conv_merge_rna_tracks(alnfolder, hdf_raw_out, cmd, jobcall)
+    bgtohdf = pipe.files(sci_obj.get_jobf('ins_out'),
+                         bgtohdf_params,
+                         name='bgtohdf')
+    bgtohdf = bgtohdf.follows(covtobed)
+
+    cmd = config.get('Pipeline', 'normsig')
+    normsig = pipe.collate(task_func=sci_obj.get_jobf('ins_out'),
+                           name='normsig',
+                           input=output_from(bgtohdf),
+                           filter=formatter('(?P<EID>E[BDE0-9]+)_(?P<ASSM>\w+)_(?P<CELL>\w+)_(?P<MARK>\w+)\.h5'),
+                           output=os.path.join('{subpath[0][1]}', '{ASSM[0]}_{MARK[0]}_norm.chk'),
+                           extras=[cmd, jobcall])
 
     aggout = os.path.join(workbase, 'conv', 'agg')
     cmd = config.get('Pipeline', 'hdfagg').replace('\n', ' ')
