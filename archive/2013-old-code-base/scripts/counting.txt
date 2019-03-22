@@ -1,0 +1,12 @@
+Total number of motifs:	3161839
+Number of 2-combinations:	33
+Number of 3-combinations:	18392
+Number of 4-combinations:	652849
+Number of 5-combinations:	581365
+Number of 6-combinations:	702354
+Number of 7-combinations:	623549
+Number of 8-combinations:	382611
+Number of 9-combinations:	155582
+Number of 10-combinations:	39642
+Number of 11-combinations:	5257
+Number of 12-combinations:	205

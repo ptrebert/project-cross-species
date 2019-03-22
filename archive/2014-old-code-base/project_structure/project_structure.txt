@@ -1,0 +1,29 @@
+# Structure of cross-species epigenome project
+# Split according to main use cases
+
+
+
+run_pipeline
+
+	Prepare blank mapping [CreateBlank]
+		Input: query species, chromosome sizes
+		Output: blank signal files to be mapped on the cluster
+		Initiate mapping on cluster manually, aggregate split files manually
+
+	Process blank mapping [ProcessBlank]
+		Input: blank mapping with overlapping regions
+		Output: map file for query - target species pair with non-overlapping regions and fix resolution
+		Annotate genome mapping (mapped fragments) files with conservation score; resolve conflicting regions
+		(regions with overlaps) based on neighbour composition and conservation 
+
+	Map epigenome [MapFiles]
+		Input: signal tracks with fix resolution in simple bedgraph format, query - target species pair
+		Output: mapped signal tracks with fix resolution in simple bedgraph format, bigWig output is optional
+
+	Evaluate mapping
+		Input:
+		Output:
+
+	Predict epigenome
+		Input: peak tracks
+		Output: model, prediction...? 

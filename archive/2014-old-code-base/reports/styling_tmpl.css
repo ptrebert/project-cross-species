@@ -1,0 +1,90 @@
+/*
+source: http://designyourweb.info/so-erstellst-du-ein-vertikales-css3-accordion-menu/914
+*/
+
+nav {
+    width: auto;
+}
+nav ul li {
+    float: none;
+}
+nav ul li ul {
+    position: relative;
+}
+
+nav ul {
+    padding: 0px;
+    margin: 0px;
+ 
+    -moz-box-shadow: 2px 2px 2px #dfdfdf;
+    -webkit-box-shadow: 2px 2px 2px #dfdfdf;
+    box-shadow: 2px 2px 2px #dfdfdf;
+ 
+    border-right: 1px solid #DFDFDF;
+    border-bottom: 1px solid #DFDFDF;
+}
+nav ul:after {
+    clear: both;
+    content: " ";
+    display: block;
+    font-size: 0;
+    height: 0;
+    visibility: hidden;
+}
+nav ul,nav ul li{
+    background-color: #FAFAFA;
+}
+nav ul li {
+    list-style: none;
+    border-bottom: 1px solid #DFDFDF
+}
+nav ul li a {
+    text-decoration: none;
+    display: block;
+    color: #333;
+    padding: 14px 34px 14px 34px;
+}
+nav ul li ul{
+    display: block;
+    padding: 0px;
+    border: none;
+    box-shadow: none;
+}
+nav ul li ul li{
+    float: none;
+    display: block;
+    border: none;
+}
+nav ul li ul li a {
+    padding-left: 44px;
+    color: #FAFAFA;
+}
+nav ul li ul li a:hover{
+    color: #333;
+    background-color: #FAFAFA !important;
+}
+
+nav ul li:target > a {
+    color: #FAFAFA;
+}
+
+nav ul li ul{
+    max-height: 0px;
+    overflow: hidden;
+ 
+    -webkit-transition: max-height 0.3s ease-out;
+    -moz-transition: max-height 0.3s ease-out;
+    -o-transition: max-height 0.3s ease-out;
+    -ms-transition: max-height 0.3s ease-out;
+    transition: max-height 0.3s ease-out;
+}
+nav ul li:target > ul {
+    max-height: 200px;
+}
+
+/*
+=================
+Dynamic part, needs to be adapted for each report to make the menu work
+*/
+
+/*replaceMenu*/
