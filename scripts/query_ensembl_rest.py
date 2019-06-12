@@ -50,7 +50,15 @@ class EnsemblRestService:
             check_result = 0
         return check_result
 
-    def get_species_info(self):
+    def plain_rest_query(self, query_type):
+        """
+        :param query_type:
+        :return:
+        """
+        plain_types = {'species': self._get_species_info}
+        return plain_types[query_type]()
+
+    def _get_species_info(self):
         """
         :return:
         """
@@ -92,6 +100,14 @@ def parse_command_line():
                              'configuration parameters for the '
                              'loggers to use. A logger named "debug" '
                              'must be present in the configuration file.')
+    parser.add_argument('--output', '-o', type=str, dest='output', required=True,
+                        help='Full path to output JSON file to store '
+                             'data dump. Non-existing folders will be'
+                             ' created.')
+    parser.add_argument('--query-type', '-qt', type=str, choices=['species'],
+                        required=True, dest='query_type',
+                        help='Specify the type of the query to be sent to the '
+                             'Ensembl REST service.')
 
     args = parser.parse_args()
     return args
@@ -117,6 +133,20 @@ def init_logger(cli_args):
     return
 
 
+def prepare_output_file_path(output_path):
+    """
+    :param output_path:
+    :return:
+    """
+    if os.path.isfile(output_path):
+        logger.warning('Output file already exists: {}'.format(output_path))
+    else:
+        output_folders = os.path.abspath(os.path.dirname(output_path))
+        os.makedirs(output_folders, exist_ok=True)
+        logger.debug('Created output folder structure: {}'.format(output_folders))
+    return
+
+
 def main():
     """
     :return:
@@ -124,6 +154,18 @@ def main():
     args = parse_command_line()
     init_logger(args)
     rest_service = EnsemblRestService()
+    logger.debug('Connection to Ensembl REST service API established')
+    logger.debug('Querying service for data type: {}'.format(args.query_type))
+    if args.query_type in ['species']:
+        # queries that do not require additional parameters
+        response_content = rest_service.plain_rest_query(args.query_type)
+    else:
+        raise NotImplementedError
+    prepare_output_file_path(args.output)
+    with open(args.output, 'w') as dump:
+        _ = json.dump(response_content, dump, check_circular=True,
+                      sort_keys=True, ensure_ascii=True, indent=2)
+    logger.debug('JSON output dumped to file')
     return
 
 

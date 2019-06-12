@@ -5,6 +5,9 @@ channels:
   - r
 dependencies:
   - Python=3.6.*
+  - drmaa=0.7.9
+  - salmon=0.14.0
+  - snakemake=5.4.4
   - pandas=0.24.2
   - requests=2.22.0
   - numpy=1.16.4
