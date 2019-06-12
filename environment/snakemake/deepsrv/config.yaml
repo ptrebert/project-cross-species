@@ -1,0 +1,12 @@
+# Default runtime profile for DEEP infrastructure / SGE cluster
+
+directory: /TL/deep/fhgfs/projects/pebert/thesis/projects/cross-species-epigenomics
+drmaa-log-dir: /TL/deep/fhgfs/projects/pebert/thesis/projects/cross-species-epigenomics/log/cluster_jobs
+drmaa: " {cluster.clusterSpec}"
+jobname: "SMK{jobid}_{name}"
+cores: 4
+jobs: 50
+latency-wait: 1
+keep-going: True
+rerun-incomplete: False
+restart-times: 1

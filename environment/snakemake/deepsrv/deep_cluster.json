@@ -1,0 +1,6 @@
+{
+  "__default__": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=10G,slots_free=1,mem_free=5G",
+    "jobName": "{rule}__defaultSpec__"
+  }
+}
