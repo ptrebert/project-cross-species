@@ -1,0 +1,71 @@
+species	abbreviation	source	datatype	author	bioproject
+Human	hsa	literature	transcriptome	Brawand	PRJNA143627
+Chimpanzee	ptr	literature	transcriptome	Brawand	PRJNA143627
+Bonobo	ppa	literature	transcriptome	Brawand	PRJNA143627
+Gorilla	ggo	literature	transcriptome	Brawand	PRJNA143627
+Orangutan	ppy	literature	transcriptome	Brawand	PRJNA143627
+Macaque	mml	literature	transcriptome	Brawand	PRJNA143627
+Mouse	mmu	literature	transcriptome	Brawand	PRJNA143627
+Opossum	mdo	literature	transcriptome	Brawand	PRJNA143627
+Platypus	oan	literature	transcriptome	Brawand	PRJNA143627
+Chicken	gga	literature	transcriptome	Brawand	PRJNA143627
+Cow	bta	literature	transcriptome	Fushan	PRJNA184055
+Goat	chi	literature	transcriptome	Fushan	PRJNA184055
+Pig	ssc	literature	transcriptome	Fushan	PRJNA184055
+Dog	caf	literature	transcriptome	Fushan	PRJNA184055
+Cat	fca	literature	transcriptome	Fushan	PRJNA184055
+"Asian badger"	mle	literature	transcriptome	Fushan	PRJNA184055
+"American black bear"	uam	literature	transcriptome	Fushan	PRJNA184055
+"Greater tube-nosed bat"	mhi	literature	transcriptome	Fushan	PRJNA184055
+"Brazilian free-tailed bat"	tbr	literature	transcriptome	Fushan	PRJNA184055
+Opossum	mod	literature	transcriptome	Fushan	PRJNA184055
+"Sugar glider"	pbr	literature	transcriptome	Fushan	PRJNA184055
+Hedgehog	eeu	literature	transcriptome	Fushan	PRJNA184055
+Rabbit	ocu	literature	transcriptome	Fushan	PRJNA184055
+Platypus	oan	literature	transcriptome	Fushan	PRJNA184055
+Horse	eca	literature	transcriptome	Fushan	PRJNA184055
+Grivet	cae	literature	transcriptome	Fushan	PRJNA184055
+Gorilla	ggo	literature	transcriptome	Fushan	PRJNA184055
+Human	hsa	literature	transcriptome	Fushan	PRJNA184055
+"Long-tailed macaque"	mfa	literature	transcriptome	Fushan	PRJNA184055
+Macaque	mmu	literature	transcriptome	Fushan	PRJNA184055
+Bonobo	ppa	literature	transcriptome	Fushan	PRJNA184055
+Orangutan	ppy	literature	transcriptome	Fushan	PRJNA184055
+Chimpanzee	ptr	literature	transcriptome	Fushan	PRJNA184055
+"Spiny mouse"	aca	literature	transcriptome	Fushan	PRJNA184055
+"Guinea pig"	cpo	literature	transcriptome	Fushan	PRJNA184055
+"Naked mole-rat"	hgl	literature	transcriptome	Fushan	PRJNA184055
+"Golden hamster"	mau	literature	transcriptome	Fushan	PRJNA184055
+"Mongolian gerbil"	mun	literature	transcriptome	Fushan	PRJNA184055
+Mouse	mus	literature	transcriptome	Fushan	PRJNA184055
+"White-footed mouse"	ple	literature	transcriptome	Fushan	PRJNA184055
+Rat	rno	literature	transcriptome	Fushan	PRJNA184055
+"Siberian chipmunk"	tsi	literature	transcriptome	Fushan	PRJNA184055
+"House shrew"	smu	literature	transcriptome	Fushan	PRJNA184055
+Human	hsap	literature	epigenome	Villar	PRJEB6906
+Macaque	mmul	literature	epigenome	Villar	PRJEB6906
+Green monkey	csab	literature	epigenome	Villar	PRJEB6906
+Marmoset	cjac	literature	epigenome	Villar	PRJEB6906
+Mouse	mmus	literature	epigenome	Villar	PRJEB6906
+Rat	rnor	literature	epigenome	Villar	PRJEB6906
+"Guinea pig"	cpor	literature	epigenome	Villar	PRJEB6906
+"Naked mole-rat"	hgla	literature	epigenome	Villar	PRJEB6906
+Rabbit	ocun	literature	epigenome	Villar	PRJEB6906
+"Tree shrew"	tbel	literature	epigenome	Villar	PRJEB6906
+Cow	btau	literature	epigenome	Villar	PRJEB6906
+Dolphin	ddel	literature	epigenome	Villar	PRJEB6906
+"Sei whale"	bbor	literature	epigenome	Villar	PRJEB6906
+"Sowerby's breaked whale"	mbid	literature	epigenome	Villar	PRJEB6906
+Pig	sscr	literature	epigenome	Villar	PRJEB6906
+Dog	cfam	literature	epigenome	Villar	PRJEB6906
+Cat	fcat	literature	epigenome	Villar	PRJEB6906
+Ferret	mfur	literature	epigenome	Villar	PRJEB6906
+Opossum	mdom	literature	epigenome	Villar	PRJEB6906
+"Tasmanian Devil"	shar	literature	epigenome	Villar	PRJEB6906
+Human	hsa	encode	epigenome	Project	PRJNA63443
+Human	hsa	encode	transcriptome	Project	PRJNA63443
+Mouse	mmu	encode	epigenome	Project	PRJNA63471
+Mouse	mmu	encode	transcriptome	Project	PRJNA66167
+Mouse	mmu	blueprint	epigenome	Project	PRJNA371787
+Mouse	mmu	blueprint	transcriptome	Project	PRJNA373805
+Mouse	mmu	blueprint	transcriptome	Project	PRJNA489886
