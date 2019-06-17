@@ -5,3 +5,6 @@ notify_email: pebert@mpi-inf.mpg.de
 script_dir: /home/pebert/work/code/github/project-cross-species/scripts
 script_log_config: /home/pebert/work/code/github/project-cross-species/scripts/configs/log_config.json
 
+bioproject_table: /home/pebert/work/code/github/project-cross-species/annotation/ena_bio_projects/ena_bio_projects.tsv
+
+ensembl_release_url: ftp://ftp.ensembl.org/pub/release-96
