@@ -4,9 +4,10 @@ directory: /TL/deep/fhgfs/projects/pebert/thesis/projects/cross-species-epigenom
 drmaa-log-dir: /TL/deep/fhgfs/projects/pebert/thesis/projects/cross-species-epigenomics/log/cluster_jobs
 drmaa: " {cluster.clusterSpec}"
 jobname: "SMK{jobid}_{name}"
+cluster-config: /home/pebert/work/code/github/project-cross-species/environment/snakemake/deepsrv/deep_cluster.json
 cores: 4
 jobs: 50
 latency-wait: 1
 keep-going: True
 rerun-incomplete: False
-restart-times: 1
+restart-times: 0

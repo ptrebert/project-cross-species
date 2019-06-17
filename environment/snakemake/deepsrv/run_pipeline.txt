@@ -1,1 +1,1 @@
-snakemake --configfile snake_config.yml --profile environment/snakemake/deepsrv --drmaa
+snakemake --configfile snake_config.yml --profile environment/snakemake/deepsrv --cluster-config environment/snakemake/deepsrv/deep_cluster.json
