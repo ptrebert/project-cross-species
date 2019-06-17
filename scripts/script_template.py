@@ -20,6 +20,11 @@ def parse_command_line():
     script_full_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_full_path)
     log_config_default_path = os.path.join(script_dir, 'configs', 'log_config.json')
+    if not os.path.isfile(log_config_default_path):
+        script_root = os.path.split(script_dir)[0]
+        log_config_default_path = os.path.join(script_root, 'configs', 'log_config.json')
+        if not os.path.isfile(log_config_default_path):
+            log_config_default_path = ''
 
     parser = argp.ArgumentParser(add_help=True, allow_abbrev=False)
     parser.add_argument('--debug', '-d', action='store_true', dest='debug',
@@ -44,6 +49,8 @@ def init_logger(cli_args):
     :param cli_args:
     :return:
     """
+    if not os.path.isfile(cli_args.log_config):
+        return
     with open(cli_args.log_config, 'r') as log_config:
         config = json.load(log_config)
     if 'debug' not in config['loggers']:
