@@ -65,9 +65,8 @@ Ferret	mfur	literature	epigenome	Villar	PRJEB6906
 Opossum	mdom	literature	epigenome	Villar	PRJEB6906
 "Tasmanian Devil"	shar	literature	epigenome	Villar	PRJEB6906
 Human	hsa	encode	epigenome	Project	PRJNA63443
-Human	hsa	encode	transcriptome	Project	PRJNA63443
+Human	hsa	encode	transcriptome	Project	PRJNA30709
 Mouse	mmu	encode	epigenome	Project	PRJNA63471
 Mouse	mmu	encode	transcriptome	Project	PRJNA66167
 Mouse	mmu	blueprint	epigenome	Project	PRJNA371787
 Mouse	mmu	blueprint	transcriptome	Project	PRJNA373805
-Mouse	mmu	blueprint	transcriptome	Project	PRJNA489886
