@@ -6,5 +6,9 @@
   "build_bowtie_index": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btidx"
+  },
+  "align_single_end_epigenome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_btmse"
   }
 }
