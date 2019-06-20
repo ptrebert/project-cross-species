@@ -8,3 +8,69 @@ script_log_config: /home/pebert/work/code/github/project-cross-species/scripts/c
 bioproject_table: /home/pebert/work/code/github/project-cross-species/annotation/ena_bio_projects/ena_bio_projects.tsv
 
 ensembl_release_url: ftp://ftp.ensembl.org/pub/release-96
+
+histone_marks:
+  - H3K4me3
+  - H3K27ac
+  - H3K36me3
+  - Input
+
+bioprojects:
+  - PRJEB6906
+  - PRJNA143627
+  - PRJNA164819
+  - PRJNA184055
+  - PRJNA244152
+  - PRJNA30709
+  - PRJNA371787
+  - PRJNA373805
+  - PRJNA63443
+  - PRJNA63471
+  - PRJNA66167
+
+bioproject_label_map:
+  PRJEB6906: EV
+  PRJNA143627: TV
+  PRJNA164819: TV
+  PRJNA184055: TV
+  PRJNA244152: TV
+  PRJNA30709: TT
+  PRJNA371787: ET
+  PRJNA373805: TT
+  PRJNA63443: ET
+  PRJNA63471: ET
+  PRJNA66167: TT
+
+bioproject_pub_map:
+  PRJEB6906: "10.1016/j.cell.2015.01.006 ; Villar"
+  PRJNA143627: "10.1038/nature10532 ; Brawand"
+  PRJNA164819: "not-available ; Broad"
+  PRJNA184055: "10.1111/acel.12283 ; Fushan"
+  PRJNA244152: "10.1126/science.1252806 ; Jiang"
+  PRJNA30709: "10.1038/nature11247 ; Encode-human-transcriptome"
+  PRJNA371787: "not-available ; Blueprint-mouse-epigenome"
+  PRJNA373805: "not-available ; Blueprint-mouse-transcriptome"
+  PRJNA63443: "10.1038/nature11247 ; Encode-human-epigenome"
+  PRJNA63471: "10.1186/gb-2012-13-8-418 ; Encode-mouse-epigenome"
+  PRJNA66167: "10.1186/gb-2012-13-8-418 ; Encode-mouse-transcriptome"
+
+species:
+  - bonobo
+  - cat
+  - chicken
+  - chimpanzee
+  - cow
+  - dog
+  - goat
+  - gorilla
+  - horse
+  - human
+  - macaque
+  - mouse
+  - opossum
+  - orangutan
+  - pig
+  - platypus
+  - rabbit
+  - rat
+  - sheep
