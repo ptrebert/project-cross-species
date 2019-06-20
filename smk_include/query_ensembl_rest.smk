@@ -23,8 +23,9 @@ rule process_ensembl_species_list:
         dump = 'annotation/ensembl_json_dump/ensembl_species.json',
         bioprojects = config['bioproject_table']
     output:
-        #'annotation/species/ensembl_species.tsv',
-        dynamic('annotation/species/{species}.info')
+        'annotation/species/ensembl_species.tsv',
+        [os.path.join('annotation/species', s + '.info')
+         for s in config['species']]
     params:
         script_dir = config['script_dir'],
         log_config = config['script_log_config']
@@ -35,5 +36,4 @@ rule process_ensembl_species_list:
         exec += ' --species-table {input.bioprojects}'
         exec += ' --create-info-files'
         exec += ' --output {output}'
-#        exec += ' &> {log}'
         shell(exec)
