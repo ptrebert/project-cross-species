@@ -5,9 +5,9 @@ drmaa-log-dir: /TL/deep/fhgfs/projects/pebert/thesis/projects/cross-species-epig
 drmaa: " {cluster.clusterSpec}"
 jobname: "SMK{jobid}_{name}"
 cluster-config: /home/pebert/work/code/github/project-cross-species/environment/snakemake/deepsrv/deep_cluster.json
-cores: 4
-jobs: 50
+local-cores: 2
+jobs: 25
 latency-wait: 1
 keep-going: True
-rerun-incomplete: False
-restart-times: 0
+rerun-incomplete: True
+restart-times: 2
