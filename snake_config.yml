@@ -7,6 +7,8 @@ script_log_config: /home/pebert/work/code/github/project-cross-species/scripts/c
 
 bioproject_table: /home/pebert/work/code/github/project-cross-species/annotation/ena_bio_projects/ena_bio_projects.tsv
 
+aspera_credentials: /home/pebert/.ssh/dkfz_aspera.cred
+
 ensembl_release_url: ftp://ftp.ensembl.org/pub/release-96
 
 histone_marks:
