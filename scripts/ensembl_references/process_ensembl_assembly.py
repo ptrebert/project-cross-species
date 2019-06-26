@@ -12,9 +12,15 @@ import gzip as gzip
 import io as io
 import re as re
 import itertools as itt
+import collections as col
+
+import pandas as pd
 
 
 logger = logging.getLogger()
+
+
+NUCLEOTIDES = list('ACGTNacgtn')
 
 
 def parse_command_line():
@@ -24,6 +30,11 @@ def parse_command_line():
     script_full_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_full_path)
     log_config_default_path = os.path.join(script_dir, 'configs', 'log_config.json')
+    if not os.path.isfile(log_config_default_path):
+        script_root = os.path.split(script_dir)[0]
+        log_config_default_path = os.path.join(script_root, 'configs', 'log_config.json')
+        if not os.path.isfile(log_config_default_path):
+            log_config_default_path = ''
 
     parser = argp.ArgumentParser(add_help=True, allow_abbrev=False)
     parser.add_argument('--debug', '-d', action='store_true', dest='debug',
@@ -41,6 +52,7 @@ def parse_command_line():
     parser.add_argument('--fasta-in', '-fin', type=str, dest='input', required=True)
     parser.add_argument('--fasta-out', '-fout', type=str, dest='output', required=True)
     parser.add_argument('--chromosome-sizes', '-csz', type=str, dest='chromsizes', required=True)
+    parser.add_argument('--genome-metrics', '-met', type=str, dest='metrics', default='')
 
     args = parser.parse_args()
     return args
@@ -51,6 +63,8 @@ def init_logger(cli_args):
     :param cli_args:
     :return:
     """
+    if not os.path.isfile(cli_args.log_config):
+        return
     with open(cli_args.log_config, 'r') as log_config:
         config = json.load(log_config)
     if 'debug' not in config['loggers']:
@@ -95,6 +109,30 @@ def dump_chromosome_size_table(chrom_order, chrom_sizes, output_file):
     return
 
 
+def dump_metrics_table(chrom_order, chrom_metrics, output_file):
+    """
+    :param chrom_order:
+    :param chrom_metrics:
+    :param output_file:
+    :return:
+    """
+    os.makedirs(os.path.abspath(os.path.dirname(output_file)), exist_ok=True)
+    with open(output_file, 'w') as table:
+        metrics = pd.DataFrame.from_records([chrom_metrics[chrom] for chrom in chrom_order],
+                                            columns=NUCLEOTIDES + ['other'], index=chrom_order)
+        metrics.fillna(0, inplace=True)
+        metrics = metrics.astype('int64')
+        gw_row = pd.DataFrame([metrics.sum(axis=0)],
+                              columns=NUCLEOTIDES + ['other'],
+                              index=['genome'])
+
+        metrics = metrics.append(gw_row, ignore_index=False, sort=False)
+        metrics['effective_size'] = metrics.sum(axis=1).astype('int64')
+        metrics.loc[:, 'effective_size'] -= (metrics.loc[:, 'N'] + metrics.loc[:, 'n'] + metrics.loc[:, 'other'])
+        metrics.to_csv(table, sep='\t', index=True, index_label='region')
+    return
+
+
 def read_gzipped_fasta(input_path):
     """
     :param input_path:
@@ -132,6 +170,17 @@ def read_gzipped_fasta(input_path):
                 known_size = int(parts[2].split(':')[-2])
                 if 'chromosome' in parts[1]:
                     current_chrom = 'chr' + current_chrom
+                elif 'primary_assembly' in parts[1]:
+                    if 'EquCab' in parts[2]:
+                        if not parts[0].startswith('>PJAA'):
+                            current_chrom = 'chr' + current_chrom
+                    elif 'ARS-UCD' in parts[2]:
+                        if not parts[0].startswith('>NKL'):
+                            current_chrom = 'chr' + current_chrom
+                    else:
+                        pass
+                else:
+                    pass
                 logger.debug('Reading chromosome {}'.format(current_chrom))
             elif line.strip() and not skip:
                 seq_buffer.write(line)
@@ -143,13 +192,39 @@ def read_gzipped_fasta(input_path):
     return chromosome_sizes, chromosome_sequences
 
 
+def compute_sequence_metrics(chrom_sequences):
+    """
+    :param chrom_sequences:
+    :return:
+    """
+    counts_per_chrom = dict()
+    for chrom, seqbuffer in chrom_sequences.items():
+        clean_count = col.Counter()
+        base_count = col.Counter(seqbuffer.getvalue())
+        for base, abundance in base_count.items():
+            if base in NUCLEOTIDES:
+                clean_count[base] = abundance
+            elif base in ['\n', '\t', '.', '-', '_']:
+                continue
+            else:
+                clean_count['other'] += abundance
+        counts_per_chrom[chrom] = clean_count
+    return counts_per_chrom
+
+
 def main():
     """
     :return:
     """
     args = parse_command_line()
     init_logger(args)
+    logger.debug('Reading input FASTA file')
     sizes, sequences = read_gzipped_fasta(args.input)
+    if args.metrics:
+        logger.debug('Computing genome metrics')
+        metrics = compute_sequence_metrics(sequences)
+    else:
+        metrics = None
 
     sort_order_main = []
     other = []
@@ -171,12 +246,16 @@ def main():
                 sort_order_main.append((order_number, chrom_name))
             else:
                 other.append(chrom_name)
+    logger.debug('Established chromosome sort order')
     
     sort_order = [c for n, c in sorted(sort_order_main)] + sorted(other)
     logger.debug('Writing genome sequence')
     dump_genome_sequence(sort_order, sequences, args.output)
     logger.debug('Writing chromosome size table')
     dump_chromosome_size_table(sort_order, sizes, args.chromsizes)
+    if metrics is not None:
+        logger.debug('Writing metrics file')
+        dump_metrics_table(sort_order, metrics, args.metrics)
     return
 
 
