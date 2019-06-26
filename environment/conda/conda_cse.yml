@@ -12,4 +12,10 @@ dependencies:
   - requests=2.22.0
   - numpy=1.16.4
   - bowtie2=2.3.5
-  - sambamba=0.7.0
+  - samtools=1.9.0
+# following: fix some dependencies for gffutils
+  - simplejson=3.16.0
+  - six=1.12.0
+  - pyfaidx=0.5.3
+  - pip:
+      - git+https://github.com/daler/gffutils@master
