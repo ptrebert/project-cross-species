@@ -1,5 +1,5 @@
 
-localrules: load_bioproject_file_reports, parse_ena_file_report, create_request_files, check_file_integrity
+localrules: load_bioproject_file_reports, parse_ena_file_report, create_ena_request_files, check_file_integrity
 
 rule load_bioproject_file_reports:
     output:
@@ -55,14 +55,14 @@ rule parse_ena_file_report:
         # end of rule
 
 
-rule create_request_files:
+rule create_ena_request_files:
     input:
         'input/checkpoints/{bioproject}.{datatype}.download'
     output:
         request_files = directory('input/fastq/{datatype}/{bioproject}')
     wildcard_constraints:
         datatype = '(transcriptome|epigenome)',
-        bioproject = '[A-Z0-9]+'
+        bioproject = 'PR[A-Z0-9]+'
     run:
         output_dir = output.request_files
         os.makedirs(output_dir, exist_ok=True)
@@ -80,7 +80,7 @@ rule create_request_files:
 
 rule handle_request_file:
     input:
-        rules.create_request_files.output[0],
+        rules.create_ena_request_files.output[0],
         request_file = 'input/fastq/{datatype}/{bioproject}/{readset}.request',
     output:
         'input/fastq/{datatype}/{bioproject}/{readset}.fastq.gz'
@@ -97,7 +97,7 @@ rule handle_request_file:
                 remote_path = 'ftp://' + remote_path
             else:
                 raise ValueError('Unsupported transfer protocol: {}'.format(input.request_file))
-            exec = 'wget --timeout=5 --tries==2 -O {} "{}" &> {{log}}'.format(local_path, remote_path)
+            exec = 'wget --timeout=30 --tries=2 -O {} "{}" &> {{log}}'.format(local_path, remote_path)
         shell(exec)
 
 
