@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # coding=utf-8
 
+__author__ = "Peter Ebert"
+__copyright__ = "Copyright (C) 2019 Peter Ebert"
+__license__ = "GPLv3"
+
 import os as os
 import sys as sys
 import traceback as trb
