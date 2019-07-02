@@ -6,7 +6,7 @@ drmaa: " {cluster.clusterSpec}"
 jobname: "SMK{jobid}_{name}"
 cluster-config: /home/pebert/work/code/github/project-cross-species/environment/snakemake/deepsrv/deep_cluster.json
 local-cores: 2
-jobs: 25
+jobs: 100
 latency-wait: 1
 keep-going: True
 rerun-incomplete: True

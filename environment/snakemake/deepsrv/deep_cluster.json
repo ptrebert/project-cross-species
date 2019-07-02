@@ -10,5 +10,26 @@
   "align_single_end_epigenome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btmse"
+  },
+  "align_paired_end_epigenome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_btmpe"
+  },
+  "build_salmon_index": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=8,mem_free=10G",
+    "jobName": "{rule}_salidx"
+  },
+  "quantify_single_end_transcriptome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_salqse"
+  },
+  "quantify_paired_end_transcriptome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_salqse"
+  },
+  "count_unique_kmers": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=2,mem_free=10G",
+    "jobName": "{rule}_cuqkm"
   }
 }
+

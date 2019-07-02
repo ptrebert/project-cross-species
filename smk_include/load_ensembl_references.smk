@@ -108,6 +108,23 @@ rule filter_sort_genome_assembly:
         shell(exec)
 
 
+rule count_unique_genome_kmers:
+    input:
+        'references/assemblies/whole-genome/{species_name}.wg.fa'
+    output:
+        'references/assemblies/whole-genome/{species_name}.k{kmer}.stats'
+    log:
+        'log/references/assemblies/whole-genome/{species_name}.k{kmer}.stats.log'
+    benchmark:
+        'run/references/assemblies/whole-genome/{species_name}.k{kmer}.stats.rsrc'
+    run:
+        exec = 'unique-kmers.py --ksize {wildcards.kmer}'
+        exec += ' --error-rate 0.01 --report {output}'
+        exec += ' {input}'
+        exec += ' &> {log}'
+        shell(exec)
+
+
 rule build_bowtie_index:
     input:
         'references/assemblies/whole-genome/{species_name}.wg.fa'

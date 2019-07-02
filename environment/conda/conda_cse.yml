@@ -6,13 +6,18 @@ channels:
 dependencies:
   - Python=3.6.*
   - drmaa=0.7.9
-  - salmon=0.14.0
-  - snakemake=5.4.4
+  - salmon=0.14.1
+  - snakemake=5.5.0
   - pandas=0.24.2
   - requests=2.22.0
   - numpy=1.16.4
   - bowtie2=2.3.5
   - samtools=1.9.0
+  - star=2.7.0f
+  - deeptools=3.3.0
+  - khmer=3.0.0
+  - scipy=1.3.0
+  - matplotlib=3.1.0
 # following: fix some dependencies for gffutils
   - simplejson=3.16.0
   - six=1.12.0

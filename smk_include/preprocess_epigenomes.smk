@@ -1,5 +1,66 @@
 
 
+#def determine_single_combinations(species, tissues, marks, samples):
+#
+#    valid_combinations = []
+#    root_folder = 'input/fastq/epigenome'
+#    existing_combinations = set()
+#    for root, dirs, files in os.walk(root_folder):
+#        if files:
+#            valid_files = list(filter(lambda x: x.endswith('.single.ok'), files))
+#            [existing_combinations.add(vf.rsplit('_', 1)[0]) for vf in valid_files]
+#
+#    for spec, tissue, mark, sample in zip(species, tissues, marks, samples):
+#        s = spec[1]
+#        t = tissue[1]
+#        m = mark[1]
+#        p = sample[1]
+#        combo = '_'.join([s, t, m, p])
+#        if combo in existing_combinations:
+#            valid_combinations.append({'species': s,
+#                                        'tissue': t,
+#                                        'mark': m,
+#                                        'sample': p})
+#    return valid_combinations
+#
+#
+#def determine_paired_combinations(species, tissues, marks, samples):
+#
+#    valid_combinations = []
+#    root_folder = 'input/fastq/epigenome'
+#    existing_combinations = set()
+#    for root, dirs, files in os.walk(root_folder):
+#        if files:
+#            valid_files = list(filter(lambda x: x.endswith('.paired1.ok'), files))
+#            [existing_combinations.add(vf.rsplit('_', 1)[0]) for vf in valid_files]
+#
+#    for spec, tissue, mark, sample in zip(species, tissues, marks, samples):
+#        s = spec[1]
+#        t = tissue[1]
+#        m = mark[1]
+#        p = sample[1]
+#        combo = '_'.join([s, t, m, p])
+#        if combo in existing_combinations:
+#            valid_combinations.append({'species': s,
+#                                        'tissue': t,
+#                                        'mark': m,
+#                                        'sample': p})
+#    return valid_combinations
+
+
+SINGLE_EPIGENOME_WILDCARDS = glob_wildcards('input/fastq/epigenome/{bioproject}/{species}_{tissue}_{mark}_{sample}_{run}.single.ok')
+PAIRED_EPIGENOME_WILDCARDS = glob_wildcards('input/fastq/epigenome/{bioproject}/{species}_{tissue}_{mark}_{sample}_{run}.paired1.ok')
+
+EPIGENOME_WILDCARDS = glob_wildcards('input/bam/epigenome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.filt.bam')
+
+rule preprocess_epigenomes_master:
+    input:
+        expand('input/bedgraph/epigenome/{species}_{tissue}_{mark}_{sample}.cov.bg',
+                zip,
+                species=EPIGENOME_WILDCARDS.species,
+                tissue=EPIGENOME_WILDCARDS.tissue,
+                mark=EPIGENOME_WILDCARDS.mark,
+                sample=EPIGENOME_WILDCARDS.sample)
 
 
 def collect_single_end_epigenomes(wildcards):
@@ -155,4 +216,103 @@ rule align_paired_end_epigenome:
         exec += ' -o {output.bam} -@ 2'
         exec += ' /dev/stdin'
         exec += ' &> {log.samtools}'
+        shell(exec)
+
+
+rule compute_bam_read_stats:
+    input:
+        'input/bam/epigenome/temp/{layout}/{filename}.filt.bam'
+    output:
+        'input/bam/epigenome/temp/{layout}/{filename}.read-stats'
+    shell:
+        'samtools stats {input} > {output}'
+
+
+checkpoint collect_read_length_statistics:
+    input:
+        expand('input/bam/epigenome/temp/{layout}/{{filename}}.read-stats',
+                layout=['single', 'paired'])
+    output:
+        directory('input/bam/epigenome/temp/{layout}/read-length')
+    run:
+        for stat_file in input:
+            rlen = None
+            with open(stat_file, 'r') as stats:
+                for line in stats:
+                    if line.startswith('RL'):
+                        rlen = line.read().split()[1]
+                        assert int(rlen), 'Non-integer read length for file {}: {}'.format(stat_file, rlen)
+                        break
+                    continue
+            assert rlen is not None, 'No read length for file {}'.format(stat_file)
+            output_path = os.path.join(output[0], 'read-length', '{wildcards.filename}.k{}'.format(rlen))
+            with open(output_path, 'w') as dump:
+                pass
+
+
+def collect_signal_coverage_input(wildcards):
+
+    layout_single = checkpoints.collect_read_length_statistics.get(layout='single').output[0]
+    layout_paired = checkpoints.collect_read_length_statistics.get(layout='paired').output[0]
+
+    file_id = '_'.join([wildcards.species, wildcards.tissue, wildcards.mark, wildcards.sample])
+
+    single_bam = os.path.join(os.path.split(layout_single)[0], file_id + '.filt.bam')
+    paired_bam = os.path.join(os.path.split(layout_paired)[0], file_id + '.filt.bam')
+
+    if os.path.isfile(single_bam):
+        search_path = layout_single
+        input_bam = single_bam
+    elif os.path.isfile(paired_bam):
+        search_path = layout_paired
+        input_bam = paired_bam
+    else:
+        return dict()
+
+    rlen_file = list(filter(lambda x: file_id in x, os.listdir(search_path)))
+    if len(rlen_file) < 1:
+        raise ValueError('No read length file for file {}'.format(input_bam))
+
+    rlen_path = os.path.join(search_path, rlen_file)
+    kmer = rlen_file.split('.')[-1].strip('k')
+
+    gstat_file = 'references/assemblies/whole-genome/{}.k{}.stats'.format(wildcards.species, kmer)
+
+    assert os.path.isfile(rlen_path), 'rlen_path invalid'
+    assert os.path.isfile(gstat_file), 'gstat_file invalid'
+
+    file_combo = {'bam': input_bam,
+                  'genome_size': gstat_file,
+                  'kmer_size': rlen_path}
+
+    return file_combo
+
+
+rule compute_signal_coverage:
+    input:
+        unpack(collect_signal_coverage_input)
+    output:
+        'input/bedgraph/epigenome/{species}_{tissue}_{mark}_{sample}.cov.bg'
+    threads: 6
+    log:
+        'log/input/bedgraph/epigenome/{species}_{tissue}_{mark}_{sample}.cov.bg'
+    benchmark:
+        'run/input/bedgraph/epigenome/{species}_{tissue}_{mark}_{sample}.cov.bg'
+    run:
+        effective_genome_size = None
+        with open(input.genome_size, 'r') as counts:
+            for line in counts:
+                if line.startswith('number of unique k-mers'):
+                    effective_genome_size = line.split()[1]
+                    assert int(effective_genome_size), 'Non-integer genome size: {}'.format(input.genome_size)
+                    break
+        assert effective_genome_size is not None, 'No genome size for file: {}'.format(input.genome_size)
+
+        exec = 'bamCoverage --bam {input.bam}'
+        exec += ' --outFileName {output}'
+        exec += ' --outFileFormat bedgraph'
+        exec += ' --binSize 25 --numberOfProcessors {threads}'
+        exec += ' --effectiveGenomeSize ' + effective_genome_size
+        exec += ' --normalizeUsing RPGC' # according to docs, should be 1x normalization
+        exec += ' --verbose &> {log}'
         shell(exec)
