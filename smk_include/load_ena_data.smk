@@ -59,12 +59,14 @@ rule create_ena_request_files:
     input:
         'input/checkpoints/{bioproject}.{datatype}.download'
     output:
-        request_files = directory('input/fastq/{datatype}/{bioproject}')
+        request_files = touch('input/fastq/{datatype}/{bioproject}/{bioproject}.chk')
+        #request_files = directory('input/fastq/{datatype}/{bioproject}')
     wildcard_constraints:
         datatype = '(transcriptome|epigenome)',
         bioproject = 'PR[A-Z0-9]+'
     run:
-        output_dir = output.request_files
+        #output_dir = output.request_files
+        output_dir = os.path.dirname(output.request_files)
         os.makedirs(output_dir, exist_ok=True)
         assert os.path.isdir(output_dir), 'No output folder created: {}'.format(output_dir)
         with open(input[0], 'r') as listing:
