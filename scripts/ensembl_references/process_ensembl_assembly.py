@@ -52,6 +52,7 @@ def parse_command_line():
     parser.add_argument('--fasta-in', '-fin', type=str, dest='input', required=True)
     parser.add_argument('--fasta-out', '-fout', type=str, dest='output', required=True)
     parser.add_argument('--chromosome-sizes', '-csz', type=str, dest='chromsizes', required=True)
+    parser.add_argument('--autosome-sizes', '-asz', type=str, dest='autosomes', default='')
     parser.add_argument('--genome-metrics', '-met', type=str, dest='metrics', default='')
 
     args = parser.parse_args()
@@ -253,6 +254,16 @@ def main():
     dump_genome_sequence(sort_order, sequences, args.output)
     logger.debug('Writing chromosome size table')
     dump_chromosome_size_table(sort_order, sizes, args.chromsizes)
+
+    if args.autosomes:
+        autosome_select = re.compile('chr[A-F0-9]{1,2}$')
+        autosomes = []
+        for c in sort_order:
+            if autosome_select.match(c) is not None:
+                autosomes.append(c)
+        logger.debug('Selected {} autosomes')
+        dump_chromosome_size_table(autosomes, sizes, args.autosomes)
+
     if metrics is not None:
         logger.debug('Writing metrics file')
         dump_metrics_table(sort_order, metrics, args.metrics)

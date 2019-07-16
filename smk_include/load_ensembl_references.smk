@@ -70,14 +70,12 @@ ENSEMBL_REFERENCES_TRANSCRIPT_SEQUENCES = {
 
 rule download_genome_assembly:
     input:
-        'annotation/species/{species_name}.info'
+        'annotation/species/{species}.info'
     output:
-        'references/assemblies/raw_download/{species_name}.fna.gz'
-    wildcard_constraints:
-        species_name = '[a-z]+'
+        'references/assemblies/raw_download/{species}.fna.gz'
     run:
         base_url = config['ensembl_release_url']
-        load_path = ENSEMBL_REFERENCES_ASSEMBLIES[wildcards.species_name]
+        load_path = ENSEMBL_REFERENCES_ASSEMBLIES[wildcards.species]
         source_url = os.path.join(base_url, load_path)
         exec = 'wget --quiet -O {output} ' + source_url
         shell(exec)
@@ -85,14 +83,13 @@ rule download_genome_assembly:
 
 rule filter_sort_genome_assembly:
     input:
-        'references/assemblies/raw_download/{species_name}.fna.gz'
+        'references/assemblies/raw_download/{species}.fna.gz'
     output:
-        fasta = 'references/assemblies/whole-genome/{species_name}.wg.fa',
-        sizes = 'references/chromosomes/whole-genome/{species_name}.wg.sizes',
-        metrics = 'references/metrics/whole-genome/{species_name}.wg.metrics'
-    log: 'log/references/filter_sort/whole-genome/{species_name}.log'
-    wildcard_constraints:
-        species_name = '[a-z]+'
+        fasta = 'references/assemblies/whole-genome/{species}.wg.fa',
+        sizes = 'references/chromosomes/whole-genome/{species}.wg.sizes',
+        autosomes = 'references/chromosomes/autosomes/{species}.auto.sizes',
+        metrics = 'references/metrics/whole-genome/{species}.wg.metrics'
+    log: 'log/references/filter_sort/whole-genome/{species}.log'
     params:
         script_dir = config['script_dir'],
         log_config = config['script_log_config']
@@ -102,6 +99,7 @@ rule filter_sort_genome_assembly:
         exec += ' --fasta-in {input} --debug'
         exec += ' --fasta-out {output.fasta}'
         exec += ' --chromosome-sizes {output.sizes}'
+        exec += ' --autosome-sizes {output.autosomes}'
         exec += ' --genome-metrics {output.metrics}'
         exec += ' --debug'
         exec += ' &> {log}'
@@ -110,13 +108,13 @@ rule filter_sort_genome_assembly:
 
 rule count_unique_genome_kmers:
     input:
-        'references/assemblies/whole-genome/{species_name}.wg.fa'
+        'references/assemblies/whole-genome/{species}.wg.fa'
     output:
-        'references/assemblies/whole-genome/{species_name}.k{kmer}.stats'
+        'references/assemblies/whole-genome/{species}.k{kmer}.stats'
     log:
-        'log/references/assemblies/whole-genome/{species_name}.k{kmer}.stats.log'
+        'log/references/assemblies/whole-genome/{species}.k{kmer}.stats.log'
     benchmark:
-        'run/references/assemblies/whole-genome/{species_name}.k{kmer}.stats.rsrc'
+        'run/references/assemblies/whole-genome/{species}.k{kmer}.stats.rsrc'
     run:
         exec = 'unique-kmers.py --ksize {wildcards.kmer}'
         exec += ' --error-rate 0.01 --report {output}'
@@ -127,33 +125,33 @@ rule count_unique_genome_kmers:
 
 rule build_bowtie_index:
     input:
-        'references/assemblies/whole-genome/{species_name}.wg.fa'
+        'references/assemblies/whole-genome/{species}.wg.fa'
     output:
-        expand('references/indices/bowtie/{{species_name}}/{{species_name}}.{idxnum}.bt2',
+        expand('references/indices/bowtie/{{species}}/{{species}}.{idxnum}.bt2',
                 idxnum=[1, 2, 3, 4])
-    log: 'log/references/indices/bowtie/{species_name}.log'
-    benchmark: 'run/references/indices/bowtie/{species_name}.rsrc'
+    log: 'log/references/indices/bowtie/{species}.log'
+    benchmark: 'run/references/indices/bowtie/{species}.rsrc'
     wildcard_constraints:
-        species_name = '[a-z]+'
+        species = '[a-z]+'
     threads: 16
     run:
         exec = 'bowtie2-build --threads {threads}'
         exec += ' {input}'
-        exec += ' references/indices/bowtie/{wildcards.species_name}/{wildcards.species_name}'
+        exec += ' references/indices/bowtie/{wildcards.species}/{wildcards.species}'
         exec += ' &> {log}'
         shell(exec)
 
 
 rule download_gene_model:
     input:
-        'annotation/species/{species_name}.info'
+        'annotation/species/{species}.info'
     output:
-        'references/gene-models/raw_download/{species_name}.gff.gz'
+        'references/gene-models/raw_download/{species}.gff.gz'
     wildcard_constraints:
-        species_name = '[a-z]+'
+        species = '[a-z]+'
     run:
         base_url = config['ensembl_release_url']
-        load_path = ENSEMBL_REFERENCES_GENEMODELS[wildcards.species_name]
+        load_path = ENSEMBL_REFERENCES_GENEMODELS[wildcards.species]
         source_url = os.path.join(base_url, load_path)
         exec = 'wget --quiet -O {output} ' + source_url
         shell(exec)
@@ -161,18 +159,16 @@ rule download_gene_model:
 
 rule process_gene_model:
     input:
-        gff = 'references/gene-models/raw_download/{species_name}.gff.gz',
-        tsv = 'references/chromosomes/whole-genome/{species_name}.wg.sizes'
+        gff = 'references/gene-models/raw_download/{species}.gff.gz',
+        tsv = 'references/chromosomes/whole-genome/{species}.wg.sizes'
     output:
-        db = 'references/gene-models/whole-genome/{species_name}.sqlite',
-        genes = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.genes.tsv',
-        transcripts = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.transcripts.tsv',
-        bodies = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.gene-body.bed',
-        promoters = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.gene-promoter.bed',
-        mapping = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.gt-map.tsv'
-    log: 'log/references/gene-models/whole-genome/{species_name}.wg.protein-coding.log'
-    wildcard_constraints:
-        species_name = '[a-z]+'
+        db = 'references/gene-models/whole-genome/{species}.sqlite',
+        genes = 'references/gene-models/whole-genome/protein-coding/{species}.wg.genes.tsv',
+        transcripts = 'references/gene-models/whole-genome/protein-coding/{species}.wg.transcripts.tsv',
+        bodies = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gene-body.bed',
+        promoters = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gene-promoter.bed',
+        mapping = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gt-map.tsv'
+    log: 'log/references/gene-models/whole-genome/{species}.wg.protein-coding.log'
     params:
         script_dir = config['script_dir'],
         log_config = config['script_log_config']
@@ -180,7 +176,7 @@ rule process_gene_model:
         exec = '{params.script_dir}/ensembl_references/process_ensembl_genemodel.py'
         exec += ' --log-config {params.log_config}'
         exec += ' --debug'
-        if wildcards.species_name in ['human', 'mouse']:
+        if wildcards.species in ['human', 'mouse']:
             exec += ' --enforce-basic'
         exec += ' --gff-gene-model {input.gff}'
         exec += ' --db-gene-model {output.db}'
@@ -196,25 +192,23 @@ rule process_gene_model:
 
 rule download_transcript_sequences:
     input:
-        'annotation/species/{species_name}.info'
+        'annotation/species/{species}.info'
     output:
-        'references/gene-models/raw_download/{species_name}.fa.gz'
-    wildcard_constraints:
-        species_name = '[a-z]+'
+        'references/gene-models/raw_download/{species}.fa.gz'
     run:
         base_url = config['ensembl_release_url']
-        load_path = ENSEMBL_REFERENCES_TRANSCRIPT_SEQUENCES[wildcards.species_name]
+        load_path = ENSEMBL_REFERENCES_TRANSCRIPT_SEQUENCES[wildcards.species]
         source_url = os.path.join(base_url, load_path)
         exec = 'wget --quiet -O {output} ' + source_url
         shell(exec)
-        if wildcards.species_name == 'human':
+        if wildcards.species == 'human':
             source_url = 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_30/gencode.v30.pc_transcripts.fa.gz'
             output_dir = os.path.join(os.path.dirname(output[0]), 'validation')
             os.makedirs(output_dir, exist_ok=True)
             output_file = os.path.join(output_dir, 'human.gencode-v30.fa.gz')
             exec = 'wget --quiet -O ' + output_file + ' ' + source_url
             shell(exec)
-        if wildcards.species_name == 'mouse':
+        if wildcards.species == 'mouse':
             source_url = 'ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M21/gencode.vM21.pc_transcripts.fa.gz'
             output_dir = os.path.join(os.path.dirname(output[0]), 'validation')
             os.makedirs(output_dir, exist_ok=True)
@@ -225,13 +219,11 @@ rule download_transcript_sequences:
 
 rule process_transcript_sequences:
     input:
-        fasta = 'references/gene-models/raw_download/{species_name}.fa.gz',
-        table = 'references/gene-models/whole-genome/protein-coding/{species_name}.wg.transcripts.tsv'
+        fasta = 'references/gene-models/raw_download/{species}.fa.gz',
+        table = 'references/gene-models/whole-genome/protein-coding/{species}.wg.transcripts.tsv'
     output:
-        'references/gene-models/whole-genome/protein-coding/{species_name}.wg.transcripts.fa'
-    log: 'log/references/gene-models/whole-genome/{species_name}.wg.transcript-seq.log'
-    wildcard_constraints:
-        species_name = '[a-z]+'
+        'references/gene-models/whole-genome/protein-coding/{species}.wg.transcripts.fa'
+    log: 'log/references/gene-models/whole-genome/{species}.wg.transcript-seq.log'
     params:
         script_dir = config['script_dir'],
         log_config = config['script_log_config']
@@ -239,10 +231,10 @@ rule process_transcript_sequences:
         exec = '{params.script_dir}/ensembl_references/process_ensembl_transcript_sequences.py'
         exec += ' --log-config {params.log_config}'
         exec += ' --debug'
-        if wildcards.species_name == 'human':
+        if wildcards.species == 'human':
             check_file = os.path.join(os.path.dirname(input.fasta), 'validation', 'human.gencode-v30.fa.gz')
             exec += ' --fasta-compare ' + check_file
-        if wildcards.species_name == 'mouse':
+        if wildcards.species == 'mouse':
             check_file = os.path.join(os.path.dirname(input.fasta), 'validation', 'mouse.gencode-vM21.fa.gz')
             exec += ' --fasta-compare ' + check_file
         exec += ' --fasta-in {input.fasta}'
