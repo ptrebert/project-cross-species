@@ -9,7 +9,7 @@ include: 'smk_include/preprocess_transcriptomes.smk'
 
 wildcard_constraints:
     species='[a-z]+',
-    tissue='[a-z]+'
+    tissue='[a-z4]+'
 
 
 onsuccess:
@@ -48,6 +48,12 @@ rule master:
     input:
         rules.preprocess_transcriptomes_master.input,
         rules.preprocess_epigenomes_master.input,
+        expand('references/alignments/whole-genome/{reference}_vs_{target}.lastz-net.tar.gz',
+                reference='human',
+                target=list(set(SPECIES) - set(['human']))),
+        expand('references/alignments/whole-genome/{reference}_vs_{target}.lastz-net.tar.gz',
+                reference='mouse',
+                target=['chicken', 'cow', 'dog', 'opossum', 'pig', 'platypus', 'rat']),
 
         expand('input/fastq/{datatype}/EGAC00001000331.link.ok',
                 datatype=['epigenome', 'transcriptome']),

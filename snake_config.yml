@@ -76,3 +76,7 @@ species:
   - rabbit
   - rat
   - sheep
+
+rna_kmer_seeds:
+  - 19
+  - 31
