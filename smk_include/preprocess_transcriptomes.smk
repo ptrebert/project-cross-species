@@ -1,4 +1,5 @@
 
+localrules: select_best_transcriptome_quantification
 
 RNA_READS_SE_WILDCARDS = glob_wildcards('input/fastq/transcriptome/{bioproject}/{species}_{tissue}_{mark}_{sample}_{run}.single.ok')
 
@@ -79,7 +80,15 @@ rule preprocess_transcriptomes_master:
                 tissue=RNA_READS_PE_WILDCARDS.tissue,
                 mark=RNA_READS_PE_WILDCARDS.mark,
                 sample=RNA_READS_PE_WILDCARDS.sample,
-                kmer=config['rna_kmer_seeds'])
+                kmer=config['rna_kmer_seeds']),
+
+        expand('input/tabular/transcriptome/temp/raw/{species}_{tissue}_{mark}_{sample}.{layout}.gene-exp.tsv',
+                zip,
+                layout=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').layout,
+                species=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').species,
+                tissue=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').tissue,
+                mark=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').mark,
+                sample=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').sample)
 
 
 rule build_salmon_index:
@@ -162,8 +171,6 @@ rule quantify_single_end_transcriptome:
     log:
         salmon = 'log/input/tabular/transcriptome/temp/{species}_{tissue}_{mark}_{sample}.k{kmer}.se.salmon.log',
     benchmark: 'run/bam/epigenome/temp/{species}_{tissue}_{mark}_{sample}.k{kmer}.se.quant.rsrc'
-    wildcard_constraints:
-        species = '[a-z]+'
     threads: 16
     params:
         index_loc = lambda wildcards, input: os.path.dirname(input.index),
@@ -244,8 +251,6 @@ rule quantify_paired_end_transcriptome:
     log:
         salmon = 'log/input/tabular/transcriptome/temp/{species}_{tissue}_{mark}_{sample}.k{kmer}.pe.salmon.log',
     benchmark: 'run/bam/epigenome/temp/{species}_{tissue}_{mark}_{sample}.k{kmer}.pe.quant.rsrc'
-    wildcard_constraints:
-        species = '[a-z]+'
     threads: 16
     params:
         index_loc = lambda wildcards, input: os.path.dirname(input.index),
@@ -264,4 +269,32 @@ rule quantify_paired_end_transcriptome:
         exec += ' --forgettingFactor 0.8'
         exec += ' --output {params.output_dir}'
         exec += ' &> {log}'
+        shell(exec)
+
+
+rule select_best_transcriptome_quantification:
+    input:
+        k19_genes = 'input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k19/quant.genes.sf',
+        k19_meta = 'input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k19/aux_info/meta_info.json',
+        k31_genes = 'input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k31/quant.genes.sf',
+        k31_meta = 'input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k31/aux_info/meta_info.json'
+    output:
+        'input/tabular/transcriptome/temp/raw/{species}_{tissue}_{mark}_{sample}.{layout}.gene-exp.tsv'
+    run:
+        import json as json
+
+        with open(input.k19_meta, 'r') as info:
+            content = json.load(info)
+            k19_map_rate = float(content['percent_mapped'])
+
+        with open(input.k31_meta, 'r') as info:
+            content = json.load(info)
+            k31_map_rate = float(content['percent_mapped'])
+
+        if k19_map_rate > k31_map_rate:
+            input_file = input.k19_genes
+        else:
+            input_file = input.k31_genes
+
+        exec = 'cat ' + input_file + ' > {output}'
         shell(exec)

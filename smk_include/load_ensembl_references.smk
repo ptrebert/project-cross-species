@@ -68,6 +68,46 @@ ENSEMBL_REFERENCES_TRANSCRIPT_SEQUENCES = {
 }
 
 
+ENSEMBL_REFERENCES_PAIRWISE_ALIGNMENTS = {
+    'human_vs_bonobo': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ppan_panpan1.1.lastz_net.tar.gz',
+    'human_vs_cat': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.fcat_felis_catus_9.0.lastz_net.tar.gz',
+    'human_vs_chicken': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ggal_grcg6a.lastz_net.tar.gz',
+    'human_vs_chimpanzee': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ptro_pan_tro_3.0.lastz_net.tar.gz',
+    'human_vs_cow': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.btau_ars-ucd1.2.lastz_net.tar.gz',
+    'human_vs_dog': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.cfam_canfam3.1.lastz_net.tar.gz',
+    'human_vs_goat': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.chir_ars1.lastz_net.tar.gz',
+    'human_vs_gorilla': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ggor_gorgor4.lastz_net.tar.gz',
+    'human_vs_horse': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ecab_equcab3.0.lastz_net.tar.gz',
+    'human_vs_macaque': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.mmul_mmul_8.0.1.lastz_net.tar.gz',
+    'human_vs_mouse': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.mmus_grcm38.lastz_net.tar.gz',
+    'human_vs_opossum': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.mdom_mondom5.lastz_net.tar.gz',
+    'human_vs_orangutan': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.pabe_ppyg2.lastz_net.tar.gz',
+    'human_vs_pig': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.sscr_sscrofa11.1.lastz_net.tar.gz',
+    'human_vs_platypus': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.oana_oana5.lastz_net.tar.gz',
+    'human_vs_rabbit': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.ocun_orycun2.0.lastz_net.tar.gz',
+    'human_vs_rat': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.rnor_rnor_6.0.lastz_net.tar.gz',
+    'human_vs_sheep': 'maf/ensembl-compara/pairwise_alignments/hsap_grch38.v.oari_oar_v3.1.lastz_net.tar.gz',
+
+#    'mouse_vs_bonobo': '',
+#    'mouse_vs_cat': '',
+    'mouse_vs_chicken': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.ggal_grcg6a.lastz_net.tar.gz',
+#    'mouse_vs_chimpanzee': '',
+    'mouse_vs_cow': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.btau_ars-ucd1.2.lastz_net.tar.gz',
+    'mouse_vs_dog': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.cfam_canfam3.1.lastz_net.tar.gz',
+#    'mouse_vs_goat': '',
+#    'mouse_vs_gorilla': '',
+#    'mouse_vs_horse': '',
+#    'mouse_vs_macaque': '',
+    'mouse_vs_opossum': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.mdom_mondom5.lastz_net.tar.gz',
+#    'mouse_vs_orangutan': '',
+    'mouse_vs_pig': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.sscr_sscrofa11.1.lastz_net.tar.gz',
+    'mouse_vs_platypus': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.oana_oana5.lastz_net.tar.gz',
+#    'mouse_vs_rabbit': '',
+    'mouse_vs_rat': 'maf/ensembl-compara/pairwise_alignments/mmus_grcm38.v.rnor_rnor_6.0.lastz_net.tar.gz',
+#    'mouse_vs_sheep': '',
+}
+
+
 rule download_genome_assembly:
     input:
         'annotation/species/{species}.info'
@@ -87,7 +127,9 @@ rule filter_sort_genome_assembly:
     output:
         fasta = 'references/assemblies/whole-genome/{species}.wg.fa',
         sizes = 'references/chromosomes/whole-genome/{species}.wg.sizes',
+        regions = 'references/chromosomes/whole-genome/{species}.wg.bed',
         autosomes = 'references/chromosomes/autosomes/{species}.auto.sizes',
+        auto_regions = 'references/chromosomes/autosomes/{species}.auto.bed',
         metrics = 'references/metrics/whole-genome/{species}.wg.metrics'
     log: 'log/references/filter_sort/whole-genome/{species}.log'
     params:
@@ -99,7 +141,9 @@ rule filter_sort_genome_assembly:
         exec += ' --fasta-in {input} --debug'
         exec += ' --fasta-out {output.fasta}'
         exec += ' --chromosome-sizes {output.sizes}'
+        exec += ' --chromosome-regions {output.regions}'
         exec += ' --autosome-sizes {output.autosomes}'
+        exec += ' --autosome-regions {output.auto_regions}'
         exec += ' --genome-metrics {output.metrics}'
         exec += ' --debug'
         exec += ' &> {log}'
@@ -241,4 +285,19 @@ rule process_transcript_sequences:
         exec += ' --transcripts {input.table}'
         exec += ' --fasta-out {output}'
         exec += ' &> {log}'
+        shell(exec)
+
+
+rule download_pairwise_alignments:
+    input:
+        'annotation/species/{reference_species}.info',
+        'annotation/species/{target_species}.info'
+    output:
+        'references/alignments/whole-genome/{reference_species}_vs_{target_species}.lastz-net.tar.gz'
+    run:
+        base_url = config['ensembl_release_url']
+        key_pair = '{}_vs_{}'.format(wildcards.reference_species, wildcards.target_species)
+        load_path = ENSEMBL_REFERENCES_PAIRWISE_ALIGNMENTS[key_pair]
+        source_url = os.path.join(base_url, load_path)
+        exec = 'wget --quiet -O {output} ' + source_url
         shell(exec)
