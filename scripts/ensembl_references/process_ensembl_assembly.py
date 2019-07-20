@@ -52,7 +52,9 @@ def parse_command_line():
     parser.add_argument('--fasta-in', '-fin', type=str, dest='input', required=True)
     parser.add_argument('--fasta-out', '-fout', type=str, dest='output', required=True)
     parser.add_argument('--chromosome-sizes', '-csz', type=str, dest='chromsizes', required=True)
+    parser.add_argument('--chromosome-regions', '-cre', type=str, dest='chromregions', required=True)
     parser.add_argument('--autosome-sizes', '-asz', type=str, dest='autosomes', default='')
+    parser.add_argument('--autosome-regions', '-are', type=str, dest='autoregions', default='')
     parser.add_argument('--genome-metrics', '-met', type=str, dest='metrics', default='')
 
     args = parser.parse_args()
@@ -96,17 +98,21 @@ def dump_genome_sequence(chrom_order, chrom_sequence, output_file):
     return
 
 
-def dump_chromosome_size_table(chrom_order, chrom_sizes, output_file):
+def dump_chromosome_size_table(chrom_order, chrom_sizes, output_file, regions=False):
     """
     :param chrom_order:
     :param chrom_sizes:
     :param output_file:
+    :param regions:
     :return:
     """
     os.makedirs(os.path.abspath(os.path.dirname(output_file)), exist_ok=True)
     with open(output_file, 'w') as table:
         for chrom_name in chrom_order:
-            _ = table.write(chrom_name + '\t' + str(chrom_sizes[chrom_name]) + '\n')
+            if regions:
+                _ = table.write(chrom_name + '\t0\t' + str(chrom_sizes[chrom_name]) + '\n')
+            else:
+                _ = table.write(chrom_name + '\t' + str(chrom_sizes[chrom_name]) + '\n')
     return
 
 
@@ -254,19 +260,27 @@ def main():
     dump_genome_sequence(sort_order, sequences, args.output)
     logger.debug('Writing chromosome size table')
     dump_chromosome_size_table(sort_order, sizes, args.chromsizes)
+    logger.debug('Writing chromosome region BED file')
+    dump_chromosome_size_table(sort_order, sizes, args.chromregions, True)
 
-    if args.autosomes:
+    if args.autosomes or args.autoregions:
         autosome_select = re.compile('chr[A-F0-9]{1,2}$')
         autosomes = []
         for c in sort_order:
             if autosome_select.match(c) is not None:
                 autosomes.append(c)
-        logger.debug('Selected {} autosomes')
-        dump_chromosome_size_table(autosomes, sizes, args.autosomes)
+        logger.debug('Selected {} autosomes'.format(len(autosomes)))
+        if args.autosomes:
+            logger.debug('Writing autosome size table')
+            dump_chromosome_size_table(autosomes, sizes, args.autosomes)
+        if args.autoregions:
+            logger.debug('Writing autosome region table')
+            dump_chromosome_size_table(autosomes, sizes, args.autoregions, True)
 
     if metrics is not None:
         logger.debug('Writing metrics file')
         dump_metrics_table(sort_order, metrics, args.metrics)
+    logger.debug('Done')
     return
 
 
