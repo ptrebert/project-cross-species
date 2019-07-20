@@ -7,6 +7,18 @@
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btidx"
   },
+  "samtools_bai_index_bam": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=4,mem_free=10G",
+    "jobName": "{rule}_smtbai"
+  },
+  "samtools_csi_index_bam": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=4,mem_free=10G",
+    "jobName": "{rule}_smtcsi"
+  },
+  "samtools_position_sort_bam": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=6,mem_free=12G",
+    "jobName": "{rule}_psort"
+  },
   "align_single_end_epigenome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btmse"
@@ -25,11 +37,15 @@
   },
   "quantify_paired_end_transcriptome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
-    "jobName": "{rule}_salqse"
+    "jobName": "{rule}_salqpe"
   },
   "count_unique_kmers": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=2,mem_free=10G",
     "jobName": "{rule}_cuqkm"
+  },
+    "compute_signal_coverage": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=40G,slots_free=6,mem_free=20G",
+    "jobName": "{rule}_sigcov"
   }
 }
 

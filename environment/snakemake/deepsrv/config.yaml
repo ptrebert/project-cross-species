@@ -9,5 +9,5 @@ local-cores: 2
 jobs: 100
 latency-wait: 1
 keep-going: True
-rerun-incomplete: True
-restart-times: 2
+rerun-incomplete: False
+restart-times: 0
