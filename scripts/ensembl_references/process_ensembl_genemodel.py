@@ -76,6 +76,8 @@ def parse_command_line():
                         required=True)
     parser.add_argument('--bed-gene-bodies', '-body', type=str, dest='bodies',
                         required=True)
+    parser.add_argument('--bed-gene-loci', '-loci', type=str, dest='loci',
+                        required=True)
     parser.add_argument('--enforce-basic', '-fb', action='store_true',
                         default=False, dest='force_basic',
                         help='If no "tag" attribute is present, assume that a transcript '
@@ -230,27 +232,61 @@ def derive_gene_promoters(genes):
     :param genes:
     :return:
     """
-    genes['promoter_start'] = 0
-    genes['promoter_end'] = 0
+    promoters = genes.copy()
+    promoters['promoter_start'] = 0
+    promoters['promoter_end'] = 0
 
-    # plus strand genes
-    genes.loc[genes['strand'] > 0, 'promoter_start'] = genes.loc[genes['strand'] > 0, 'start'] - 1000
-    genes.loc[genes['strand'] > 0, 'promoter_end'] = genes.loc[genes['strand'] > 0, 'start'] + 500
+    # plus strand promoters
+    promoters.loc[promoters['strand'] > 0, 'promoter_start'] = promoters.loc[promoters['strand'] > 0, 'start'] - 1000
+    promoters.loc[promoters['strand'] > 0, 'promoter_end'] = promoters.loc[promoters['strand'] > 0, 'start'] + 500
 
-    # minus strand genes
+    # minus strand promoters
     # make sure that start < end always holds
-    genes.loc[genes['strand'] < 0, 'promoter_end'] = genes.loc[genes['strand'] < 0, 'end'] + 1000
-    genes.loc[genes['strand'] < 0, 'promoter_start'] = genes.loc[genes['strand'] < 0, 'end'] - 500
+    promoters.loc[promoters['strand'] < 0, 'promoter_end'] = promoters.loc[promoters['strand'] < 0, 'end'] + 1000
+    promoters.loc[promoters['strand'] < 0, 'promoter_start'] = promoters.loc[promoters['strand'] < 0, 'end'] - 500
 
-    genes['start'] = genes['promoter_start']
-    genes['end'] = genes['promoter_end']
-    genes.drop(['promoter_start', 'promoter_end'], inplace=True, axis=1)
-    genes['length'] = genes['end'] - genes['start']
+    promoters['start'] = promoters['promoter_start'].astype('int64')
+    promoters['end'] = promoters['promoter_end'].astype('int64')
+    promoters.drop(['promoter_start', 'promoter_end'], inplace=True, axis=1)
+    promoters['length'] = promoters['end'] - promoters['start']
 
-    assert (genes['length'] > 0).all(), 'Zero length: deriving promoter coordinates failed'
-    assert (genes['start'] < genes['end']).all(), 'End > start: deriving promoter coordinates failed'
+    assert (promoters['length'] > 0).all(), 'Zero length: deriving promoter coordinates failed'
+    assert (promoters['start'] < promoters['end']).all(), 'End > start: deriving promoter coordinates failed'
 
-    return genes
+    return promoters
+
+
+def derive_gene_loci(genes, promoters):
+    """
+    :param genes:
+    :param promoters:
+    :return:
+    """
+    loci = genes.copy()
+    loci['locus_start'] = 0
+    loci['locus_end'] = 0
+    loci['promoter_start'] = promoters['start']
+    loci['promoter_end'] = promoters['end']
+
+    # note to self here: so far, genes have not been filtered
+    # for size, i.e., there can be genes with size 500 bp,
+    # which would cause all() to fail - use any() instead
+    assert (loci['start'] != promoters['start']).any(), 'Failed to copy data'
+
+    min_starts = loci.loc[:, ['start', 'promoter_start']].min(axis=1)
+    max_ends = loci.loc[:, ['end', 'promoter_end']].max(axis=1)
+    loci.loc[:, 'locus_start'] = min_starts.values
+    loci.loc[:, 'locus_end'] = max_ends.values
+
+    loci['start'] = loci['locus_start'].astype('int64')
+    loci['end'] = loci['locus_end'].astype('int64')
+    loci.drop(['promoter_start', 'promoter_end', 'locus_start', 'locus_end'], inplace=True, axis=1)
+    loci['length'] = loci['end'] - loci['start']
+
+    assert (loci['length'] > 0).all(), 'Zero length: deriving promoter coordinates failed'
+    assert (loci['start'] < loci['end']).all(), 'End > start: deriving gene locus coordinates failed'
+
+    return loci
 
 
 def build_annotation_tables(genes, transcripts, transcript_count):
@@ -386,9 +422,9 @@ def load_gene_transcript_information(database, chromosomes, force_basic):
     logger.debug('Excluded transcripts based on biotype: {}'.format(exclude_transcript['non_coding']))
     logger.debug('Excluded non-basic transcripts: {}'.format(exclude_transcript['non_basic']))
     logger.debug('\n===================\nList of excluded genes\n=========================\n')
-    logger.debug('{}'.format('\n'.join(sorted(excluded_genes))))
+    logger.debug('\n' + '{}'.format('\n'.join(sorted(excluded_genes))))
     logger.debug('\n===================\nList of excluded transcripts\n========================\n')
-    logger.debug('{}'.format('\n'.join(sorted(excluded_transcripts))))
+    logger.debug('\n' + '{}'.format('\n'.join(sorted(excluded_transcripts))))
 
     return selected_genes, selected_transcripts, transcript_count
 
@@ -411,10 +447,15 @@ def main():
     logger.debug('Writing gene and transcript tables....')
     dump_tabular_output(genes, args.genes)
     dump_tabular_output(transcripts, args.transcripts)
-    logger.debug('Writing BED output...')
+    logger.debug('Writing BED output for genes...')
     dump_tabular_output(genes, args.bodies, True)
-    genes = derive_gene_promoters(genes)
-    dump_tabular_output(genes, args.promoters, True)
+    promoters = derive_gene_promoters(genes)
+    logger.debug('Writing BED output for promoters...')
+    dump_tabular_output(promoters, args.promoters, True)
+    loci = derive_gene_loci(genes, promoters)
+    logger.debug('Writing BED output for loci...')
+    dump_tabular_output(loci, args.loci, True)
+    logger.debug('Done')
     return
 
 
