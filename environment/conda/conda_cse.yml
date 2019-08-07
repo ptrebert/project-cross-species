@@ -5,6 +5,8 @@ channels:
   - r
 dependencies:
   - Python=3.6.*
+  - boost=1.67.0
+  - cmake=3.14.0
   - drmaa=0.7.9
   - salmon=0.14.1
   - snakemake=5.5.0
@@ -22,5 +24,8 @@ dependencies:
   - simplejson=3.16.0
   - six=1.12.0
   - pyfaidx=0.5.3
+  - bedtools=2.27.1
+  - ucsc-fatotwobit=377
+  - twobitreader=3.1.7
   - pip:
       - git+https://github.com/daler/gffutils@master
