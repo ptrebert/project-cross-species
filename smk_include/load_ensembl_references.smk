@@ -206,11 +206,12 @@ rule process_gene_model:
         gff = 'references/gene-models/raw_download/{species}.gff.gz',
         tsv = 'references/chromosomes/whole-genome/{species}.wg.sizes'
     output:
-        db = 'references/gene-models/whole-genome/{species}.sqlite',
+        db = protected('references/gene-models/whole-genome/{species}.sqlite'),
         genes = 'references/gene-models/whole-genome/protein-coding/{species}.wg.genes.tsv',
         transcripts = 'references/gene-models/whole-genome/protein-coding/{species}.wg.transcripts.tsv',
         bodies = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gene-body.bed',
         promoters = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gene-promoter.bed',
+        loci = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gene-locus.bed',
         mapping = 'references/gene-models/whole-genome/protein-coding/{species}.wg.gt-map.tsv'
     log: 'log/references/gene-models/whole-genome/{species}.wg.protein-coding.log'
     params:
@@ -230,6 +231,7 @@ rule process_gene_model:
         exec += ' --tsv-transcripts {output.transcripts}'
         exec += ' --bed-gene-promoters {output.promoters}'
         exec += ' --bed-gene-bodies {output.bodies}'
+        exec += ' --bed-gene-loci {output.loci}'
         exec += ' &> {log}'
         shell(exec)
 
@@ -301,3 +303,77 @@ rule download_pairwise_alignments:
         source_url = os.path.join(base_url, load_path)
         exec = 'wget --quiet -O {output} ' + source_url
         shell(exec)
+
+
+rule extract_pairwise_alignments:
+    input:
+        'references/alignments/whole-genome/{reference_species}_vs_{target_species}.lastz-net.tar.gz'
+    output:
+        folder = directory('references/alignments/whole-genome/{reference_species}_vs_{target_species}'),
+        checkfile = touch('references/alignments/whole-genome/{reference_species}_vs_{target_species}.extract.chk')
+    shell:
+        'mkdir -p {output.folder} && tar xzf {input} --strip-components=1 --directory={output.folder}'
+
+
+rule preprocess_pairwise_alignments:
+    input:
+        checkfile = 'references/alignments/whole-genome/{reference_species}_vs_{target_species}.extract.chk',
+        chrom_ref = 'references/chromosomes/autosomes/{reference_species}.auto.sizes',
+        chrom_trg = 'references/chromosomes/autosomes/{target_species}.auto.sizes'
+    output:
+        maf_count = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.maf-block-count.tsv',
+        block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
+    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}.norm.log'
+    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}.norm.rsrc'
+    threads: 5
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        exec = '{params.script_dir}/ensembl_references/process_ensembl_raw_alignments.py'
+        exec += ' --log-config {params.log_config}'
+        exec += ' --debug --num-cpu {threads}'
+        exec += ' --maf-folder references/alignments/whole-genome/{wildcards.reference_species}_vs_{wildcards.target_species}'
+        exec += ' --reference-chromosomes {input.chrom_ref}'
+        exec += ' --target-chromosomes {input.chrom_trg}'
+        exec += ' --out-block-counts {output.maf_count}'
+        exec += ' --out-block-splits {output.block_splits}'
+        exec += ' &> {log}'
+        shell(exec)
+
+
+rule determine_unique_reference_alignment_splits:
+    input:
+        block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
+    output:
+        uniq_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.tsv.gz',
+    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.log'
+    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.rsrc'
+    threads: 2
+    shell:
+        'bedtools intersect -nonamecheck -c -a {input.block_splits} -b {input.block_splits} 2> {log} | egrep "\\s1$" | gzip > {output.uniq_splits}'
+
+
+rule determine_nonunique_reference_alignment_splits:
+    input:
+        block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
+    output:
+        non_uniq_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits.tsv.gz'
+    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits.log'
+    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits.rsrc'
+    threads: 2
+    shell:
+        'set +o pipefail; bedtools intersect -nonamecheck -c -a {input.block_splits} -b {input.block_splits} 2> {log} | egrep -v "\\s1$" | gzip > {output.non_uniq_splits}'
+
+
+rule determine_nonunique_reference_alignment_splits_in_genes:
+    input:
+        non_uniq_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits.tsv.gz',
+        gene_loci = 'references/gene-models/whole-genome/protein-coding/{reference_species}.wg.gene-locus.bed',
+    output:
+        splits_ovl_genes = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits-ovl-genes.tsv.gz'
+    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits-ovl-genes.log'
+    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits-ovl-genes.rsrc'
+    threads: 1
+    shell:
+        'bedtools intersect -nonamecheck -c -a {input.non_uniq_splits} -b {input.gene_loci} 2> {log} | gzip > {output.splits_ovl_genes}'

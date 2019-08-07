@@ -3,6 +3,10 @@
     "clusterSpec": " -V -S /bin/bash -l h_vmem=12G,slots_free=1,mem_free=8G",
     "jobName": "{rule}__defaultSpec__"
   },
+  "preprocess_pairwise_alignments": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=40G,slots_free=5,mem_free=20G",
+    "jobName": "{rule}_prepaln"
+  },
   "build_bowtie_index": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btidx"
@@ -46,6 +50,13 @@
     "compute_signal_coverage": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=40G,slots_free=6,mem_free=20G",
     "jobName": "{rule}_sigcov"
+  },
+    "determine_unique_reference_alignment_splits": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_refuniq"
+  },
+    "determine_nonunique_reference_alignment_splits": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_refnuniq"
   }
 }
-
