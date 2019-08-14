@@ -128,6 +128,7 @@ rule filter_sort_genome_assembly:
         fasta = 'references/assemblies/whole-genome/{species}.wg.fa',
         sizes = 'references/chromosomes/whole-genome/{species}.wg.sizes',
         regions = 'references/chromosomes/whole-genome/{species}.wg.bed',
+        auto_seq = 'references/assemblies/autosomes/{species}.auto.fa',
         autosomes = 'references/chromosomes/autosomes/{species}.auto.sizes',
         auto_regions = 'references/chromosomes/autosomes/{species}.auto.bed',
         metrics = 'references/metrics/whole-genome/{species}.wg.metrics'
@@ -142,6 +143,7 @@ rule filter_sort_genome_assembly:
         exec += ' --fasta-out {output.fasta}'
         exec += ' --chromosome-sizes {output.sizes}'
         exec += ' --chromosome-regions {output.regions}'
+        exec += ' --autosome-sequence {output.auto_seq}'
         exec += ' --autosome-sizes {output.autosomes}'
         exec += ' --autosome-regions {output.auto_regions}'
         exec += ' --genome-metrics {output.metrics}'
@@ -152,13 +154,13 @@ rule filter_sort_genome_assembly:
 
 rule count_unique_genome_kmers:
     input:
-        'references/assemblies/whole-genome/{species}.wg.fa'
+        'references/assemblies/autosomes/{species}.auto.fa'
     output:
-        'references/assemblies/whole-genome/{species}.k{kmer}.stats'
+        'references/assemblies/autosomes/{species}.k{kmer}.stats'
     log:
-        'log/references/assemblies/whole-genome/{species}.k{kmer}.stats.log'
+        'log/references/assemblies/autosomes/{species}.k{kmer}.stats.log'
     benchmark:
-        'run/references/assemblies/whole-genome/{species}.k{kmer}.stats.rsrc'
+        'run/references/assemblies/autosomes/{species}.k{kmer}.stats.rsrc'
     run:
         exec = 'unique-kmers.py --ksize {wildcards.kmer}'
         exec += ' --error-rate 0.01 --report {output}'

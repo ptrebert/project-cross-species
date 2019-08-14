@@ -53,6 +53,7 @@ def parse_command_line():
     parser.add_argument('--fasta-out', '-fout', type=str, dest='output', required=True)
     parser.add_argument('--chromosome-sizes', '-csz', type=str, dest='chromsizes', required=True)
     parser.add_argument('--chromosome-regions', '-cre', type=str, dest='chromregions', required=True)
+    parser.add_argument('--autosome-sequence', '-as', type=str, dest='autoseq', default='')
     parser.add_argument('--autosome-sizes', '-asz', type=str, dest='autosomes', default='')
     parser.add_argument('--autosome-regions', '-are', type=str, dest='autoregions', default='')
     parser.add_argument('--genome-metrics', '-met', type=str, dest='metrics', default='')
@@ -263,13 +264,15 @@ def main():
     logger.debug('Writing chromosome region BED file')
     dump_chromosome_size_table(sort_order, sizes, args.chromregions, True)
 
-    if args.autosomes or args.autoregions:
+    if args.autosomes or args.autoregions or args.autoseq:
         autosome_select = re.compile('chr[A-F0-9]{1,2}$')
         autosomes = []
         for c in sort_order:
             if autosome_select.match(c) is not None:
                 autosomes.append(c)
         logger.debug('Selected {} autosomes'.format(len(autosomes)))
+        if args.autoseq:
+            dump_genome_sequence(autosomes, sequences, args.autoseq)
         if args.autosomes:
             logger.debug('Writing autosome size table')
             dump_chromosome_size_table(autosomes, sizes, args.autosomes)
