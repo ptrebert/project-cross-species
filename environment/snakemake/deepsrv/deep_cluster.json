@@ -1,15 +1,27 @@
 {
   "__default__": {
-    "clusterSpec": " -V -S /bin/bash -l h_vmem=12G,slots_free=1,mem_free=8G",
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=16G,slots_free=2,mem_free=8G",
     "jobName": "{rule}__defaultSpec__"
   },
   "preprocess_pairwise_alignments": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=40G,slots_free=5,mem_free=20G",
     "jobName": "{rule}_prepaln"
   },
+  "swap_reference_and_target": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=3,mem_free=12G",
+    "jobName": "{rule}_swap"
+  },
+  "select_reciprocal_best_blocks": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=3,mem_free=12G",
+    "jobName": "{rule}_rbest"
+  },
   "build_bowtie_index": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_btidx"
+  },
+  "build_star_index": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_stidx"
   },
   "samtools_bai_index_bam": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=20G,slots_free=4,mem_free=10G",
@@ -22,6 +34,10 @@
   "samtools_position_sort_bam": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=6,mem_free=12G",
     "jobName": "{rule}_psort"
+  },
+  "samtools_name_sort_bam": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=6,mem_free=12G",
+    "jobName": "{rule}_nsort"
   },
   "align_single_end_epigenome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
@@ -38,6 +54,14 @@
   "quantify_single_end_transcriptome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
     "jobName": "{rule}_salqse"
+  },
+  "align_single_end_transcriptome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_starse"
+  },
+  "align_paired_end_transcriptome": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
+    "jobName": "{rule}_starpe"
   },
   "quantify_paired_end_transcriptome": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=120G,slots_free=16,mem_free=40G",
@@ -58,5 +82,21 @@
     "determine_nonunique_reference_alignment_splits": {
     "clusterSpec": " -V -S /bin/bash -l h_vmem=24G,slots_free=2,mem_free=16G",
     "jobName": "{rule}_refnuniq"
+  },
+  "call_paired_end_peaks_macs": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=32G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_pemacs"
+  },
+  "call_single_end_peaks_macs": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=32G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_semacs"
+  },
+  "call_paired_end_peaks_zerone": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=32G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_pezone"
+  },
+  "call_single_end_peaks_zerone": {
+    "clusterSpec": " -V -S /bin/bash -l h_vmem=32G,slots_free=2,mem_free=16G",
+    "jobName": "{rule}_sezone"
   }
 }

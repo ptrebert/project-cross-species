@@ -1,0 +1,9 @@
+name: csepy2
+channels:
+  - defaults
+  - bioconda
+dependencies:
+  - Python=2.7.*
+  - gcc_linux-64=7.3.0
+  - gfortran_linux-64=7.3.0
+  - macs2=2.1.2
