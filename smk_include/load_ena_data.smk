@@ -177,6 +177,14 @@ def combine_local_remote(local_name, record):
             mate_num = url.split('_')[-1].strip('.fastq.gz')
             assert int(mate_num), 'Unexpected mate number: {}'.format(record)
             tmp = local_name + '.paired{}.fastq.gz'.format(mate_num)
+            if mate_num == '1' and 'mouse_ncd4_Input_ET-SAMN06312021_SRR5237812' in local_name:
+                # for the ncd4 H3K27ac sample, create a matched Input
+                # by selecting mate 1 reads of the paired Input
+                tmp2 = local_name.replace('ET-SAMN06312021', 'ET-SAMN06312017') + '.single.fastq.gz'
+                load_info.append((tmp2, url, md5))
+            if mate_num == '1' and 'mouse_ncd4_Input_ET-SAMN06312022_SRR5237810' in local_name:
+                tmp2 = local_name.replace('ET-SAMN06312022', 'ET-SAMN06312018') + '.single.fastq.gz'
+                load_info.append((tmp2, url, md5))
         else:
             tmp = local_name + '.single.fastq.gz'
         load_info.append((tmp, url, md5))

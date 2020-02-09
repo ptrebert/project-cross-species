@@ -80,3 +80,9 @@ species:
 rna_kmer_seeds:
   - 19
   - 31
+
+min_mapq: 10
+
+min_reads_narrow: 30000000
+
+min_reads_broad: 50000000

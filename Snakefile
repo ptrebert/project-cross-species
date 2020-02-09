@@ -46,31 +46,34 @@ def determine_readset_combinations(datatypes, bioprojects, readsets):
 
 rule master:
     input:
-        rules.preprocess_transcriptomes_master.input,
         rules.preprocess_epigenomes_master.input,
-        expand('references/alignments/whole-genome/{reference}_vs_{target}.lastz-net.tar.gz',
+        expand('references/assemblies/autosomes/{species}.auto.fa',
+                species=SPECIES),
+        expand('references/alignments/autosomes/reciprocal-best/{reference}_vs_{target}.blocks.tsv.gz',
                 reference='human',
                 target=list(set(SPECIES) - set(['human']))),
-        expand('references/alignments/whole-genome/{reference}_vs_{target}.lastz-net.tar.gz',
+        expand('references/alignments/autosomes/reciprocal-best/{reference}_vs_{target}.blocks.tsv.gz',
                 reference='mouse',
                 target=['chicken', 'cow', 'dog', 'opossum', 'pig', 'platypus', 'rat']),
 
-        expand('input/fastq/{datatype}/EGAC00001000331.link.ok',
-                datatype=['epigenome', 'transcriptome']),
-
-        expand(rules.handle_deep_batch_download.output,
-                datatype=['epigenome', 'transcriptome']),
-        expand(rules.create_ena_request_files.output,
-                datatype='epigenome',
-                bioproject=EPIGENOME_PROJECTS),
-        expand(rules.create_ena_request_files.output,
-                datatype='transcriptome',
-                bioproject=TRANSCRIPTOME_PROJECTS),
-        expand('input/fastq/{datatype}/{bioproject}/{readset}.ok',
-                determine_readset_combinations,
-                datatype=READSET_WILDCARDS.datatype,
-                bioproject=READSET_WILDCARDS.bioproject,
-                readset=READSET_WILDCARDS.readset),
+#        rules.preprocess_transcriptomes_master.input,
+#        rules.preprocess_epigenomes_master.input,
+#        expand('input/fastq/{datatype}/EGAC00001000331.link.ok',
+#                datatype=['epigenome', 'transcriptome']),
+#
+#        expand(rules.handle_deep_batch_download.output,
+#                datatype=['epigenome', 'transcriptome']),
+#        expand(rules.create_ena_request_files.output,
+#                datatype='epigenome',
+#                bioproject=EPIGENOME_PROJECTS),
+#        expand(rules.create_ena_request_files.output,
+#                datatype='transcriptome',
+#                bioproject=TRANSCRIPTOME_PROJECTS),
+#        expand('input/fastq/{datatype}/{bioproject}/{readset}.ok',
+#                determine_readset_combinations,
+#                datatype=READSET_WILDCARDS.datatype,
+#                bioproject=READSET_WILDCARDS.bioproject,
+#                readset=READSET_WILDCARDS.readset),
 
     message: 'Executing MASTER rule'
 

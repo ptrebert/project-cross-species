@@ -6,7 +6,7 @@ RNA_READS_SE_WILDCARDS = glob_wildcards('input/fastq/transcriptome/{bioproject}/
 RNA_READS_PE_WILDCARDS = glob_wildcards('input/fastq/transcriptome/{bioproject}/{species}_{tissue}_{mark}_{sample}_{run}.paired1.ok')
 
 
-def transcriptome_single_end_combinations(species, tissues, marks, samples, kmers):
+def transcriptome_single_end_combinations(species, tissues, marks, samples, kmers=None):
 
     valid_combinations = []
     root_folder = 'input/fastq/transcriptome'
@@ -24,16 +24,22 @@ def transcriptome_single_end_combinations(species, tissues, marks, samples, kmer
         p = sample[1]
         combo = '_'.join([s, t, m, p])
         if combo in existing_combinations:
-            for _, k in kmers:
+            if kmers is not None:
+                for _, k in kmers:
+                    valid_combinations.append({'species': s,
+                                                'tissue': t,
+                                                'mark': m,
+                                                'sample': p,
+                                                'kmer': k})
+            else:
                 valid_combinations.append({'species': s,
-                                            'tissue': t,
-                                            'mark': m,
-                                            'sample': p,
-                                            'kmer': k})
+                                           'tissue': t,
+                                           'mark': m,
+                                           'sample': p})
     return valid_combinations
 
 
-def transcriptome_paired_end_combinations(species, tissues, marks, samples, kmers):
+def transcriptome_paired_end_combinations(species, tissues, marks, samples, kmers=None):
 
     valid_combinations = []
     root_folder = 'input/fastq/transcriptome'
@@ -51,12 +57,18 @@ def transcriptome_paired_end_combinations(species, tissues, marks, samples, kmer
         p = sample[1]
         combo = '_'.join([s, t, m, p])
         if combo in existing_combinations:
-            for _, k in kmers:
+            if kmers is not None:
+                for _, k in kmers:
+                    valid_combinations.append({'species': s,
+                                                'tissue': t,
+                                                'mark': m,
+                                                'sample': p,
+                                                'kmer': k})
+            else:
                 valid_combinations.append({'species': s,
-                                            'tissue': t,
-                                            'mark': m,
-                                            'sample': p,
-                                            'kmer': k})
+                                                'tissue': t,
+                                                'mark': m,
+                                                'sample': p})
     return valid_combinations
 
 
@@ -88,7 +100,24 @@ rule preprocess_transcriptomes_master:
                 species=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').species,
                 tissue=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').tissue,
                 mark=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').mark,
-                sample=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').sample)
+                sample=glob_wildcards('input/tabular/transcriptome/temp/{layout}/{species}_{tissue}_{mark}_{sample}.k{kmer}/quant.genes.sf').sample),
+
+        expand('references/indices/star/{species}/Genome',
+                species=['human', 'mouse']),
+
+        expand('input/bam/transcriptome/temp/single/{species}_{tissue}_{mark}_{sample}/Aligned.sortedByCoord.out.bam',
+                transcriptome_single_end_combinations,
+                species=RNA_READS_SE_WILDCARDS.species,
+                tissue=RNA_READS_SE_WILDCARDS.tissue,
+                mark=RNA_READS_SE_WILDCARDS.mark,
+                sample=RNA_READS_SE_WILDCARDS.sample),
+
+        expand('input/bam/transcriptome/temp/paired/{species}_{tissue}_{mark}_{sample}/Aligned.sortedByCoord.out.bam',
+                transcriptome_paired_end_combinations,
+                species=RNA_READS_PE_WILDCARDS.species,
+                tissue=RNA_READS_PE_WILDCARDS.tissue,
+                mark=RNA_READS_PE_WILDCARDS.mark,
+                sample=RNA_READS_PE_WILDCARDS.sample)
 
 
 rule build_salmon_index:
@@ -115,28 +144,28 @@ rule build_salmon_index:
         shell(exec)
 
 
-#rule build_star_index:
-#    input:
-#        'references/gene-models/whole-genome/protein-coding/{species}.wg.transcripts.fa'
-#    output:
-#        'references/indices/star/whole-genome/protein-coding/{species}.k{kmer}.idx/SA'
-#    log:
-#        'log/references/indices/star/whole-genome/protein-coding/{species}.k{kmer}.idx.log'
-#    benchmark:
-#        'run/references/indices/star/whole-genome/protein-coding/{species}.k{kmer}.idx.rsrc'
-#    threads: 8
-#    params:
-#        index_dir = lambda wildcards, output: os.path.dirname(output[0])
-#    run:
-#        exec = 'salmon index --type quasi'
-#        exec += ' --transcripts {input}'
-#        exec += ' --kmerLen {wildcards.kmer}'
-#        exec += ' --keepDuplicates'  # should not have any effect
-#        exec += ' --threads {threads}'
-#        exec += ' --perfectHash'
-#        exec += ' --index {params.index_dir}'
-#        exec += ' &> {log}'
-#        shell(exec)
+rule build_star_index:
+    input:
+        'references/assemblies/whole-genome/{species}.wg.fa'
+    output:
+        expand('references/indices/star/{{species}}/{filename}',
+                filename=['Genome', 'SA', 'SAindex', 'chrLength.txt',
+                            'chrName.txt', 'chrNameLength.txt',
+                            'chrStart.txt', 'genomeParameters.txt'])
+    log:
+        'log/references/indices/star/{species}.log'
+    benchmark:
+        'run/eferences/indices/star/{species}.rsrc'
+    threads: 16
+    params:
+        output_dir = lambda wildcards, output: os.path.dirname(output[0])
+    run:
+        exec = 'STAR --runMode genomeGenerate'
+        exec += ' --runThreadN {threads}'
+        exec += ' --genomeDir {params.output_dir}'
+        exec += ' --genomeFastaFiles {input}'
+        exec += ' &> {log}'
+        shell(exec)
 
 
 def collect_single_end_transcriptomes(wildcards):
@@ -186,6 +215,34 @@ rule quantify_single_end_transcriptome:
         exec += ' --forgettingFactor 0.8'
         exec += ' --output {params.output_dir}'
         exec += ' &> {log}'
+        shell(exec)
+
+
+rule align_single_end_transcriptome:
+    input:
+        fastq = collect_single_end_transcriptomes,
+        index = 'references/indices/star/{species}/Genome',
+    output:
+        bam = 'input/bam/transcriptome/temp/single/{species}_{tissue}_{mark}_{sample}/Aligned.sortedByCoord.out.bam',
+        junctions = 'input/bam/transcriptome/temp/single/{species}_{tissue}_{mark}_{sample}/SJ.out.tab'
+    log:
+        'log/input/bam/transcriptome/temp/single/{species}_{tissue}_{mark}_{sample}/star.log',
+    benchmark:
+        'run/input/bam/transcriptome/temp/single/{species}_{tissue}_{mark}_{sample}/star.rsrc',
+    threads: 16
+    params:
+        output_dir = lambda wildcards, output: os.path.dirname(output.bam),
+        index_dir = lambda wildcards, input: os.path.dirname(input.index)
+    run:
+        exec = 'STAR --runMode alignReads --runThreadN {threads}'
+        exec += ' --outFileNamePrefix {params.output_dir}'
+        exec += ' --genomeDir {params.index_dir}'
+        exec += ' --readFilesCommand gunzip -c'
+        exec += ' --readFilesIn {input.fastq}'
+        exec += ' --outFilterType BySJout --outFilterMultimapNmax 20 --alignSJoverhangMin 8'
+        exec += ' --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04'
+        exec += ' --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000'
+        exec += ' --outSAMtype BAM SortedByCoordinate'
         shell(exec)
 
 
@@ -269,6 +326,35 @@ rule quantify_paired_end_transcriptome:
         exec += ' --forgettingFactor 0.8'
         exec += ' --output {params.output_dir}'
         exec += ' &> {log}'
+        shell(exec)
+
+
+rule align_paired_end_transcriptome:
+    input:
+        fastq1 = collect_paired_end_transcriptomes_mate1,
+        fastq2 = collect_paired_end_transcriptomes_mate2,
+        index = 'references/indices/star/{species}/Genome'
+    output:
+        bam = 'input/bam/transcriptome/temp/paired/{species}_{tissue}_{mark}_{sample}/Aligned.sortedByCoord.out.bam',
+        junctions = 'input/bam/transcriptome/temp/paired/{species}_{tissue}_{mark}_{sample}/SJ.out.tab'
+    log:
+        'log/input/bam/transcriptome/temp/paired/{species}_{tissue}_{mark}_{sample}/star.log',
+    benchmark:
+        'run/input/bam/transcriptome/temp/paired/{species}_{tissue}_{mark}_{sample}/star.rsrc',
+    threads: 16
+    params:
+        output_dir = lambda wildcards, output: os.path.dirname(output.bam),
+        index_dir = lambda wildcards, input: os.path.dirname(input.index)
+    run:
+        exec = 'STAR --runMode alignReads --runThreadN {threads}'
+        exec += ' --outFileNamePrefix {params.output_dir}'
+        exec += ' --genomeDir {params.index_dir}'
+        exec += ' --readFilesCommand gunzip -c'
+        exec += ' --readFilesIn {input.fastq1} {input.fastq2}'
+        exec += ' --outFilterType BySJout --outFilterMultimapNmax 20 --alignSJoverhangMin 8'
+        exec += ' --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --outFilterMismatchNoverReadLmax 0.04'
+        exec += ' --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000'
+        exec += ' --outSAMtype BAM SortedByCoordinate'
         shell(exec)
 
 

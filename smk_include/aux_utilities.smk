@@ -32,4 +32,20 @@ rule samtools_position_sort_bam:
     resources:
         mem_mb= 12 * 1024  # 2G per thread
     shell:
-        'samtools sort -l 9 -m 2G -@ {threads} --output-fmt BAM -o {output} {input} &> {log}'
+        'samtools sort -T $TMPDIR -l 9 -m 2G -@ {threads} --output-fmt BAM -o {output} {input} &> {log}'
+
+
+rule samtools_name_sort_bam:
+    input:
+        '{filepath}.bam'
+    output:
+        '{filepath}.nsort.bam'
+    log:
+        'log/{filepath}.nsort.log'
+    benchmark:
+        'run/{filepath}.nsort.rsrc'
+    threads: 6
+    resources:
+        mem_mb= 12 * 1024  # 2G per thread
+    shell:
+        'samtools sort -T $TMPDIR -n -l 9 -m 2G -@ {threads} --output-fmt BAM -o {output} {input} &> {log}'

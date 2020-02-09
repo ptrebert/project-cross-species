@@ -344,18 +344,6 @@ rule preprocess_pairwise_alignments:
         shell(exec)
 
 
-rule determine_unique_reference_alignment_splits:
-    input:
-        block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
-    output:
-        uniq_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.tsv.gz',
-    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.log'
-    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.uniq-splits.rsrc'
-    threads: 2
-    shell:
-        'bedtools intersect -nonamecheck -c -a {input.block_splits} -b {input.block_splits} 2> {log} | egrep "\\s1$" | gzip > {output.uniq_splits}'
-
-
 rule determine_nonunique_reference_alignment_splits:
     input:
         block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
@@ -379,3 +367,132 @@ rule determine_nonunique_reference_alignment_splits_in_genes:
     threads: 1
     shell:
         'bedtools intersect -nonamecheck -c -a {input.non_uniq_splits} -b {input.gene_loci} 2> {log} | gzip > {output.splits_ovl_genes}'
+
+
+rule determine_forbidden_reference_blocks:
+    input:
+        splits_ovl_genes = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.non-uniq-splits-ovl-genes.tsv.gz'
+    output:
+        forbidden_ref = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.forbidden.txt'
+    log: 'log/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.forbidden.log'
+    benchmark: 'run/references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.forbidden.rsrc'
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        exec = '{params.script_dir}/ensembl_references/process_ensembl_clean_alignments.py'
+        exec += ' --log-config {params.log_config}'
+        exec += ' --debug --process-mode single-coverage'
+        exec += ' --block-overlaps {input.splits_ovl_genes}'
+        exec += ' --output-forbidden {output.forbidden_ref}'
+        exec += ' &> {log}'
+        shell(exec)
+
+
+rule swap_reference_and_target:
+    input:
+        block_splits = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
+        forbidden_ref = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.forbidden.txt'
+    output:
+        swapped = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/{target_species}_vs_{reference_species}.wg.tsv.gz'
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        exec = '{params.script_dir}/ensembl_references/process_ensembl_clean_alignments.py'
+        exec += ' --log-config {params.log_config}'
+        exec += ' --debug --process-mode swap'
+        exec += ' --block-overlaps {input.block_splits}'
+        exec += ' --discard-blocks {input.forbidden_ref}'
+        exec += ' --output-blocks {output.swapped}'
+        shell(exec)
+
+
+rule determine_nonunique_target_alignment_splits:
+    input:
+        block_splits = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/{target_species}_vs_{reference_species}.wg.tsv.gz',
+    output:
+        non_uniq_splits = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits.tsv.gz'
+    log: 'log/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits.log'
+    benchmark: 'run/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits.rsrc'
+    threads: 2
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        if wildcards.target_species == 'opossum':
+            # https://groups.google.com/forum/#!topic/bedtools-discuss/t-nQSCxaFGE
+            exec = '{params.script_dir}/ensembl_references/process_opossum_overlaps.py'
+            exec += ' --log-config {params.log_config} --debug'
+            exec += ' --splits {input.block_splits}'
+            exec += ' --output {output.non_uniq_splits} &> {log}'
+        else:
+            exec = 'set +o pipefail; bedtools intersect -nonamecheck -c -a {input.block_splits} -b {input.block_splits} 2> {log} | egrep -v "\\s1$" | gzip > {output.non_uniq_splits}'
+        shell(exec)
+
+
+rule determine_nonunique_target_alignment_splits_in_genes:
+    input:
+        non_uniq_splits = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits.tsv.gz',
+        gene_loci = 'references/gene-models/whole-genome/protein-coding/{target_species}.wg.gene-locus.bed',
+    output:
+        splits_ovl_genes = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits-ovl-genes.tsv.gz'
+    log: 'log/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits-ovl-genes.log'
+    benchmark: 'run/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits-ovl-genes.rsrc'
+    threads: 1
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        if wildcards.target_species == 'opossum':
+            # https://groups.google.com/forum/#!topic/bedtools-discuss/t-nQSCxaFGE
+            exec = '{params.script_dir}/ensembl_references/process_opossum_overlaps.py'
+            exec += ' --log-config {params.log_config} --debug'
+            exec += ' --splits {input.non_uniq_splits} --genes {input.gene_loci}'
+            exec += ' --output {output.splits_ovl_genes} &> {log}'
+        else:
+            exec = 'bedtools intersect -nonamecheck -c -a {input.non_uniq_splits} -b {input.gene_loci} 2> {log} | gzip > {output.splits_ovl_genes}'
+        shell(exec)
+
+
+rule determine_forbidden_target_blocks:
+    input:
+        splits_ovl_genes = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.non-uniq-splits-ovl-genes.tsv.gz'
+    output:
+        forbidden_trg = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.forbidden.txt'
+    log: 'log/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.forbidden.log'
+    benchmark: 'run/references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.forbidden.rsrc'
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        exec = '{params.script_dir}/ensembl_references/process_ensembl_clean_alignments.py'
+        exec += ' --log-config {params.log_config}'
+        exec += ' --debug --process-mode single-coverage'
+        exec += ' --block-overlaps {input.splits_ovl_genes}'
+        exec += ' --output-forbidden {output.forbidden_trg}'
+        exec += ' &> {log}'
+        shell(exec)
+
+
+rule select_reciprocal_best_blocks:
+    input:
+        block_splits_ref = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/{reference_species}_vs_{target_species}.wg.tsv.gz',
+        forbidden_ref = 'references/alignments/autosomes/{reference_species}_vs_{target_species}/temp/{reference_species}_vs_{target_species}.wg.forbidden.txt',
+        forbidden_trg = 'references/alignments/autosomes/swapped/{target_species}_vs_{reference_species}/temp/{target_species}_vs_{reference_species}.wg.forbidden.txt'
+    output:
+        'references/alignments/autosomes/reciprocal-best/{reference_species}_vs_{target_species}.blocks.tsv.gz'
+    log: 'log/references/alignments/autosomes/reciprocal-best/{reference_species}_vs_{target_species}.blocks.log'
+    benchmark: 'run/references/alignments/autosomes/reciprocal-best/{reference_species}_vs_{target_species}.blocks.rsrc'
+    params:
+        script_dir = config['script_dir'],
+        log_config = config['script_log_config']
+    run:
+        exec = '{params.script_dir}/ensembl_references/process_ensembl_clean_alignments.py'
+        exec += ' --log-config {params.log_config}'
+        exec += ' --debug --process-mode remove'
+        exec += ' --block-overlaps {input.block_splits_ref}'
+        exec += ' --discard-blocks {input.forbidden_ref} {input.forbidden_trg}'
+        exec += ' --output-blocks {output}'
+        exec += ' &> {log}'
+        shell(exec)
